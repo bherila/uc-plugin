@@ -93,10 +93,12 @@ export default function OfferPageClient() {
                     </Link>
                   </td>
                   <td align="right">
-                    <VariantLink
-                      variantURI={offer.offer_variant_id}
-                      shopifyData={shopifyData}
-                    />
+                    {offer.offerProductData && (
+                      <VariantLink
+                        variantURI={offer.offerProductData.variantId}
+                        shopifyData={shopifyData}
+                      />
+                    )}
                   </td>
                   <td align="right">
                     <DeleteButton
@@ -122,7 +124,9 @@ export default function OfferPageClient() {
                 ? null
                 : shopifyData.filter(
                     (opt) =>
-                      !offers.find((o) => o.offer_variant_id === opt.variantId),
+                      !offers.find(
+                        (o) => o.offerProductData?.variantId === opt.variantId,
+                      ),
                   )
             }
           />

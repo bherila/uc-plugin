@@ -1,11 +1,30 @@
+export interface ProductData {
+  variantId: string
+  productId: string
+  title: string
+  maxVariantPriceAmount: string
+  featuredImageUrl: string | null
+}
+
+export interface ProductDataGrouping {
+  productId: string
+  title: string
+  maxVariantPriceAmount: string
+  featuredImageUrl: string | null
+  qty: number
+  percentChance: number
+}
+
 export interface V3OfferListItem {
   offer_id: number
   offer_name: string
-  offer_variant_id: string
+  offerProductData: ProductData
 }
 
 export interface V3Offer extends V3OfferListItem {
   mf: V3Manifest[]
+  manifestProductData: { [key: string]: ProductDataGrouping }
+  offerProductData: ProductData
 }
 
 export interface SkuQty {

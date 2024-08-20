@@ -6,6 +6,7 @@ import Button from 'react-bootstrap/Button'
 import Form from 'react-bootstrap/Form'
 import DealSelector from '@/components/DealSelector'
 import z from 'zod'
+import clientPutSkuQtyRequest from '@/app/offers/[offer_id]/clientPutSkuQtyRequest'
 
 interface NewOfferProps {
   offerId: number
@@ -35,16 +36,9 @@ function AddManifestForm({
       if (selectedProductVariant == null) {
         return
       }
-      const formattedSkuToAdd: SkuQty[] = [
-        {
-          variant_id: selectedProductVariant?.variantId,
-          qty: z.coerce.number().default(0).parse(qty),
-        },
-      ]
-      const response: V3Offer = await post('/api/manifest/', {
-        action: 'put_sku_to_offer',
-        offer_id: offerId,
-        sku_to_add: formattedSkuToAdd,
+      const response = await clientPutSkuQtyRequest(offerId, {
+        variant_id: selectedProductVariant?.variantId,
+        qty: z.coerce.number().default(0).parse(qty),
       })
       if (response) {
         setOffer(response)

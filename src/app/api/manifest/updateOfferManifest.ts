@@ -63,10 +63,12 @@ export default async function updateOfferManifests(
     }
 
     // process inserts
-    await db.query(
-      'insert into v3_offer_manifest (offer_id, mf_variant, assignment_ordering) values ?',
-      [toInsert.map((r) => [offer_id, r.variant_id, Math.random()])],
-    )
+    if (toInsert.length > 0) {
+      await db.query(
+        'insert into v3_offer_manifest (offer_id, mf_variant, assignment_ordering) values ?',
+        [toInsert.map((r) => [offer_id, r.variant_id, Math.random()])],
+      )
+    }
     return await queryOffer({ offer_id })
   } finally {
     await db.end()

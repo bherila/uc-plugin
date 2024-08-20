@@ -16,6 +16,8 @@ import groupBySku from '@/lib/groupBySku'
 import { Alert } from 'react-bootstrap'
 import Button from 'react-bootstrap/Button'
 import { ShopifyOrdersTable } from '@/app/offers/[offer_id]/ShopifyOrdersTable'
+import DeleteButton from '@/components/DeleteButton'
+import clientPutSkuQtyRequest from '@/app/offers/[offer_id]/clientPutSkuQtyRequest'
 
 function OfferPageClient({
   offer_id,
@@ -50,7 +52,7 @@ function OfferPageClient({
     ShopifyProductVariant[] | null
   >(null)
   useEffect(() => {
-    get('/api/shopify/products/?type=manifest').then(
+    get('/api/shopify/products/?type=manifest-item').then(
       (result) => setManifestOptions(result),
       (err) => console.error(err),
     )
@@ -72,7 +74,7 @@ function OfferPageClient({
         [{offer?.offer_id}] {offer?.offer_name}
       </MainTitle>
       <p>
-        Shopify product id {offer?.offer_variant_id} ({shopifyTitle}),{' '}
+        Shopify product id {offer?.offerProductData.variantId} ({shopifyTitle}),{' '}
         {shopifyInventoryQuantity} inventory
       </p>
       {criticalErrorMessage ? (
@@ -111,6 +113,7 @@ function OfferPageClient({
                 <th># Offered</th>
                 <th># Allocated</th>
                 <th># Remaining</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -118,14 +121,33 @@ function OfferPageClient({
                 const totalQuantity = manifestGroups[manifest].length
                 const numAllocated =
                   offer?.mf?.filter(
-                    (m) => m.variant_id == manifest && m.assignee_id,
+                    (m) => m && m.variant_id == manifest && m.assignee_id,
                   ).length ?? 0
                 return (
                   <tr key={manifest}>
-                    <td>{manifest}</td>
+                    <td>
+                      {offer?.manifestProductData[manifest]?.title ?? '??'}
+                      <br />
+                      <small>{manifest}</small>
+                    </td>
                     <td>{totalQuantity}</td>
                     <td>{numAllocated}</td>
                     <td>{totalQuantity - numAllocated}</td>
+                    <td>
+                      {numAllocated == 0 && (
+                        <DeleteButton
+                          onDelete={() => {
+                            setIsLoading(true)
+                            clientPutSkuQtyRequest(offer_id, {
+                              variant_id: manifest,
+                              qty: 0,
+                            })
+                              .then((res) => setOffer(res))
+                              .finally(() => setIsLoading(false))
+                          }}
+                        />
+                      )}
+                    </td>
                   </tr>
                 )
               })}

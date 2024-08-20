@@ -1,6 +1,10 @@
 import { V3Manifest, V3Offer } from '@/app/api/manifest/models'
 import db from '@/lib/db'
 import z from 'zod'
+import {
+  shopifyGetProductDataByVariantId,
+  shopifyGetProductDataFromManifests,
+} from '@/lib/shopifyGetProductData'
 
 interface OfferDbSchemaRow {
   offer_id: number
@@ -68,18 +72,27 @@ export default async function queryOffer(query: {
       [z.coerce.number().parse(offer_id)],
     )
 
+    const mf = offerManifests.map(
+      (mf): V3Manifest => ({
+        id: mf.id.toString(),
+        variant_id: mf.variant_id,
+        assignee_id: mf.assignee_id,
+        assignment_ordering: mf.assignment_ordering,
+      }),
+    )
+
+    const offerProductData = await shopifyGetProductDataByVariantId(
+      offer.offer_variant_id,
+    )
+
+    const manifestProductData = await shopifyGetProductDataFromManifests(mf)
+
     return {
       offer_id: z.coerce.number().parse(offer.offer_id),
-      offer_variant_id: offer.offer_variant_id,
       offer_name: offer.offer_name,
-      mf: offerManifests.map(
-        (mf): V3Manifest => ({
-          id: mf.id.toString(),
-          variant_id: mf.variant_id,
-          assignee_id: mf.assignee_id,
-          assignment_ordering: mf.assignment_ordering,
-        }),
-      ),
+      mf,
+      manifestProductData,
+      offerProductData,
     }
   } finally {
     await db.end()

@@ -1,0 +1,93 @@
+import db from '@/lib/db'
+import shopify from '@/lib/shopify'
+import z from 'zod'
+import {
+  ProductData,
+  ProductDataGrouping,
+  V3Manifest,
+  V3Offer,
+} from '@/app/api/manifest/models'
+import groupBySku from '@/lib/groupBySku'
+
+const PRODUCT_QUERY = `
+  query($IDs: [ID!]!) {
+    nodes(ids: $IDs) {
+      ... on ProductVariant {
+        id
+        product {
+          id
+          title
+          priceRangeV2 {
+            maxVariantPrice {
+              amount
+              currencyCode
+            }
+            minVariantPrice {
+              amount
+              currencyCode
+            }
+          }
+          featuredImage {
+            url(transform: { maxWidth: 500, preferredContentType: WEBP })
+          }
+        }
+      }
+    }
+  }
+`
+
+export async function shopifyGetProductDataByVariantIds(
+  variantIds: string[],
+): Promise<{ [variantId: string]: ProductData }> {
+  try {
+    const result = await shopify.graphql(PRODUCT_QUERY, { IDs: variantIds })
+    const productData: { [id: string]: ProductData } = {}
+
+    result.nodes.forEach((node: any) => {
+      const product = node.product
+      const variantId = node.id
+      const productId = product.id
+      productData[variantId] = {
+        variantId,
+        productId,
+        title: product.title,
+        maxVariantPriceAmount:
+          product.priceRangeV2?.maxVariantPrice?.amount ?? '0.00',
+        featuredImageUrl: product.featuredImage?.url ?? null,
+      }
+    })
+
+    return productData
+  } catch (err) {
+    console.error(err)
+    return {}
+  }
+}
+
+export async function shopifyGetProductDataByVariantId(variantId: string) {
+  const result = await shopifyGetProductDataByVariantIds([variantId])
+  return result[variantId]
+}
+
+export async function shopifyGetProductDataFromManifests(
+  manifests: V3Manifest[],
+) {
+  const groupedManifests = groupBySku(manifests)
+  const allVariantIds = Object.keys(groupedManifests)
+  const shopifyProducts = await shopifyGetProductDataByVariantIds(allVariantIds)
+  const res: { [key: string]: ProductDataGrouping } = {}
+  const totalQty = manifests.length
+  for (const key of Object.keys(shopifyProducts)) {
+    let product = shopifyProducts[key]
+    let qty = groupedManifests[key]?.length ?? 0
+    res[key] = {
+      featuredImageUrl: product.featuredImageUrl,
+      maxVariantPriceAmount: product.maxVariantPriceAmount,
+      productId: product.productId,
+      qty,
+      percentChance: (qty / totalQty) * 100,
+      title: product.title,
+    }
+  }
+  return res
+}

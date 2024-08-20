@@ -17,6 +17,7 @@ interface ProductVariant {
 interface ProductNode {
   id: string
   title: string
+  tags: string[]
   variants: {
     nodes: ProductVariant[]
   }
@@ -53,7 +54,7 @@ export async function GET(req: NextRequest) {
   }
 
   const type = req.nextUrl.searchParams.get('type') ?? ''
-  if (['manifest', 'deal'].indexOf(type) < 0) {
+  if (['manifest-item', 'deal'].indexOf(type) < 0) {
     return NextResponse.json({ error: "Unexpected 'type'" }, { status: 400 })
   }
 
@@ -67,6 +68,7 @@ export async function GET(req: NextRequest) {
         node {
           id
           title
+          tags
           variants(first: 250) {
             nodes {
               id
@@ -94,6 +96,9 @@ export async function GET(req: NextRequest) {
     const products = Object.values(response.products.edges)
     products.forEach((productEdge) => {
       const product = productEdge.node
+      if (product.tags.length !== 1 || product.tags[0] !== type) {
+        return
+      }
       product.variants.nodes.forEach((variant) => {
         result.push({
           productId: product.id,
