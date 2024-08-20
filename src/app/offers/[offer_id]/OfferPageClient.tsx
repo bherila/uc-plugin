@@ -113,6 +113,7 @@ function OfferPageClient({
                 <th># Offered</th>
                 <th># Allocated</th>
                 <th># Remaining</th>
+                <th>% Chance</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -133,6 +134,12 @@ function OfferPageClient({
                     <td>{totalQuantity}</td>
                     <td>{numAllocated}</td>
                     <td>{totalQuantity - numAllocated}</td>
+                    <td>
+                      {offer?.manifestProductData[
+                        manifest
+                      ]?.percentChance.toFixed(2)}
+                      %
+                    </td>
                     <td>
                       {numAllocated == 0 && (
                         <DeleteButton
