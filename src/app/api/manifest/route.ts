@@ -5,13 +5,13 @@ import queryOffer from '@/app/api/manifest/queryOffer'
 import { z } from 'zod'
 import { V3Offer, V3OfferListItem } from '@/app/api/manifest/models'
 import { getSession } from '@/lib/session'
-import shopifyWriteVariantMetafield from '@/lib/shopifyWriteVariantMetafield'
 import {
   shopifyGetProductDataByVariantId,
   shopifyGetProductDataByVariantIds,
 } from '@/lib/shopifyGetProductData'
-import { parse } from 'date-fns'
 import shopifyWriteProductMetafield from '@/lib/shopifyWriteProductMetafield'
+import ShopifyWriteProductMetafield from '@/lib/shopifyWriteProductMetafield'
+import currency from 'currency.js'
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const session = await getSession()
@@ -134,10 +134,18 @@ async function maybeUpdateOfferMetafield(updatedOffer: V3Offer | null) {
       'offer_v3',
       JSON.stringify(updatedOffer.manifestProductData, null, 2),
     )
-    // await shopifyWriteVariantMetafield(
-    //   updatedOffer.offerProductData.variantId,
-    //   'product_data',
-    //   JSON.stringify(updatedOffer.manifestProductData),
-    // )
+    await ShopifyWriteProductMetafield(
+      updatedOffer.offerProductData.productId,
+      'offer_v3_array',
+      JSON.stringify({
+        items: Object.values(updatedOffer.manifestProductData),
+        maxPrice:
+          Object.values(updatedOffer.manifestProductData).reduce(
+            (prev, cur) =>
+              Math.max(prev, currency(cur.maxVariantPriceAmount).value),
+            0,
+          ) || null,
+      }),
+    )
   }
 }
