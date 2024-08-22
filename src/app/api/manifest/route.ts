@@ -138,7 +138,12 @@ async function maybeUpdateOfferMetafield(updatedOffer: V3Offer | null) {
       updatedOffer.offerProductData.productId,
       'offer_v3_array',
       JSON.stringify({
-        items: Object.values(updatedOffer.manifestProductData),
+        items: Object.values(updatedOffer.manifestProductData).sort(
+          (a, b) =>
+            currency(a.maxVariantPriceAmount).subtract(
+              currency(b.maxVariantPriceAmount),
+            ).intValue,
+        ),
         maxPrice:
           Object.values(updatedOffer.manifestProductData).reduce(
             (prev, cur) =>
