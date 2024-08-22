@@ -110,7 +110,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (o.action === 'offer_get') {
     const params = z.object({ offer_id: z.coerce.number() }).parse(o)
     const offer = await queryOffer(params)
-    await maybeUpdateOfferMetafield(offer)
+    await maybeUpdateOfferMetafield(offer) // TODO () don't backfill on every GET
     return NextResponse.json(offer)
   }
 
