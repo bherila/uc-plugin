@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from 'react'
+'use client'
+import React, { useState } from 'react'
 import { Button } from 'react-bootstrap'
 
 interface Props {
-  onDelete: () => void
+  offerID: number
+  onDelete: (offer_id: number) => Promise<void>
 }
 
-const DeleteButton: React.FC<Props> = ({ onDelete }) => {
+const DeleteButton: React.FC<Props> = ({ offerID, onDelete }) => {
   const [isConfirming, setIsConfirming] = useState(false)
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (isConfirming) {
-      onDelete()
+      await onDelete(offerID)
       setIsConfirming(false)
     } else {
       setIsConfirming(true)

@@ -1,75 +1,68 @@
-'use client'
 import Col from 'react-bootstrap/Col'
 import Container from '@/components/container'
-import CriticalErrorBanner from '@/components/CriticalErrorBanner'
 import DeleteButton from '@/components/DeleteButton'
 import MainTitle from '@/components/main-title'
 import Row from 'react-bootstrap/Row'
-import Spinner from 'react-bootstrap/Spinner'
 import Table from 'react-bootstrap/Table'
-import { V3OfferListItem } from '@/app/api/manifest/models'
-import { get, post } from '@/lib/fetchWrapper'
-import React, { useCallback, useEffect, useState } from 'react'
-import { ShopifyProductVariant } from '@/app/api/shopify/models'
-import NewOfferForm from '@/app/offers/NewOfferForm'
+import { post } from '@/lib/fetchWrapper'
+import React from 'react'
 import Link from 'next/link'
 import VariantLink from '@/app/offers/VariantLink'
+import svrLoadOfferList from '@/server_lib/svrLoadOfferList'
+import { revalidatePath } from 'next/cache'
+import NewOfferForm from '@/app/offers/NewOfferForm'
+import svrLoadShopifyProducts from '@/server_lib/svrLoadShopifyProducts'
+import svrDeleteOffer from '@/server_lib/svrDeleteOffer'
+import { z } from 'zod'
+import svrCreateOffer from '@/server_lib/svrCreateOffer'
 
-export default function OfferPageClient() {
-  const [offers, setOffers] = useState<V3OfferListItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [criticalErrorMessage, setCriticalErrorMessage] = useState<
-    string | null
-  >(null)
-  const setIsNotLoading = useCallback(() => setIsLoading(false), [setIsLoading])
-  const handleError = useCallback(
-    (error: any) => {
-      console.error(error)
-      if (error instanceof Error) {
-        setCriticalErrorMessage(error.message)
-      }
-      if (typeof error === 'string') {
-        setCriticalErrorMessage(error)
-      }
-    },
-    [setCriticalErrorMessage],
-  )
+export default async function OfferPageClient() {
+  // start loading
+  const offerPromise = svrLoadOfferList()
+  const shopifyPromise = svrLoadShopifyProducts('deal')
 
-  useEffect(() => {
-    setIsLoading(true)
-    post('/api/manifest/', { action: 'offer_list' })
-      .then(setOffers)
-      .catch(handleError)
-      .finally(setIsNotLoading)
-  }, [])
+  // wait for loaded
+  const { offerListItems: offers } = await offerPromise
+  const shopifyData = await shopifyPromise
 
-  const [shopifyData, setShopifyData] = useState<
-    ShopifyProductVariant[] | null
-  >(null)
-  useEffect(() => {
-    get('/api/shopify/products/?type=deal')
-      .then(setShopifyData)
-      .catch(handleError)
-  }, [])
+  // server actions
+  const newOffer = async (offer_name: string, offer_variant_id: string) => {
+    'use server'
+    const parsed = z
+      .object({
+        offer_name: z.string(),
+        offer_variant_id: z.string(),
+      })
+      .parse({
+        offer_name,
+        offer_variant_id,
+      })
+    await svrCreateOffer(parsed)
+    revalidatePath('/offers')
+  }
 
   const deleteOfferId = async (id: number) => {
-    setOffers(offers.filter((offer) => offer.offer_id !== id))
-    setIsLoading(true)
-    post('/api/manifest/', {
-      action: 'offer_delete',
-      offer_id: id,
-    })
-      .then(setOffers)
-      .catch(handleError)
-      .finally(setIsNotLoading)
+    'use server'
+    try {
+      await svrDeleteOffer(id)
+    } finally {
+      revalidatePath('/offers')
+    }
   }
+
+  const options =
+    shopifyData == null
+      ? null
+      : shopifyData.filter(
+          (opt) =>
+            !offers.find(
+              (o) => o.offerProductData?.variantId === opt.variantId,
+            ),
+        )
 
   return (
     <Container>
       <MainTitle>Offers</MainTitle>
-      {criticalErrorMessage && (
-        <CriticalErrorBanner message={criticalErrorMessage} />
-      )}
       <Row>
         <Col xs={9}>
           <Table responsive striped bordered hover>
@@ -95,41 +88,25 @@ export default function OfferPageClient() {
                   <td align="right">
                     {offer.offerProductData && (
                       <VariantLink
+                        type="deal"
                         variantURI={offer.offerProductData.variantId}
-                        shopifyData={shopifyData}
                       />
                     )}
                   </td>
                   <td align="right">
                     <DeleteButton
-                      onDelete={() => deleteOfferId(offer.offer_id)}
+                      offerID={offer.offer_id}
+                      onDelete={deleteOfferId}
                     />
                   </td>
                 </tr>
               ))}
             </tbody>
           </Table>
-          {isLoading && (
-            <Spinner animation="border" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </Spinner>
-          )}
         </Col>
         <Col xs={3}>
           <h2>New Offer</h2>
-          <NewOfferForm
-            {...{ setOffers, handleError }}
-            options={
-              shopifyData == null
-                ? null
-                : shopifyData.filter(
-                    (opt) =>
-                      !offers.find(
-                        (o) => o.offerProductData?.variantId === opt.variantId,
-                      ),
-                  )
-            }
-          />
+          <NewOfferForm action={newOffer} options={options} />
           <p>
             To add a new offer, create a product in shopify for the Deal. This
             specifies the buy-in price and all the details that wil be shown to

@@ -1,15 +1,18 @@
-import { ShopifyProductVariant } from '@/app/api/shopify/models'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faExternalLink } from '@fortawesome/free-solid-svg-icons/faExternalLink'
 import React from 'react'
-function VariantLink({
-  shopifyData,
+import svrLoadShopifyProducts, {
+  MID,
+} from '@/server_lib/svrLoadShopifyProducts'
+import FontAwesomeIcon from '@/lib/FontAwesomeIcon'
+export default async function VariantLink({
   variantURI,
+  type,
 }: {
-  shopifyData: ShopifyProductVariant[] | null
   variantURI: string
+  type: MID
 }) {
   try {
+    const shopifyData = await svrLoadShopifyProducts(type)
     const variantNum = variantURI.split('/').pop()
     const shopifyProduct = shopifyData?.find((x) => x.variantId == variantURI)
     const productId = shopifyProduct?.productId.split('/').pop()
@@ -18,7 +21,8 @@ function VariantLink({
         target="_blank"
         href={`https://admin.shopify.com/store/d62c7d-0a/products/${productId}`}
       >
-        {variantNum} <FontAwesomeIcon icon={faExternalLink} />
+        {variantNum}&nbsp;
+        <FontAwesomeIcon icon={faExternalLink} />
       </a>
     )
   } catch (err) {
@@ -26,5 +30,3 @@ function VariantLink({
   }
   return <span>{variantURI}</span>
 }
-
-export default VariantLink

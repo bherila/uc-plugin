@@ -1,62 +1,31 @@
-import { V3OfferListItem } from '@/app/api/manifest/models'
-import { ShopifyProductVariant } from '@/app/api/shopify/models'
-import { useState } from 'react'
-import { post } from '@/lib/fetchWrapper'
+'use client'
 import Button from 'react-bootstrap/Button'
 import Form from 'react-bootstrap/Form'
 import DealSelector from '@/components/DealSelector'
+import { useState } from 'react'
+import { ShopifyProductVariant } from '@/app/api/shopify/models'
 
 interface NewOfferProps {
-  setOffers: (offers: V3OfferListItem[]) => void
-  handleError: (err: any) => void
+  action: (offer_name: string, offer_variant_id: string) => any
   options: ShopifyProductVariant[] | null
 }
 
-function NewOfferForm({ setOffers, handleError, options }: NewOfferProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+function NewOfferForm({ action, options }: NewOfferProps) {
   const [offerName, setOfferName] = useState('')
   const [selectedVariant, setSelectedVariant] =
     useState<ShopifyProductVariant | null>(null)
-  const [createdItem, setCreatedItem] = useState<V3OfferListItem | null>(null)
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (isSubmitting) {
-      return
-    }
-    if (!selectedVariant) {
-      console.error('!selectedVariant')
-      return
-    }
-    setIsSubmitting(true)
-    post('/api/manifest/', {
-      action: 'offer_create',
-      offer_name: offerName,
-      offer_variant_id: selectedVariant?.variantId,
-    })
-      .then((response: V3OfferListItem[]) => {
-        setOffers(response)
-        setCreatedItem(response[0])
-      })
-      .catch(handleError)
-      .finally(() => setIsSubmitting(false))
-  }
-
-  return createdItem ? (
-    <div>
-      <p>Added a deal! You can see it on the left side now.</p>
-      <p>
-        <Button
-          onClick={(e) => {
-            e.preventDefault()
-            setCreatedItem(null)
-          }}
-        >
-          Create another deal
-        </Button>
-      </p>
-    </div>
-  ) : (
-    <Form onSubmit={handleSubmit} method="POST" className="pb-3">
+  return (
+    <Form
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (selectedVariant) {
+          action(offerName, selectedVariant.variantId)
+          setOfferName('')
+          setSelectedVariant(null)
+        }
+      }}
+      className="pb-3"
+    >
       <Form.Group controlId="shopifyDealProduct">
         <Form.Label>Offer Variant ID:</Form.Label>
         <DealSelector
@@ -73,15 +42,15 @@ function NewOfferForm({ setOffers, handleError, options }: NewOfferProps) {
         <Form.Control
           type="text"
           value={offerName}
+          onChange={(e) => setOfferName(e.currentTarget.value)}
           required
-          onChange={(e) => setOfferName(e.target.value)}
         />
       </Form.Group>
       <Button
         variant="primary"
         className="my-3"
         type="submit"
-        disabled={isSubmitting || !selectedVariant || !offerName}
+        disabled={!selectedVariant || !offerName}
       >
         Submit
       </Button>
