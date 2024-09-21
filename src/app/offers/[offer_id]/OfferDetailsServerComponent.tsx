@@ -17,6 +17,7 @@ import { revalidatePath } from 'next/cache'
 import svrPutSkuQty from '@/server_lib/svrPutSkuQty'
 import { addManifestAction } from '@/app/offers/[offer_id]/_addManifestServerAction'
 import DeleteButton from '@/components/DeleteButton'
+import MetafieldsClient from '@/app/offers/[offer_id]/MetafieldClient'
 
 async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   const promises = {
@@ -29,8 +30,7 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   const offer = await promises.offer
   const manifestGroups = groupBySku(offer?.mf ?? [])
 
-  await maybeUpdateOfferMetafield(offer)
-
+  const offerMetafieldData = await maybeUpdateOfferMetafield(offer)
   const { inventoryQuantity, product } = await promises.shopifyOfferDetail
 
   const numManifestsNotAssigned =
@@ -140,6 +140,7 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
           </Table>
           {/*<h2>Orders</h2>*/}
           {/*<ShopifyOrdersTable shopifyOrderIds={shopifyOrderIds} />*/}
+          <MetafieldsClient metafields={offerMetafieldData} />
         </Col>
         <Col xs={3}>
           <h2>Add bottles to Offer</h2>

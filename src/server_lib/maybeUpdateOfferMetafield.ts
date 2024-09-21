@@ -3,16 +3,16 @@ import { V3Offer } from '@/app/api/manifest/models'
 import shopifyWriteProductMetafield from '@/lib/shopifyWriteProductMetafield'
 import currency from 'currency.js'
 
-interface ShopifyOfferMetafields {
-  offerV3: string;
-  offerV3Array: string;
+export interface ShopifyOfferMetafields {
+  offerV3: string
+  offerV3Array: string
 }
 
 export default async function maybeUpdateOfferMetafield(
   updatedOffer: V3Offer | null,
 ): Promise<ShopifyOfferMetafields | null> {
   if (updatedOffer == null) {
-    return null;
+    return null
   }
 
   const data = {
@@ -36,15 +36,15 @@ export default async function maybeUpdateOfferMetafield(
   const m1 = shopifyWriteProductMetafield(
     updatedOffer.offerProductData.productId,
     'offer_v3',
-    data.offerV3
+    data.offerV3,
   )
 
   const m2 = shopifyWriteProductMetafield(
     updatedOffer.offerProductData.productId,
     'offer_v3_array',
-    data.offerV3Array
+    data.offerV3Array,
   )
 
   await Promise.allSettled([m1, m2])
-  return data;
+  return data
 }

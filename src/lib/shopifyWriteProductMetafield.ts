@@ -46,16 +46,18 @@ async function shopifyWriteProductMetafield(
   key: string,
   value: string,
 ) {
+  let result: { [key: string]: any } = {}
   try {
-    const vars = {
+    result.vars = {
       productId,
       key,
       value,
     }
-    await log(vars)
-    const response = await shopify.graphql(UPDATE_METAFIELD_MUTATION, vars)
-    const edges = response.data.productUpdate.product.metafields.edges
-    await log(edges)
+    const response = await shopify.graphql(
+      UPDATE_METAFIELD_MUTATION,
+      result.vars,
+    )
+    result.edges = response.productUpdate.product.metafields.edges
     return z
       .array(
         z.object({
@@ -65,9 +67,11 @@ async function shopifyWriteProductMetafield(
           }),
         }),
       )
-      .parse(edges)
-  } catch (error) {
-    await log(error)
+      .parse(result.edges)
+  } catch (error: any) {
+    result['error'] = error?.toString()
+  } finally {
+    await log(result)
   }
 }
 
