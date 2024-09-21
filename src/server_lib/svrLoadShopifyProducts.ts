@@ -1,7 +1,7 @@
 import 'server-only'
 import { ShopifyProductVariant } from '@/app/api/shopify/models'
 import shopify from '@/lib/shopify'
-import { cache } from 'react'
+import { unstable_cache } from 'next/cache'
 
 // <generated>
 interface ProductVariant {
@@ -47,7 +47,7 @@ interface QueryResponse {
 
 export type MID = 'manifest-item' | 'deal'
 
-const svrLoadShopifyProducts = cache(async (type: MID) => {
+const svrLoadShopifyProducts = async (type: MID) => {
   if (['manifest-item', 'deal'].indexOf(type) < 0) {
     throw new Error('unexpected type')
   }
@@ -108,6 +108,12 @@ const svrLoadShopifyProducts = cache(async (type: MID) => {
     })
   } while (response.products.pageInfo.hasNextPage)
   return result
-})
+}
 
-export default svrLoadShopifyProducts
+const cachedFn = unstable_cache(
+  async (type: MID) => await svrLoadShopifyProducts(type),
+  [],
+  { revalidate: 30 },
+)
+
+export default cachedFn
