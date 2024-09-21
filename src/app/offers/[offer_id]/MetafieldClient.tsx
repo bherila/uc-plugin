@@ -22,13 +22,13 @@ export default function MetafieldsClient(props: {
               <h3>offer_v3</h3>
               <textarea
                 style={{ width: '100%', height: '100px' }}
-                value={metafields?.offerV3}
+                defaultValue={metafields?.offerV3}
               />
 
               <h3>offer_v3_array</h3>
               <textarea
                 style={{ width: '100%', height: '100px' }}
-                value={metafields?.offerV3Array}
+                defaultValue={metafields?.offerV3Array}
               />
             </div>
           </AccordionCollapse>
