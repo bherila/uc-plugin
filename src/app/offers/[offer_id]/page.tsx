@@ -1,5 +1,5 @@
 import React from 'react'
-import OfferPageClient from '@/app/offers/[offer_id]/OfferPageClient'
+import OfferDetailsServerComponent from '@/app/offers/[offer_id]/OfferDetailsServerComponent'
 import z from 'zod'
 import { getSession } from '@/lib/session'
 import { redirect } from 'next/navigation'
@@ -18,5 +18,5 @@ export default async function Page({
 
   const offerId = z.coerce.number().parse(params.offer_id)
 
-  return <OfferPageClient offer_id={offerId} />
+  return <OfferDetailsServerComponent offer_id={offerId} />
 }

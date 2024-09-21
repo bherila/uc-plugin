@@ -3,21 +3,21 @@ import { V3Offer } from '@/app/api/manifest/models'
 import shopifyWriteProductMetafield from '@/lib/shopifyWriteProductMetafield'
 import currency from 'currency.js'
 
-export default function maybeUpdateOfferMetafield(
+interface ShopifyOfferMetafields {
+  offerV3: string;
+  offerV3Array: string;
+}
+
+export default async function maybeUpdateOfferMetafield(
   updatedOffer: V3Offer | null,
-): Promise<any> {
+): Promise<ShopifyOfferMetafields | null> {
   if (updatedOffer == null) {
-    return Promise.resolve()
+    return null;
   }
-  const m1 = shopifyWriteProductMetafield(
-    updatedOffer.offerProductData.productId,
-    'offer_v3',
-    JSON.stringify(updatedOffer.manifestProductData, null, 2),
-  )
-  const m2 = shopifyWriteProductMetafield(
-    updatedOffer.offerProductData.productId,
-    'offer_v3_array',
-    JSON.stringify({
+
+  const data = {
+    offerV3: JSON.stringify(updatedOffer.manifestProductData, null, 2),
+    offerV3Array: JSON.stringify({
       items: Object.values(updatedOffer.manifestProductData).sort(
         (a, b) =>
           currency(a.maxVariantPriceAmount).subtract(
@@ -31,7 +31,20 @@ export default function maybeUpdateOfferMetafield(
           0,
         ) || null,
     }),
+  }
+
+  const m1 = shopifyWriteProductMetafield(
+    updatedOffer.offerProductData.productId,
+    'offer_v3',
+    data.offerV3
   )
 
-  return Promise.allSettled([m1, m2])
+  const m2 = shopifyWriteProductMetafield(
+    updatedOffer.offerProductData.productId,
+    'offer_v3_array',
+    data.offerV3Array
+  )
+
+  await Promise.allSettled([m1, m2])
+  return data;
 }

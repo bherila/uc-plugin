@@ -15,7 +15,7 @@ import svrDeleteOffer from '@/server_lib/svrDeleteOffer'
 import { z } from 'zod'
 import svrCreateOffer from '@/server_lib/svrCreateOffer'
 
-export default async function OfferPageClient() {
+export default async function OfferListServerComponent() {
   // start loading
   const offerPromise = svrLoadOfferList()
   const shopifyPromise = svrLoadShopifyProducts('deal')

@@ -18,7 +18,7 @@ import svrPutSkuQty from '@/server_lib/svrPutSkuQty'
 import { addManifestAction } from '@/app/offers/[offer_id]/_addManifestServerAction'
 import DeleteButton from '@/components/DeleteButton'
 
-async function OfferPageClient({ offer_id }: { offer_id: number }) {
+async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   const promises = {
     offer: queryOffer({ offer_id }),
     shopifyProducts: svrLoadShopifyProducts('manifest-item'),
@@ -29,7 +29,7 @@ async function OfferPageClient({ offer_id }: { offer_id: number }) {
   const offer = await promises.offer
   const manifestGroups = groupBySku(offer?.mf ?? [])
 
-  // await maybeUpdateOfferMetafield(offer) // wip: don't backfill on every page load!
+  await maybeUpdateOfferMetafield(offer)
 
   const { inventoryQuantity, product } = await promises.shopifyOfferDetail
 
@@ -201,4 +201,4 @@ async function genShopifyDetail(
   }
 }
 
-export default OfferPageClient
+export default OfferDetailsServerComponent
