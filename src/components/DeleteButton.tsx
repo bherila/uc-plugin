@@ -1,8 +1,8 @@
 'use client'
 import React, { useState } from 'react'
 import { Button } from 'react-bootstrap'
-import FontAwesomeIcon from "@/lib/FontAwesomeIcon";
-import { faTrash } from "@fortawesome/free-solid-svg-icons/faTrash";
+import FontAwesomeIcon from '@/lib/FontAwesomeIcon'
+import { faTrash } from '@fortawesome/free-solid-svg-icons/faTrash'
 
 interface Props {
   offerID: number
@@ -31,8 +31,11 @@ const DeleteButton: React.FC<Props> = ({ offerID, onDelete }) => {
       onClick={handleClick}
       onBlur={handleBlur}
     >
-      {isConfirming ? <span>Click again to confirm</span> :
-        <FontAwesomeIcon icon={faTrash} />}
+      {isConfirming ? (
+        <span>Click again to confirm</span>
+      ) : (
+        <FontAwesomeIcon icon={faTrash} />
+      )}
     </Button>
   )
 }
