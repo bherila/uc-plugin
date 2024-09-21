@@ -2,11 +2,7 @@ import 'server-only'
 import { V3Offer } from '@/app/api/manifest/models'
 import shopifyWriteProductMetafield from '@/lib/shopifyWriteProductMetafield'
 import currency from 'currency.js'
-
-export interface ShopifyOfferMetafields {
-  offerV3: string
-  offerV3Array: string
-}
+import { ShopifyOfferMetafields } from '@/lib/ShopifyOfferMetafields'
 
 export default async function maybeUpdateOfferMetafield(
   updatedOffer: V3Offer | null,

@@ -78,7 +78,7 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
         </Alert>
       )}
       <Row>
-        <Col xs={9}>
+        <Col xs={8}>
           <Table responsive striped bordered hover>
             <thead>
               <tr>
@@ -142,7 +142,7 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
           {/*<ShopifyOrdersTable shopifyOrderIds={shopifyOrderIds} />*/}
           <MetafieldsClient metafields={offerMetafieldData} />
         </Col>
-        <Col xs={3}>
+        <Col xs={4}>
           <h2>Add bottles to Offer</h2>
           <AddManifestForm
             availableManifestSKUs={manifestOptions}

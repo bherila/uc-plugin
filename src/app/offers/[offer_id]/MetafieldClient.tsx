@@ -1,11 +1,9 @@
 'use client'
-import { ShopifyOfferMetafields } from '@/server_lib/maybeUpdateOfferMetafield'
-import {
-  Accordion,
-  AccordionButton,
-  AccordionItem,
-  AccordionCollapse,
-} from 'react-bootstrap'
+import Accordion from 'react-bootstrap/Accordion'
+import AccordionButton from 'react-bootstrap/esm/AccordionButton'
+import AccordionItem from 'react-bootstrap/esm/AccordionItem'
+import AccordionCollapse from 'react-bootstrap/AccordionCollapse'
+import { ShopifyOfferMetafields } from '@/lib/ShopifyOfferMetafields'
 import React from 'react'
 
 export default function MetafieldsClient(props: {
@@ -22,14 +20,16 @@ export default function MetafieldsClient(props: {
           <AccordionCollapse eventKey="0">
             <div>
               <h3>offer_v3</h3>
-              <textarea style={{ width: '100%', height: '100px' }}>
-                {metafields?.offerV3}
-              </textarea>
+              <textarea
+                style={{ width: '100%', height: '100px' }}
+                value={metafields?.offerV3}
+              />
 
               <h3>offer_v3_array</h3>
-              <textarea style={{ width: '100%', height: '100px' }}>
-                {metafields?.offerV3Array}
-              </textarea>
+              <textarea
+                style={{ width: '100%', height: '100px' }}
+                value={metafields?.offerV3Array}
+              />
             </div>
           </AccordionCollapse>
         </AccordionItem>
