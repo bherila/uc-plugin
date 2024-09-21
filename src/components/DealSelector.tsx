@@ -25,12 +25,11 @@ const DealSelector: React.FC<Props> = ({
 
     // match any item which has json that contains ANY OF THE
     // WORDS in searchText, case insensitive
-    const searchTextLower = searchText.toLowerCase().split(' ')
-    return options?.filter((option) =>
-      searchTextLower.some((word) =>
-        JSON.stringify(option).toLowerCase().includes(word),
-      ),
-    )
+    const searchWords = searchText.toLowerCase().split(' ').filter(Boolean)
+    return options?.filter((option) => {
+      const lcjson = JSON.stringify(option).toLowerCase()
+      return searchWords.every((word) => lcjson.includes(word))
+    })
   }, [searchText])
 
   useEffect(() => {
