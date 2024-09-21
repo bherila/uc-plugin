@@ -1,7 +1,6 @@
 import 'server-only'
 import { V3Offer } from '@/app/api/manifest/models'
 import shopifyWriteProductMetafield from '@/lib/shopifyWriteProductMetafield'
-import ShopifyWriteProductMetafield from '@/lib/shopifyWriteProductMetafield'
 import currency from 'currency.js'
 
 export default function maybeUpdateOfferMetafield(
@@ -15,7 +14,7 @@ export default function maybeUpdateOfferMetafield(
     'offer_v3',
     JSON.stringify(updatedOffer.manifestProductData, null, 2),
   )
-  const m2 = ShopifyWriteProductMetafield(
+  const m2 = shopifyWriteProductMetafield(
     updatedOffer.offerProductData.productId,
     'offer_v3_array',
     JSON.stringify({

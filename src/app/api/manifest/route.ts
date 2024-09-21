@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import db from '@/lib/db'
-import updateOfferManifests from '@/app/api/manifest/updateOfferManifest'
 import queryOffer from '@/app/api/manifest/queryOffer'
 import { z } from 'zod'
-import { V3Offer } from '@/app/api/manifest/models'
 import { getSession } from '@/lib/session'
 import { shopifyGetProductDataByVariantId } from '@/lib/shopifyGetProductData'
-import shopifyWriteProductMetafield from '@/lib/shopifyWriteProductMetafield'
-import ShopifyWriteProductMetafield from '@/lib/shopifyWriteProductMetafield'
-import currency from 'currency.js'
 import svrLoadOfferList from '@/server_lib/svrLoadOfferList'
 import svrDeleteOffer from '@/server_lib/svrDeleteOffer'
 import svrCreateOffer from '@/server_lib/svrCreateOffer'
-import maybeUpdateOfferMetafield from '@/server_lib/maybeUpdateOfferMetafield'
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const session = await getSession()
