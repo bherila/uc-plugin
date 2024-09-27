@@ -8,7 +8,7 @@ async function log(msg: any) {
     'insert into v3_audit_log (event_name, event_ext) values (?, ?)',
     ['metaField', txt],
   )
-  console.info('[metaField] ' + txt)
+  // console.info('[metaField] ' + txt)
 }
 
 // Define the GraphQL mutation to update the metafield

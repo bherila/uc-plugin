@@ -84,6 +84,9 @@ export default async function queryOffer(query: {
     const offerProductData = await shopifyGetProductDataByVariantId(
       offer.offer_variant_id,
     )
+    if (!offerProductData) {
+      console.error('!offerProductData')
+    }
 
     const manifestProductData = await shopifyGetProductDataFromManifests(mf)
 

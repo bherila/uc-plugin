@@ -27,6 +27,14 @@ const PRODUCT_QUERY = `
           featuredImage {
             url(transform: { maxWidth: 500, preferredContentType: WEBP })
           }
+          metafields(keys: ["custom.end_date", "custom.start_date"], first: 10) {
+            nodes {
+              key
+              jsonValue
+            }
+          }
+          status
+          tags
         }
       }
     }
@@ -51,6 +59,14 @@ export async function shopifyGetProductDataByVariantIds(
         maxVariantPriceAmount:
           product.priceRangeV2?.maxVariantPrice?.amount ?? '0.00',
         featuredImageUrl: product.featuredImage?.url ?? null,
+        startDate: product.metafields.nodes.find(
+          (field: any) => field.key.indexOf('start_date') !== -1,
+        )?.jsonValue,
+        endDate: product.metafields.nodes.find(
+          (field: any) => field.key.indexOf('end_date') !== -1,
+        )?.jsonValue,
+        status: product.status,
+        tags: product.tags,
       }
     })
 

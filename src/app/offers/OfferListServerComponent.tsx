@@ -14,6 +14,11 @@ import svrLoadShopifyProducts from '@/server_lib/svrLoadShopifyProducts'
 import svrDeleteOffer from '@/server_lib/svrDeleteOffer'
 import { z } from 'zod'
 import svrCreateOffer from '@/server_lib/svrCreateOffer'
+import RenderUTCDate from '@/components/RenderUTCDate'
+import Countdown from '@/components/Countdown'
+import RenderRelativeTimeInterval from '@/components/RenderRelativeTimeInterval'
+import { Stack } from 'react-bootstrap'
+import Badge from 'react-bootstrap/Badge'
 
 export default async function OfferListServerComponent() {
   // start loading
@@ -64,14 +69,21 @@ export default async function OfferListServerComponent() {
       <MainTitle>Offers</MainTitle>
       <Row>
         <Col xs={9}>
-          <Table responsive striped bordered hover>
+          <Table
+            responsive
+            striped
+            bordered
+            hover
+            size="sm"
+            style={{ fontSize: '10pt' }}
+          >
             <thead>
               <tr>
                 <th style={{ width: '40px' }}>Offer ID</th>
                 <th>Offer Name</th>
-                <th style={{ textAlign: 'right', width: '175px' }}>
-                  Product ID
-                </th>
+                <th>Product ID</th>
+                <th>Date from Shopify Metafield</th>
+                <th>Shopify Status</th>
                 <th style={{ textAlign: 'right', width: '130px' }}>&nbsp;</th>
               </tr>
             </thead>
@@ -84,14 +96,26 @@ export default async function OfferListServerComponent() {
                       {offer.offer_name}
                     </Link>
                   </td>
-                  <td align="right">
+                  <td style={{ whiteSpace: 'pre' }}>
                     {offer.offerProductData && (
                       <VariantLink
                         type="deal"
                         variantURI={offer.offerProductData.variantId}
                       />
                     )}
+                    <Stack direction="horizontal" gap={1}>
+                      {offer.offerProductData.tags.map((tag) => (
+                        <Badge key={tag}>{tag}</Badge>
+                      ))}
+                    </Stack>
                   </td>
+                  <td style={{ whiteSpace: 'pre' }}>
+                    <RenderRelativeTimeInterval
+                      startDate={offer.offerProductData.startDate}
+                      endDate={offer.offerProductData.endDate}
+                    />
+                  </td>
+                  <td>{offer.offerProductData.status}</td>
                   <td align="right">
                     <DeleteButton
                       offerID={offer.offer_id}

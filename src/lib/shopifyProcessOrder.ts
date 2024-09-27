@@ -18,12 +18,16 @@ export default async function shopifyProcessOrder(orderId: string) {
   try {
     const shopifyOrder = (await shopifyGetOrdersWithLineItems([orderId]))[0]
 
-    const dealSchema = z.object({ offer_id: z.number(), offer_variant_id: z.string() });
-    const deals = z.array(dealSchema)
+    const dealSchema = z.object({
+      offer_id: z.number(),
+      offer_variant_id: z.string(),
+    })
+    const deals = z
+      .array(dealSchema)
       .parse(await db.query(`select offer_id, offer_variant_id from v3_offer`))
-    const offerIdFromVariantId = new Map<string, number>();
+    const offerIdFromVariantId = new Map<string, number>()
     for (const deal of deals) {
-      offerIdFromVariantId.set(deal.offer_variant_id, deal.offer_id);
+      offerIdFromVariantId.set(deal.offer_variant_id, deal.offer_id)
     }
 
     // we will get the calculated order id from beginEdit below.
@@ -37,7 +41,7 @@ export default async function shopifyProcessOrder(orderId: string) {
         shopifyOrder.lineItems.nodes.map((node) => [
           orderId,
           node.variant.variant_graphql_id,
-          offerIdFromVariantId.get(node.variant.variant_graphql_id)
+          offerIdFromVariantId.get(node.variant.variant_graphql_id),
         ]),
       ],
     )
@@ -48,7 +52,7 @@ export default async function shopifyProcessOrder(orderId: string) {
         continue
       }
       const lineItemVariantId = orderLineItem.variant.variant_graphql_id
-      offerId = offerIdFromVariantId.get(lineItemVariantId) ?? null;
+      offerId = offerIdFromVariantId.get(lineItemVariantId) ?? null
       if (!offerId) {
         await log(
           `LineItem: ${orderLineItem.line_item_id} => No match to offer for variant ${lineItemVariantId}`,
@@ -90,8 +94,7 @@ export default async function shopifyProcessOrder(orderId: string) {
           `,
           [assigneeId, offerId, needQty],
         )
-        await log(updateResult,
-          offerId,)
+        await log(updateResult, offerId)
       } else if (needQty < 0) {
         // RELEASE (unallocate) bottles
         const updateResult = await db.query(
@@ -139,7 +142,8 @@ export default async function shopifyProcessOrder(orderId: string) {
 
             // add the item to the order
             await log(
-              `Adding ${variantId} x ${groups[variantId].length}, ${JSON.stringify(x)}`, offerId
+              `Adding ${variantId} x ${groups[variantId].length}, ${JSON.stringify(x)}`,
+              offerId,
             )
             const allocationLineItem = (await addVariant(x)).orderEditAddVariant
 

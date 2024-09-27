@@ -4,6 +4,10 @@ export interface ProductData {
   title: string
   maxVariantPriceAmount: string
   featuredImageUrl: string | null
+  startDate: string
+  endDate: string
+  status: string
+  tags: string[]
 }
 
 export interface ProductDataGrouping {
