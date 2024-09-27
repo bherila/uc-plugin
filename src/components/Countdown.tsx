@@ -28,18 +28,42 @@ const Countdown: React.FC<Props> = ({ utcDate }) => {
     if (targetDate && !isNaN(targetDate.getTime())) {
       const now = new Date()
       const diff = targetDate.getTime() - now.getTime()
+      const absDiff = Math.abs(diff)
 
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const days = Math.floor(absDiff / (1000 * 60 * 60 * 24))
       const hours = Math.floor(
-        (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+        (absDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
       )
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+      const minutes = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((absDiff % (1000 * 60)) / 1000)
 
-      if (diff > 0) {
-        setCountdown(`in ${days}d, ${hours}h, ${minutes}m, ${seconds}s`)
+      if (absDiff > 86400000) {
+        // 1 day in milliseconds
+        if (diff > 0) {
+          setCountdown(`in ${days}d, ${hours}h`)
+        } else {
+          setCountdown(`${days}d, ${hours}h ago`)
+        }
+      } else if (absDiff > 3600000) {
+        // 1 hour in milliseconds
+        if (diff > 0) {
+          setCountdown(`in ${hours}h, ${minutes}m`)
+        } else {
+          setCountdown(`${hours}h, ${minutes}m ago`)
+        }
+      } else if (absDiff > 60000) {
+        // 1 minute in milliseconds
+        if (diff > 0) {
+          setCountdown(`in ${minutes}m, ${seconds}s`)
+        } else {
+          setCountdown(`${minutes}m, ${seconds}s ago`)
+        }
       } else {
-        setCountdown(`${days}d, ${hours}h, ${minutes}m, ${seconds}s ago`)
+        if (diff > 0) {
+          setCountdown(`in ${seconds}s`)
+        } else {
+          setCountdown(`${seconds}s ago`)
+        }
       }
     }
   }, [tick, targetDate])
