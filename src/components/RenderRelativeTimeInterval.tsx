@@ -47,9 +47,10 @@ const CountdownTimer: React.FC<Props> = ({ startDate, endDate }) => {
 
   if (currentTime < startDateObject) {
     return (
-      <span>
-        In <Countdown utcDate={startDate} />
-      </span>
+      <Stack direction="horizontal" gap={1}>
+        <Badge bg="warning">Starts in</Badge>
+        <Countdown utcDate={endDate} />
+      </Stack>
     )
   } else if (currentTime >= startDateObject && currentTime < endDateObject) {
     return (
