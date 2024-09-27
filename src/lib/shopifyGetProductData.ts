@@ -49,8 +49,14 @@ export async function shopifyGetProductDataByVariantIds(
     const productData: { [id: string]: ProductData } = {}
 
     result.nodes.forEach((node: any) => {
+      if (!node) {
+        return
+      }
       const product = node.product
       const variantId = node.id
+      if (!product || !variantId) {
+        return
+      }
       const productId = product.id
       productData[variantId] = {
         variantId,
