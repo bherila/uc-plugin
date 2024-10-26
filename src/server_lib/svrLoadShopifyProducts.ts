@@ -110,10 +110,6 @@ const svrLoadShopifyProducts = async (type: MID) => {
   return result
 }
 
-const cachedFn = unstable_cache(
-  async (type: MID) => await svrLoadShopifyProducts(type),
-  [],
-  { revalidate: 30 },
-)
+const cachedFn = unstable_cache(async (type: MID) => await svrLoadShopifyProducts(type), [], { revalidate: 30 })
 
 export default cachedFn

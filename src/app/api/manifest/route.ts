@@ -34,9 +34,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             offer_name: parsed.offer_name,
             offerProductData: {
               ...(offerProductData[parsed.offer_variant_id] ??
-                (await shopifyGetProductDataByVariantId(
-                  parsed.offer_variant_id,
-                ))),
+                (await shopifyGetProductDataByVariantId(parsed.offer_variant_id))),
               variantId: parsed.offer_variant_id,
             },
           })
@@ -45,9 +43,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         case 'offer_delete':
           try {
             await svrDeleteOffer(o.offer_id)
-            return NextResponse.json(
-              offerListItems.filter((ol) => ol.offer_id != o.offer_id),
-            )
+            return NextResponse.json(offerListItems.filter((ol) => ol.offer_id != o.offer_id))
           } catch (err: unknown) {
             return NextResponse.json(offerListItems, {
               status: 400,

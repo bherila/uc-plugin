@@ -22,10 +22,7 @@ const webhookSchema = z.object({
 
 async function log(msg: any) {
   const txt = typeof msg === 'string' ? msg : JSON.stringify(msg)
-  await db.query(
-    'insert into v3_audit_log (event_name, event_ext) values (?, ?)',
-    ['webhook', txt],
-  )
+  await db.query('insert into v3_audit_log (event_name, event_ext) values (?, ?)', ['webhook', txt])
 }
 
 export async function POST(req: NextRequest) {
@@ -41,9 +38,7 @@ export async function POST(req: NextRequest) {
     const parsedOrder = webhookSchema.parse(webhookData)
     await shopifyProcessOrder(parsedOrder.admin_graphql_api_id)
   } catch (error) {
-    await log(
-      (error instanceof Error ? error.message : error?.toString()) ?? 'null',
-    )
+    await log((error instanceof Error ? error.message : error?.toString()) ?? 'null')
     return NextResponse.json(null, { status: 400 })
   } finally {
     await db.end()

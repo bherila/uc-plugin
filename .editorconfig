@@ -4,6 +4,7 @@ charset = utf-8
 indent_style = space
 tab_width = 2
 indent_size = 2
+max_line_length = 114
 
 [{*.ts,*.tsx}]
 ij_any_align_group_field_declarations = false
@@ -20,3 +21,4 @@ ij_any_align_multiline_chained_methods = false
 ij_any_keep_indents_on_empty_lines = false
 ij_typescript_use_chained_calls_group_indents = false
 ij_continuation_indent_size = 2
+ij_typescript_use_semicolon_after_statement = false

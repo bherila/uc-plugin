@@ -8,7 +8,6 @@ import Col from 'react-bootstrap/Col'
 import MainTitle from '@/components/main-title'
 
 export default async function SignInPage() {
-  const session = await getSession()
   return (
     <Container>
       <Row>

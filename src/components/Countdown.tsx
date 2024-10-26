@@ -31,9 +31,7 @@ const Countdown: React.FC<Props> = ({ utcDate }) => {
       const absDiff = Math.abs(diff)
 
       const days = Math.floor(absDiff / (1000 * 60 * 60 * 24))
-      const hours = Math.floor(
-        (absDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
-      )
+      const hours = Math.floor((absDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
       const minutes = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60))
       const seconds = Math.floor((absDiff % (1000 * 60)) / 1000)
 
@@ -68,9 +66,7 @@ const Countdown: React.FC<Props> = ({ utcDate }) => {
     }
   }, [tick, targetDate])
 
-  return !targetDate || isNaN(targetDate.getTime()) ? null : (
-    <span>{countdown}</span>
-  )
+  return !targetDate || isNaN(targetDate.getTime()) ? null : <span>{countdown}</span>
 }
 
 export default Countdown

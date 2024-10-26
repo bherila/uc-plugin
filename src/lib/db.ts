@@ -6,5 +6,6 @@ export default mysql({
     user: process.env.DBUSER,
     password: process.env.DBPASSWORD,
     database: process.env.DBNAME,
+    timeout: 10000,
   },
 })

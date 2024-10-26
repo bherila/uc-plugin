@@ -5,9 +5,7 @@ interface CriticalErrorBannerProps {
   message: string
 }
 
-const CriticalErrorBanner: React.FC<CriticalErrorBannerProps> = ({
-  message,
-}) => {
+const CriticalErrorBanner: React.FC<CriticalErrorBannerProps> = ({ message }) => {
   return (
     <Alert variant="danger" className="critical-error-banner">
       <Alert.Heading>Error</Alert.Heading>

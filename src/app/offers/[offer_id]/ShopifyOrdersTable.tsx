@@ -3,11 +3,7 @@ import Table from 'react-bootstrap/Table'
 import React, { useCallback, useState } from 'react'
 import { post } from '@/lib/fetchWrapper'
 
-export function ShopifyOrdersTable({
-  shopifyOrderIds,
-}: {
-  shopifyOrderIds: (string | null)[]
-}) {
+export function ShopifyOrdersTable({ shopifyOrderIds }: { shopifyOrderIds: (string | null)[] }) {
   return (
     <Table responsive striped bordered hover>
       <thead>
@@ -18,10 +14,7 @@ export function ShopifyOrdersTable({
       </thead>
       <tbody>
         {shopifyOrderIds.map(
-          (shopifyOrderId) =>
-            shopifyOrderId && (
-              <Row key={shopifyOrderId} shopifyOrderId={shopifyOrderId} />
-            ),
+          (shopifyOrderId) => shopifyOrderId && <Row key={shopifyOrderId} shopifyOrderId={shopifyOrderId} />,
         )}
       </tbody>
     </Table>
@@ -33,9 +26,7 @@ function Row({ shopifyOrderId }: { shopifyOrderId: string }) {
     (e: React.FormEvent) => {
       e.preventDefault()
       setLoading(true)
-      post('/api/shopify/reprocessOrder/', { shopifyOrderId }).then(() =>
-        setLoading(false),
-      )
+      post('/api/shopify/reprocessOrder/', { shopifyOrderId }).then(() => setLoading(false))
     },
     [setLoading],
   )

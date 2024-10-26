@@ -7,10 +7,11 @@ import shopifyGetOrdersWithLineItems from '@/lib/shopifyGetOrdersWithLineItems'
 
 async function log(msg: any, offerId: number | null) {
   const txt = typeof msg === 'string' ? msg : JSON.stringify(msg)
-  await db.query(
-    'insert into v3_audit_log (event_name, event_ext, offer_id) values (?, ?, ?)',
-    ['shopifyProcessOrder', txt, offerId ?? null],
-  )
+  await db.query('insert into v3_audit_log (event_name, event_ext, offer_id) values (?, ?, ?)', [
+    'shopifyProcessOrder',
+    txt,
+    offerId ?? null,
+  ])
   console.info('[allocate] ' + txt)
 }
 
@@ -22,9 +23,7 @@ export default async function shopifyProcessOrder(orderId: string) {
       offer_id: z.number(),
       offer_variant_id: z.string(),
     })
-    const deals = z
-      .array(dealSchema)
-      .parse(await db.query(`select offer_id, offer_variant_id from v3_offer`))
+    const deals = z.array(dealSchema).parse(await db.query(`select offer_id, offer_variant_id from v3_offer`))
     const offerIdFromVariantId = new Map<string, number>()
     for (const deal of deals) {
       offerIdFromVariantId.set(deal.offer_variant_id, deal.offer_id)
@@ -35,16 +34,13 @@ export default async function shopifyProcessOrder(orderId: string) {
     let offerId: number | null = null
 
     // map the variant to the order and stash this so we can query for the order later
-    await db.query(
-      `replace into v3_order_to_variant (order_id, variant_id, offer_id) values ?`,
-      [
-        shopifyOrder.lineItems.nodes.map((node) => [
-          orderId,
-          node.variant.variant_graphql_id,
-          offerIdFromVariantId.get(node.variant.variant_graphql_id),
-        ]),
-      ],
-    )
+    await db.query(`replace into v3_order_to_variant (order_id, variant_id, offer_id) values ?`, [
+      shopifyOrder.lineItems.nodes.map((node) => [
+        orderId,
+        node.variant.variant_graphql_id,
+        offerIdFromVariantId.get(node.variant.variant_graphql_id),
+      ]),
+    ])
 
     for (const orderLineItem of shopifyOrder.lineItems.nodes) {
       if (!orderLineItem.discountedTotalSet.shopMoney.amount) {
@@ -76,10 +72,7 @@ export default async function shopifyProcessOrder(orderId: string) {
         shopifyOrder.cancelledAt == null
           ? orderLineItem.quantity - alreadyHaveQty // ALLOCATE if not canceled
           : -alreadyHaveQty // RELEASE if canceled
-      await log(
-        `${alreadyHaveQty} already allocated to ${assigneeId}, need ${needQty} more`,
-        offerId,
-      )
+      await log(`${alreadyHaveQty} already allocated to ${assigneeId}, need ${needQty} more`, offerId)
 
       if (needQty > 0) {
         // ALLOCATE bottles.
@@ -122,8 +115,7 @@ export default async function shopifyProcessOrder(orderId: string) {
       if (needQty !== 0) {
         if (calculatedOrderId == null) {
           const beginEditResult = await beginEdit({ orderId })
-          calculatedOrderId =
-            beginEditResult.orderEditBegin?.calculatedOrder?.id ?? null
+          calculatedOrderId = beginEditResult.orderEditBegin?.calculatedOrder?.id ?? null
           if (!calculatedOrderId) {
             await log('CalculatedOrder.id was null, aborting', offerId)
             return
@@ -141,10 +133,7 @@ export default async function shopifyProcessOrder(orderId: string) {
             }
 
             // add the item to the order
-            await log(
-              `Adding ${variantId} x ${groups[variantId].length}, ${JSON.stringify(x)}`,
-              offerId,
-            )
+            await log(`Adding ${variantId} x ${groups[variantId].length}, ${JSON.stringify(x)}`, offerId)
             const allocationLineItem = (await addVariant(x)).orderEditAddVariant
 
             // with a zero cost i.e. 100% discount
@@ -292,9 +281,7 @@ type BeginEditInput = {
 
 type BeginEditResponse = z.infer<typeof beginEditSchema>
 
-async function beginEdit({
-  orderId,
-}: BeginEditInput): Promise<BeginEditResponse> {
+async function beginEdit({ orderId }: BeginEditInput): Promise<BeginEditResponse> {
   const response = await shopify.graphql(GQL_BEGIN_EDIT, { order_id: orderId })
   return beginEditSchema.parse(response)
 }

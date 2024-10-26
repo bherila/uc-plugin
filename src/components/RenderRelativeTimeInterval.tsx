@@ -35,13 +35,7 @@ const CountdownTimer: React.FC<Props> = ({ startDate, endDate }) => {
     return () => clearInterval(intervalId)
   }, [])
 
-  if (
-    !currentTime ||
-    !startDateObject ||
-    !endDateObject ||
-    !startDateIsValid ||
-    !endDateIsValid
-  ) {
+  if (!currentTime || !startDateObject || !endDateObject || !startDateIsValid || !endDateIsValid) {
     return <span>Invalid dates</span>
   }
 

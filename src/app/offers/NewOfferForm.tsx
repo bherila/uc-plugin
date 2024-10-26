@@ -12,8 +12,7 @@ interface NewOfferProps {
 
 function NewOfferForm({ action, options }: NewOfferProps) {
   const [offerName, setOfferName] = useState('')
-  const [selectedVariant, setSelectedVariant] =
-    useState<ShopifyProductVariant | null>(null)
+  const [selectedVariant, setSelectedVariant] = useState<ShopifyProductVariant | null>(null)
   return (
     <Form
       onSubmit={(e) => {
@@ -46,12 +45,7 @@ function NewOfferForm({ action, options }: NewOfferProps) {
           required
         />
       </Form.Group>
-      <Button
-        variant="primary"
-        className="my-3"
-        type="submit"
-        disabled={!selectedVariant || !offerName}
-      >
+      <Button variant="primary" className="my-3" type="submit" disabled={!selectedVariant || !offerName}>
         Submit
       </Button>
     </Form>

@@ -33,13 +33,10 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   const offerMetafieldData = await maybeUpdateOfferMetafield(offer)
   const { inventoryQuantity, product } = await promises.shopifyOfferDetail
 
-  const numManifestsNotAssigned =
-    offer?.mf?.filter((r) => r.assignee_id == null).length ?? 0
+  const numManifestsNotAssigned = offer?.mf?.filter((r) => r.assignee_id == null).length ?? 0
   const deficit = numManifestsNotAssigned - inventoryQuantity
 
-  const shopifyOrderIds = Array.from(
-    new Set(offer?.mf.map((r) => r.assignee_id).filter(Boolean)),
-  )
+  const shopifyOrderIds = Array.from(new Set(offer?.mf.map((r) => r.assignee_id).filter(Boolean)))
 
   return (
     <Container>
@@ -54,26 +51,22 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
       {/*  <CriticalErrorBanner message={criticalErrorMessage} />*/}
       {/*) : (*/}
       <Alert variant="info">
-        <b>Reminder!</b> Ensure that nobody is able to purchase this product
-        online until you are done setting up the bottles. The total number of
-        bottles that can be allocated to the offer is based on the quantity
+        <b>Reminder!</b> Ensure that nobody is able to purchase this product online until you are done setting up
+        the bottles. The total number of bottles that can be allocated to the offer is based on the quantity
         available of the product id listed above.
       </Alert>
       {/*)}*/}
       {deficit && (
         <Alert variant="danger">
           <p>
-            <b>Error!</b> There are QTY={inventoryQuantity} available of the
-            OFFER SKU available in Shopify store, however there are{' '}
-            {numManifestsNotAssigned} unassigned bottles in this deal. This will
-            result in the deal not allocating correctly.
+            <b>Error!</b> There are QTY={inventoryQuantity} available of the OFFER SKU available in Shopify store,
+            however there are {numManifestsNotAssigned} unassigned bottles in this deal. This will result in the
+            deal not allocating correctly.
           </p>
           <p>
-            <b>To fix it:</b> Set the quantity available in Shopify to{' '}
-            {numManifestsNotAssigned}
-            and then refresh this page. If people are actively buying the deal,
-            you might have to temporarily disable ordering the product in order
-            to set the correct quantity.
+            <b>To fix it:</b> Set the quantity available in Shopify to {numManifestsNotAssigned}
+            and then refresh this page. If people are actively buying the deal, you might have to temporarily
+            disable ordering the product in order to set the correct quantity.
           </p>
         </Alert>
       )}
@@ -94,9 +87,7 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
               {Object.keys(manifestGroups).map((manifest) => {
                 const totalQuantity = manifestGroups[manifest].length
                 const numAllocated =
-                  offer?.mf?.filter(
-                    (m) => m && m.variant_id == manifest && m.assignee_id,
-                  ).length ?? 0
+                  offer?.mf?.filter((m) => m && m.variant_id == manifest && m.assignee_id).length ?? 0
 
                 const deleteManifestAction = async () => {
                   'use server'
@@ -119,19 +110,9 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
                     <td>{totalQuantity}</td>
                     <td>{numAllocated}</td>
                     <td>{totalQuantity - numAllocated}</td>
+                    <td>{offer?.manifestProductData[manifest]?.percentChance.toFixed(2)}%</td>
                     <td>
-                      {offer?.manifestProductData[
-                        manifest
-                      ]?.percentChance.toFixed(2)}
-                      %
-                    </td>
-                    <td>
-                      {numAllocated == 0 && (
-                        <DeleteButton
-                          onDelete={deleteManifestAction}
-                          offerID={offer_id}
-                        />
-                      )}
+                      {numAllocated == 0 && <DeleteButton onDelete={deleteManifestAction} offerID={offer_id} />}
                     </td>
                   </tr>
                 )
@@ -150,10 +131,8 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
             submitAction={addManifestAction}
           />
           <p>
-            You must add the tag{' '}
-            <span className="badge badge-info">manifest-item</span> in Shopify
-            and then reload this page to see the item available to add to an
-            offer here.
+            You must add the tag <span className="badge badge-info">manifest-item</span> in Shopify and then
+            reload this page to see the item available to add to an offer here.
           </p>
         </Col>
       </Row>
@@ -183,15 +162,10 @@ const schema = z.object({
     .nullable(),
 })
 
-async function genShopifyDetail(
-  offerId: number,
-): Promise<z.infer<typeof schema>> {
+async function genShopifyDetail(offerId: number): Promise<z.infer<typeof schema>> {
   try {
     // get the offer variant name
-    const rows: any = await db.query(
-      `select offer_variant_id from v3_offer where offer_id = ?`,
-      [offerId],
-    )
+    const rows: any = await db.query(`select offer_variant_id from v3_offer where offer_id = ?`, [offerId])
     const offerVariant = z.string().parse(rows[0].offer_variant_id)
 
     // get the product quantity

@@ -4,10 +4,7 @@ import z from 'zod'
 
 async function log(msg: any) {
   const txt = typeof msg === 'string' ? msg : JSON.stringify(msg)
-  await db.query(
-    'insert into v3_audit_log (event_name, event_ext) values (?, ?)',
-    ['metaField', txt],
-  )
+  await db.query('insert into v3_audit_log (event_name, event_ext) values (?, ?)', ['metaField', txt])
   console.info('[metaField] ' + txt)
 }
 
@@ -41,11 +38,7 @@ const UPDATE_METAFIELD_MUTATION = `
 `
 
 // Function to update the metafield
-async function shopifyWriteProductMetafield(
-  productId: string,
-  key: string,
-  value: string,
-) {
+async function shopifyWriteProductMetafield(productId: string, key: string, value: string) {
   let result: { [key: string]: any } = {}
   try {
     result.vars = {
@@ -53,10 +46,7 @@ async function shopifyWriteProductMetafield(
       key,
       value,
     }
-    const response = await shopify.graphql(
-      UPDATE_METAFIELD_MUTATION,
-      result.vars,
-    )
+    const response = await shopify.graphql(UPDATE_METAFIELD_MUTATION, result.vars)
     result.edges = response.productUpdate.product.metafields.edges
     return z
       .array(

@@ -1,9 +1,5 @@
 import shopify from '@/lib/shopify'
-import {
-  ProductData,
-  ProductDataGrouping,
-  V3Manifest,
-} from '@/app/api/manifest/models'
+import { ProductData, ProductDataGrouping, V3Manifest } from '@/app/api/manifest/models'
 import groupBySku from '@/lib/groupBySku'
 
 const PRODUCT_QUERY = `
@@ -62,15 +58,11 @@ export async function shopifyGetProductDataByVariantIds(
         variantId,
         productId,
         title: product.title,
-        maxVariantPriceAmount:
-          product.priceRangeV2?.maxVariantPrice?.amount ?? '0.00',
+        maxVariantPriceAmount: product.priceRangeV2?.maxVariantPrice?.amount ?? '0.00',
         featuredImageUrl: product.featuredImage?.url ?? null,
-        startDate: product.metafields.nodes.find(
-          (field: any) => field.key.indexOf('start_date') !== -1,
-        )?.jsonValue,
-        endDate: product.metafields.nodes.find(
-          (field: any) => field.key.indexOf('end_date') !== -1,
-        )?.jsonValue,
+        startDate: product.metafields.nodes.find((field: any) => field.key.indexOf('start_date') !== -1)
+          ?.jsonValue,
+        endDate: product.metafields.nodes.find((field: any) => field.key.indexOf('end_date') !== -1)?.jsonValue,
         status: product.status,
         tags: product.tags,
       }
@@ -88,9 +80,7 @@ export async function shopifyGetProductDataByVariantId(variantId: string) {
   return result[variantId]
 }
 
-export async function shopifyGetProductDataFromManifests(
-  manifests: V3Manifest[],
-) {
+export async function shopifyGetProductDataFromManifests(manifests: V3Manifest[]) {
   const groupedManifests = groupBySku(manifests)
   const allVariantIds = Object.keys(groupedManifests)
   const shopifyProducts = await shopifyGetProductDataByVariantIds(allVariantIds)

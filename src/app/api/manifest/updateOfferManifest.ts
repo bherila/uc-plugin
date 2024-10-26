@@ -1,22 +1,12 @@
-import {
-  SkuQty,
-  V3Manifest,
-  V3ManifestForInsert,
-  V3Offer,
-} from '@/app/api/manifest/models'
+import { SkuQty, V3Manifest, V3ManifestForInsert, V3Offer } from '@/app/api/manifest/models'
 import db from '@/lib/db'
 import queryOffer from '@/app/api/manifest/queryOffer'
 import groupBySku from '@/lib/groupBySku'
 
-function deltaManifestForOffer(
-  currentManifests: V3Manifest[],
-  skuQtyToSet: SkuQty[],
-) {
+function deltaManifestForOffer(currentManifests: V3Manifest[], skuQtyToSet: SkuQty[]) {
   let toDelete: V3Manifest[] = []
   let toInsert: V3ManifestForInsert[] = []
-  console.info(
-    `Generating delta for ${currentManifests.length} current manifests`,
-  )
+  console.info(`Generating delta for ${currentManifests.length} current manifests`)
   const groups = groupBySku(currentManifests)
   for (let skuQty of skuQtyToSet) {
     const { variant_id: key, qty } = skuQty
@@ -56,18 +46,16 @@ export default async function updateOfferManifests(
 
     // process deletes, not deleting any manifest that is already assigned
     if (toDelete.length > 0) {
-      await db.query(
-        'delete from v3_offer_manifest where assignee_id is null and m_id in (?)',
-        [toDelete.map((r) => r.id)],
-      )
+      await db.query('delete from v3_offer_manifest where assignee_id is null and m_id in (?)', [
+        toDelete.map((r) => r.id),
+      ])
     }
 
     // process inserts
     if (toInsert.length > 0) {
-      await db.query(
-        'insert into v3_offer_manifest (offer_id, mf_variant, assignment_ordering) values ?',
-        [toInsert.map((r) => [offer_id, r.variant_id, Math.random()])],
-      )
+      await db.query('insert into v3_offer_manifest (offer_id, mf_variant, assignment_ordering) values ?', [
+        toInsert.map((r) => [offer_id, r.variant_id, Math.random()]),
+      ])
     }
     return await queryOffer({ offer_id })
   } finally {

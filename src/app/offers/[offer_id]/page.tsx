@@ -6,11 +6,7 @@ import { redirect } from 'next/navigation'
 import AuthRoutes from '@/app/auth/AuthRoutes'
 import { RedirectType } from 'next/dist/client/components/redirect'
 
-export default async function Page({
-  params,
-}: {
-  params: { offer_id: string }
-}) {
+export default async function Page({ params }: { params: { offer_id: string } }) {
   const session = await getSession()
   if (session?.uid == null || !session?.ax_uc) {
     return redirect(AuthRoutes.signIn, RedirectType.replace)

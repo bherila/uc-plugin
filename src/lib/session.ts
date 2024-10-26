@@ -6,8 +6,7 @@ import { sessionSchema, sessionType } from '@/lib/sessionSchema'
 
 const sessionOptions: IronSessionOptions = {
   password:
-    (process.env.VERCEL_ANALYTICS_ID as string) +
-    'cryptographically-strong pseudo random number generator',
+    (process.env.VERCEL_ANALYTICS_ID as string) + 'cryptographically-strong pseudo random number generator',
   cookieName: 'uc-session',
   // secure: true should be used in production (HTTPS) but can't be used in development (HTTP)
   cookieOptions: {

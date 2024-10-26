@@ -14,9 +14,7 @@ export function SetDocumentButton(props: SetDocumentProps & { children: any }) {
   const [showModal, setShowModal] = useState(false)
   return (
     <>
-      <Button onClick={() => setShowModal(true)}>
-        {props.children ?? 'Load data'}
-      </Button>
+      <Button onClick={() => setShowModal(true)}>{props.children ?? 'Load data'}</Button>
       <SetDocumentModal {...props} {...{ showModal, setShowModal }} />
     </>
   )

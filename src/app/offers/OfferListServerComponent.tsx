@@ -57,26 +57,14 @@ export default async function OfferListServerComponent() {
   const options =
     shopifyData == null
       ? null
-      : shopifyData.filter(
-          (opt) =>
-            !offers.find(
-              (o) => o.offerProductData?.variantId === opt.variantId,
-            ),
-        )
+      : shopifyData.filter((opt) => !offers.find((o) => o.offerProductData?.variantId === opt.variantId))
 
   return (
     <Container>
       <MainTitle>Offers</MainTitle>
       <Row>
         <Col xs={9}>
-          <Table
-            responsive
-            striped
-            bordered
-            hover
-            size="sm"
-            style={{ fontSize: '10pt' }}
-          >
+          <Table responsive striped bordered hover size="sm" style={{ fontSize: '10pt' }}>
             <thead>
               <tr>
                 <th style={{ width: '40px' }}>Offer ID</th>
@@ -92,16 +80,11 @@ export default async function OfferListServerComponent() {
                 <tr key={offer.offer_id}>
                   <td>{offer.offer_id}</td>
                   <td>
-                    <Link href={`/offers/${offer.offer_id}/`}>
-                      {offer.offer_name}
-                    </Link>
+                    <Link href={`/offers/${offer.offer_id}/`}>{offer.offer_name}</Link>
                   </td>
                   <td style={{ whiteSpace: 'pre' }}>
                     {offer.offerProductData && (
-                      <VariantLink
-                        type="deal"
-                        variantURI={offer.offerProductData.variantId}
-                      />
+                      <VariantLink type="deal" variantURI={offer.offerProductData.variantId} />
                     )}
                     <Stack direction="horizontal" gap={1}>
                       {offer.offerProductData.tags.map((tag) => (
@@ -117,10 +100,7 @@ export default async function OfferListServerComponent() {
                   </td>
                   <td>{offer.offerProductData.status}</td>
                   <td align="right">
-                    <DeleteButton
-                      offerID={offer.offer_id}
-                      onDelete={deleteOfferId}
-                    />
+                    <DeleteButton offerID={offer.offer_id} onDelete={deleteOfferId} />
                   </td>
                 </tr>
               ))}
@@ -131,14 +111,12 @@ export default async function OfferListServerComponent() {
           <h2>New Offer</h2>
           <NewOfferForm action={newOffer} options={options} />
           <p>
-            To add a new offer, create a product in shopify for the Deal. This
-            specifies the buy-in price and all the details that wil be shown to
-            the customer will be created in this Deal Product.
+            To add a new offer, create a product in shopify for the Deal. This specifies the buy-in price and all
+            the details that wil be shown to the customer will be created in this Deal Product.
           </p>
           <p>
-            You must add the tag <span className="badge badge-info">deal</span>{' '}
-            in Shopify and then reload this page to see the Deal Product to
-            select.
+            You must add the tag <span className="badge badge-info">deal</span> in Shopify and then reload this
+            page to see the Deal Product to select.
           </p>
         </Col>
       </Row>

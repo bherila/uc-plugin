@@ -26,16 +26,8 @@ const DeleteButton: React.FC<Props> = ({ offerID, onDelete }) => {
   }
 
   return (
-    <Button
-      variant={isConfirming ? 'danger' : ''}
-      onClick={handleClick}
-      onBlur={handleBlur}
-    >
-      {isConfirming ? (
-        <span>Click again to confirm</span>
-      ) : (
-        <FontAwesomeIcon icon={faTrash} />
-      )}
+    <Button variant={isConfirming ? 'danger' : ''} onClick={handleClick} onBlur={handleBlur}>
+      {isConfirming ? <span>Click again to confirm</span> : <FontAwesomeIcon icon={faTrash} />}
     </Button>
   )
 }

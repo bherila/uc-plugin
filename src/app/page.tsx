@@ -23,12 +23,8 @@ export default async function HomePage() {
         <Col xs={12}>
           <MainTitle>You are probably in the wrong place!</MainTitle>
           <Line>
-            This is the UC Admin Portal. It's a mirage. If you want to buy wine,
-            go to{' '}
-            <a href="https://www.undergroundcellar.com">
-              undergroundcellar.com
-            </a>
-            .
+            This is the UC Admin Portal. It's a mirage. If you want to buy wine, go to{' '}
+            <a href="https://www.undergroundcellar.com">undergroundcellar.com</a>.
           </Line>
         </Col>
       </Row>

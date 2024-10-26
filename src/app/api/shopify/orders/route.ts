@@ -16,9 +16,7 @@ export async function POST(req: NextRequest) {
   }
 
   const webhookData = await req.json()
-  const input = z
-    .object({ orderGraphqlIDs: z.array(z.string()) })
-    .parse(webhookData)
+  const input = z.object({ orderGraphqlIDs: z.array(z.string()) }).parse(webhookData)
 
   const result: OrderSummary[] = []
   const orders = await shopifyGetOrdersWithLineItems(input.orderGraphqlIDs)

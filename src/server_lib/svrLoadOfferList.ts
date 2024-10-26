@@ -5,8 +5,7 @@ import { shopifyGetProductDataByVariantIds } from '@/lib/shopifyGetProductData'
 import { cache } from 'react'
 
 const svrLoadOfferList = cache(async () => {
-  const SELECT =
-    'select offer_id, offer_name, offer_variant_id from v3_offer order by offer_id desc'
+  const SELECT = 'select offer_id, offer_name, offer_variant_id from v3_offer order by offer_id desc'
   const offerListItems: V3OfferListItem[] = []
   const raw_v3_offer_rows: {
     offer_id: number

@@ -11,11 +11,7 @@ interface Props {
   options: ShopifyProductVariant[] | null
 }
 
-const DealSelector: React.FC<Props> = ({
-  options,
-  selectedValue,
-  setSelectedValue,
-}) => {
+const DealSelector: React.FC<Props> = ({ options, selectedValue, setSelectedValue }) => {
   const [searchText, setSearchText] = useState('')
 
   const filteredOptions = useMemo(() => {
@@ -64,14 +60,9 @@ const DealSelector: React.FC<Props> = ({
             setSelectedValue(!val ? null : JSON.parse(val))
           }}
         >
-          {filteredOptions.length != 1 && (
-            <option value="">({filteredOptions.length} options)</option>
-          )}
+          {filteredOptions.length != 1 && <option value="">({filteredOptions.length} options)</option>}
           {filteredOptions.map((option) => (
-            <option
-              key={option.productId + '|' + option.variantId}
-              value={JSON.stringify(option)}
-            >
+            <option key={option.productId + '|' + option.variantId} value={JSON.stringify(option)}>
               {option.productName}
               {option.variantName}
               {filteredOptions.length === 1 ? ' ✅' : ''}

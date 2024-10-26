@@ -1,10 +1,7 @@
 import { V3Manifest, V3Offer } from '@/app/api/manifest/models'
 import db from '@/lib/db'
 import z from 'zod'
-import {
-  shopifyGetProductDataByVariantId,
-  shopifyGetProductDataFromManifests,
-} from '@/lib/shopifyGetProductData'
+import { shopifyGetProductDataByVariantId, shopifyGetProductDataFromManifests } from '@/lib/shopifyGetProductData'
 
 interface OfferDbSchemaRow {
   offer_id: number
@@ -81,9 +78,7 @@ export default async function queryOffer(query: {
       }),
     )
 
-    const offerProductData = await shopifyGetProductDataByVariantId(
-      offer.offer_variant_id,
-    )
+    const offerProductData = await shopifyGetProductDataByVariantId(offer.offer_variant_id)
     if (!offerProductData) {
       console.error('!offerProductData')
     }

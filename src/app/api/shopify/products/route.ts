@@ -1,9 +1,7 @@
 import 'server-only'
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
-import svrLoadShopifyProducts, {
-  MID,
-} from '@/server_lib/svrLoadShopifyProducts'
+import svrLoadShopifyProducts, { MID } from '@/server_lib/svrLoadShopifyProducts'
 import z from 'zod'
 
 export async function GET(req: NextRequest) {

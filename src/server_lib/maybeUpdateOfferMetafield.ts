@@ -15,25 +15,17 @@ export default async function maybeUpdateOfferMetafield(
     offerV3: JSON.stringify(updatedOffer.manifestProductData, null, 2),
     offerV3Array: JSON.stringify({
       items: Object.values(updatedOffer.manifestProductData).sort(
-        (a, b) =>
-          currency(a.maxVariantPriceAmount).subtract(
-            currency(b.maxVariantPriceAmount),
-          ).intValue,
+        (a, b) => currency(a.maxVariantPriceAmount).subtract(currency(b.maxVariantPriceAmount)).intValue,
       ),
       maxPrice:
         Object.values(updatedOffer.manifestProductData).reduce(
-          (prev, cur) =>
-            Math.max(prev, currency(cur.maxVariantPriceAmount).value),
+          (prev, cur) => Math.max(prev, currency(cur.maxVariantPriceAmount).value),
           0,
         ) || null,
     }),
   }
 
-  const m1 = shopifyWriteProductMetafield(
-    updatedOffer.offerProductData.productId,
-    'offer_v3',
-    data.offerV3,
-  )
+  const m1 = shopifyWriteProductMetafield(updatedOffer.offerProductData.productId, 'offer_v3', data.offerV3)
 
   const m2 = shopifyWriteProductMetafield(
     updatedOffer.offerProductData.productId,

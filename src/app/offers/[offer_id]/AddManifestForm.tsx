@@ -14,15 +14,10 @@ interface NewOfferProps {
   submitAction: (offerID: number, variantID: string, qty: number) => any
 }
 
-function AddManifestForm({
-  offerId,
-  availableManifestSKUs,
-  submitAction,
-}: NewOfferProps) {
+function AddManifestForm({ offerId, availableManifestSKUs, submitAction }: NewOfferProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [qty, setQty] = useState('1')
-  const [selectedProductVariant, setSelectedProductVariant] =
-    useState<ShopifyProductVariant | null>(null)
+  const [selectedProductVariant, setSelectedProductVariant] = useState<ShopifyProductVariant | null>(null)
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -34,11 +29,7 @@ function AddManifestForm({
       if (selectedProductVariant == null) {
         return
       }
-      await submitAction(
-        offerId,
-        selectedProductVariant?.variantId,
-        z.coerce.number().default(0).parse(qty),
-      )
+      await submitAction(offerId, selectedProductVariant?.variantId, z.coerce.number().default(0).parse(qty))
     } finally {
       setIsSubmitting(false)
       setSelectedProductVariant(null)
@@ -68,12 +59,7 @@ function AddManifestForm({
           Quantity in offer:
           {!isValidQty && <RequiredBadge />}
         </Form.Label>
-        <Form.Control
-          type="text"
-          value={qty}
-          required
-          onChange={(e) => setQty(e.target.value)}
-        />
+        <Form.Control type="text" value={qty} required onChange={(e) => setQty(e.target.value)} />
       </Form.Group>
       <Button
         variant="primary"

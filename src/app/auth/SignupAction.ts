@@ -7,15 +7,12 @@ import { ZodError } from 'zod'
 import { saveSession } from '@/lib/session'
 import { redirect } from 'next/navigation'
 
-export async function SignupAction(
-  formData: FormData,
-): Promise<{ error: string }> {
+export async function SignupAction(formData: FormData): Promise<{ error: string }> {
   try {
     const signup = SignupZod.parse(Object.fromEntries(formData))
-    const exist: { c: number }[] = await db.query(
-      'select count(*) as c from users where email = ?',
-      [signup.email],
-    )
+    const exist: { c: number }[] = await db.query('select count(*) as c from users where email = ?', [
+      signup.email,
+    ])
     if (exist[0].c !== 0) {
       // try login
       try {
@@ -29,12 +26,7 @@ export async function SignupAction(
 
     const { err, result, fields } = (await db.query(
       'insert into users (email, pw, salt, alias) values (?, ?, ?, ?)',
-      [
-        signup.email,
-        signup.password,
-        Math.random() * Number.MAX_SAFE_INTEGER,
-        signup.username,
-      ],
+      [signup.email, signup.password, Math.random() * Number.MAX_SAFE_INTEGER, signup.username],
     )) as any
 
     const userId: number = result.insertId
