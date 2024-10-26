@@ -1,0 +1,21 @@
+<div class="bottle-qty">
+  <p class="all-caps">
+    <span class="bold">
+      {%- if bottles_left <= 0 -%}
+        {{- 'products.product.inventory_low_stock_show_count' | t: quantity: bottles_left -}}
+      {%- else -%}
+        {{- 'products.product.inventory_in_stock_show_count' | t: quantity: bottles_left -}}
+      {%- endif -%}
+    </span>
+    {%- if bottles_left == 1 -%}
+      bottle left
+    {%- else -%}
+      bottles left
+    {%- endif -%}
+  </p>
+  {% if bottles_left == 0 %}
+    <div class="offer-status-badge">SOLD OUT</div>
+  {% elsif bottles_left < 50 %}
+    <div class="offer-status-badge">LOW STOCK</div>
+  {% endif %}
+</div>

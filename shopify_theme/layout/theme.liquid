@@ -34,6 +34,10 @@
     <script src="{{ 'details-disclosure.js' | asset_url }}" defer="defer"></script>
     <script src="{{ 'details-modal.js' | asset_url }}" defer="defer"></script>
     <script src="{{ 'search-form.js' | asset_url }}" defer="defer"></script>
+    <script src="{{ 'countdown.js' | asset_url }}" defer="defer"></script>
+    <script src="{{ 'countdown-related.js' | asset_url }}" defer="defer"></script>
+    <script src="{{ 'promo-ticker.js' | asset_url }}" defer="defer"></script>
+    <script src="{{ 'offer-list-ticker.js' | asset_url }}" defer="defer"></script>
 
     {%- if settings.animations_reveal_on_scroll -%}
       <script src="{{ 'animations.js' | asset_url }}" defer="defer"></script>
@@ -266,6 +270,11 @@
       {{ 'component-discounts.css' | asset_url | stylesheet_tag }}
     {%- endif -%}
 
+    <!-- Add additional css files here -->
+    {{ 'promo-ticker.css' | asset_url | stylesheet_tag }}
+    {{ 'ucellar.css' | asset_url | stylesheet_tag }}
+    {{ 'bottle-hero.css' | asset_url | stylesheet_tag }}
+
     {%- unless settings.type_body_font.system? -%}
       {% comment %}theme-check-disable AssetPreload{% endcomment %}
       <link rel="preload" as="font" href="{{ settings.type_body_font | font_url }}" type="font/woff2" crossorigin>
@@ -295,6 +304,62 @@
       if (Shopify.designMode) {
         document.documentElement.classList.add('shopify-design-mode');
       }
+    </script>
+
+    <script defer="defer">
+      (function() {
+        function initializeProductCountdowns() {
+          const countdownElements = document.querySelectorAll('[id^="countdown-timer-"]');
+          countdownElements.forEach(element => {
+            const productId = element.id.split('-').pop();
+            initializeCountdownTimer(productId);
+          });
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initializeProductCountdowns);
+        } else {
+          initializeProductCountdowns();
+        }
+      })();
+    </script>
+
+    <script defer="defer">
+      setTimeout(function() {
+        (function() {
+          function initializeRelatedCountdowns() {
+            const countdownElements = document.querySelectorAll('[id^="related-timer-"]');
+            if (countdownElements.length > 0) {
+              countdownElements.forEach(element => {
+                const productId = element.id.split('-').pop();
+                initializeRelatedCountdownTimer(productId);
+              });
+            }
+          }
+
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeRelatedCountdowns);
+          } else {
+            initializeRelatedCountdowns();
+          }
+        })();
+      }, 1000);
+    </script>
+
+    <script defer="defer">
+      (function() {
+        function ready(callback) {
+          if (document.readyState !== 'loading') {
+            callback();
+          } else {
+            document.addEventListener('DOMContentLoaded', callback);
+          }
+        }
+
+        ready(function() {
+          setTimeout(initializeTickers, 5);
+        });
+      })();
     </script>
   </head>
 

@@ -40,6 +40,8 @@ if (!customElements.get('product-info')) {
         if (!this.quantityForm) return;
 
         this.setQuantityBoundries();
+        this.quantityInput.value = 6;
+        
         if (!this.dataset.originalSection) {
           this.cartUpdateUnsubscriber = subscribe(PUB_SUB_EVENTS.cartUpdate, this.fetchQuantityRules.bind(this));
         }
@@ -313,12 +315,12 @@ if (!customElements.get('product-info')) {
       setQuantityBoundries() {
         const data = {
           cartQuantity: this.quantityInput.dataset.cartQuantity ? parseInt(this.quantityInput.dataset.cartQuantity) : 0,
-          min: this.quantityInput.dataset.min ? parseInt(this.quantityInput.dataset.min) : 1,
-          max: this.quantityInput.dataset.max ? parseInt(this.quantityInput.dataset.max) : null,
-          step: this.quantityInput.step ? parseInt(this.quantityInput.step) : 1,
+          min: this.quantityInput.dataset.min ? parseInt(this.quantityInput.dataset.min) : 3,
+          max: this.quantityInput.dataset.max ? parseInt(this.quantityInput.dataset.max) : 24,
+          step: this.quantityInput.step ? parseInt(this.quantityInput.step) : 3,
         };
-
-        let min = data.min;
+        
+        let min = 3;
         const max = data.max === null ? data.max : data.max - data.cartQuantity;
         if (max !== null) min = Math.min(min, max);
         if (data.cartQuantity >= data.min) min = Math.min(min, data.step);

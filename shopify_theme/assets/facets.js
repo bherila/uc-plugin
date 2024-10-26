@@ -14,6 +14,18 @@ class FacetFiltersForm extends HTMLElement {
     if (facetWrapper) facetWrapper.addEventListener('keyup', onKeyUpEscape);
   }
 
+   static reInitializeOfferListTickers() {
+    initializeOfferListTickers();
+  }
+
+  static reInitializeProductCountdowns() {
+    const countdownElements = document.querySelectorAll('[id^="countdown-timer-"]');
+    countdownElements.forEach(element => {
+      const productId = element.id.split('-').pop();
+      initializeCountdownTimer(productId);
+    });
+  }
+
   static setListeners() {
     const onHistoryChange = (event) => {
       const searchParams = event.state ? event.state.searchParams : FacetFiltersForm.searchParamsInitial;
@@ -80,18 +92,27 @@ class FacetFiltersForm extends HTMLElement {
   }
 
   static renderProductGridContainer(html) {
-    document.getElementById('ProductGridContainer').innerHTML = new DOMParser()
-      .parseFromString(html, 'text/html')
-      .getElementById('ProductGridContainer').innerHTML;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const newContent = doc.getElementById('ProductGridContainer').innerHTML;
+  
+    const container = document.getElementById('ProductGridContainer');
+    container.innerHTML = newContent;
+  
+    Array.from(container.querySelectorAll("script")).forEach(oldScript => {
+      const newScript = document.createElement("script");
+      newScript.text = oldScript.text;
+      document.body.appendChild(newScript).parentNode.removeChild(newScript);
+    });
+  
+    container.querySelectorAll('.scroll-trigger').forEach(element => {
+      element.classList.add('scroll-trigger--cancel');
+    });
 
-    document
-      .getElementById('ProductGridContainer')
-      .querySelectorAll('.scroll-trigger')
-      .forEach((element) => {
-        element.classList.add('scroll-trigger--cancel');
-      });
+    FacetFiltersForm.reInitializeOfferListTickers();
+    FacetFiltersForm.reInitializeProductCountdowns();
   }
-
+  
   static renderProductCount(html) {
     const count = new DOMParser().parseFromString(html, 'text/html').getElementById('ProductCount').innerHTML;
     const container = document.getElementById('ProductCount');

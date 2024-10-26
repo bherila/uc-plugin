@@ -1,0 +1,72 @@
+<!-- OuterDiv -->
+<div class="outer-div page-width">
+  <!-- StyledGridContainer -->
+  <div class="styled-grid-container">
+    <!-- Title and Button Section -->
+    <div class="grid-item">
+      <div class="title-side-div">
+        <h2 class="typography-h1 inline-richtext h1">
+          Feel the <strong>thrill</strong> of your bottles being swapped out with <strong>rare cult wines</strong> on
+          every purchase.
+        </h2>
+        <button class="button-gold button" onclick="window.handleScrollClick()">SHOP OFFERS</button>
+      </div>
+    </div>
+
+    <!-- Bottle Display Section -->
+    <div class="grid-item">
+      <div class="bottle-side-div">
+        <!-- Left Bottle -->
+        <div class="bottle left-bottle">
+          <div class="bottle-title">
+            You pay for
+            <br>
+            <strong id="left-bottle-adjective" class="white">Delightful</strong>
+          </div>
+          <div class="img-div">
+            <img
+              id="left-bottle-image"
+              src="https://cdn.shopify.com/s/files/1/0661/5164/5373/files/bottle5.png"
+              alt="Delightful bottle"
+            >
+          </div>
+          <div class="bottle-hero-price">
+            <div class="price-bottom">
+              <strong id="left-bottle-hero-price" class="white">$29</strong>
+            </div>
+            <div class="value-label">value</div>
+          </div>
+        </div>
+
+        <!-- Arrow -->
+        <div>
+          <img src="https://cdn.shopify.com/s/files/1/0661/5164/5373/files/right-arrow.svg" alt="Right Arrow">
+        </div>
+
+        <!-- Right Bottle -->
+        <div class="bottle right-bottle">
+          <div class="bottle-title">
+            You might get
+            <br>
+            <strong class="adjective white" id="right-bottle-adjective">Fantastic</strong>
+          </div>
+          <div class="img-div">
+            <img
+              id="right-bottle-image"
+              src="https://cdn.shopify.com/s/files/1/0661/5164/5373/files/bottle6.png"
+              alt="Fantastic upgraded bottle"
+            >
+          </div>
+          <div class="bottle-hero-price">
+            <div class="price-bottom">
+              <strong id="right-bottle-hero-price" class="white">$72</strong>
+            </div>
+            <div class="value-label">value</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ 'bottle-hero.js' | asset_url }}" defer="defer"></script>

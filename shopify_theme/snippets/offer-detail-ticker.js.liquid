@@ -1,0 +1,124 @@
+{% if items %}
+  <script>
+    function setupOfferDetailTicker() {
+      const offers = JSON.parse('{{ items | escape_javascript }}').items;
+      const container = document.querySelector('.offer-detail-bottles');
+      if (container) {
+        offers.forEach((offer) => {
+          const price = offer.maxVariantPriceAmount ? parseFloat(offer.maxVariantPriceAmount.toString()) : 0;
+          let perchance = offer.percentChance ? parseFloat(offer.percentChance) : 0;
+          perchance = Math.round(perchance);
+          const perchanceDisplay = perchance > 0 && perchance < 1 ? '<1%' : `${perchance}%`;
+
+          const div = document.createElement('div');
+          div.className = 'offer-item';
+          div.setAttribute('data-value', price);
+          div.setAttribute('data-title', offer.title);
+
+          div.innerHTML = offer.featuredImageUrl && offer.featuredImageUrl.trim() !== '' ? `
+            <div class="image-frame">
+              <img src="${offer.featuredImageUrl}" alt="${offer.title}">
+            </div>
+            <div class="offer-details">
+              <div class="detail-price visible-detail">
+                <span class="offer-price">$${price}</span>
+                <span class="offer-value">VALUE</span>
+              </div>
+              <div class="detail-chance hidden-detail">
+                <span class="offer-price">${perchanceDisplay}</span>
+                <span class="offer-value">OF OFFER</span>
+              </div>
+            </div>
+            <div class="offer-title">
+              <span>${offer.title}</span>
+            </div>
+          ` : `
+            <div class="image-frame no-image">
+              <span>No Image</span>
+            </div>
+            <div class="offer-details">
+              <div class="detail-price visible-detail">
+                <span class="offer-price">$${price}</span>
+                <span class="offer-value">VALUE</span>
+              </div>
+              <div class="detail-chance hidden-detail">
+                <span class="offer-price">${perchanceDisplay}</span>
+                <span class="offer-value">OF OFFER</span>
+              </div>
+            </div>
+            <div class="offer-title">
+              <span>${offer.title}</span>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setupOfferDetailTicker);
+    } else {
+      setupOfferDetailTicker();
+    }
+
+    function createOfferList() {
+      const offers = JSON.parse('{{ items | escape_javascript }}').items;
+      const container = document.querySelector('.offer-detail-bottles');
+      if (container) {
+        const headerContainer = document.createElement('div');
+        headerContainer.className = 'offer-header';
+        headerContainer.innerHTML = `
+          <div class="list-buy-in text-ellipsis">Bottles included in this offer:</div>
+          <a href="#" class="toggle-view">View All</a>
+        `;
+        container.parentNode.insertBefore(headerContainer, container);
+
+        const listContainer = document.createElement('ul');
+        listContainer.className = 'offer-list';
+        listContainer.style.display = 'none'; // Initially hidden
+
+        offers.forEach((offer) => {
+          const price = offer.maxVariantPriceAmount ? parseFloat(offer.maxVariantPriceAmount.toString()) : 0;
+          let perchance = offer.percentChance ? parseFloat(offer.percentChance) : 0;
+          perchance = Math.round(perchance);
+          const perchanceDisplay = perchance > 0 && perchance < 1 ? '<1%' : `${perchance}%`;
+
+          const li = document.createElement('li');
+          li.className = 'offer-list-item';
+          li.innerHTML = `
+            <div class="offer-list-image">
+              ${offer.featuredImageUrl && offer.featuredImageUrl.trim() !== '' 
+                ? `<img src="${offer.featuredImageUrl}" alt="${offer.title}">`
+                : '<div class="no-list-image">No Image</div>'
+              }
+            </div>
+            <div class="offer-list-details">
+              <div class="offer-list-data">
+                <span class="offer-list-title">${offer.title}</span>
+                <span class="offer-list-price"><strong>$${price}</strong> VALUE | <strong>${perchanceDisplay}</strong> OF OFFER</span>
+              </div>
+            </div>
+          `;
+          listContainer.appendChild(li);
+        });
+
+        container.parentNode.insertBefore(listContainer, container.nextSibling);
+
+        const toggleLink = headerContainer.querySelector('.toggle-view');
+        toggleLink.addEventListener('click', function(e) {
+          e.preventDefault();
+          const isExpanded = this.textContent === 'Show Less';
+          this.textContent = isExpanded ? 'View All' : 'Show Less';
+          container.style.display = isExpanded ? 'block' : 'none';
+          listContainer.style.display = isExpanded ? 'none' : 'block';
+        });
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', createOfferList);
+    } else {
+      createOfferList();
+    }
+  </script>
+{% endif %}

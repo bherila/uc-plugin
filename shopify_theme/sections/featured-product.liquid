@@ -432,6 +432,9 @@
                   {% render 'icon-with-text', block: block %}
               {%- endcase -%}
             {%- endfor -%}
+            <div class="offer-bottles">
+              {{ product.metafields.custom.offer_v3_array }}
+            </div>
             <a
               {% if product == blank %}
                 role="link" aria-disabled="true"

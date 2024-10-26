@@ -10,6 +10,22 @@
   {{ 'quick-add.css' | asset_url | stylesheet_tag }}
 {%- endunless -%}
 
+<script defer="defer">
+  (function() {
+    function ready(callback) {
+      if (document.readyState !== 'loading') {
+        callback();
+      } else {
+        document.addEventListener('DOMContentLoaded', callback);
+      }
+    }
+
+    ready(function() {
+      setTimeout(initializeOfferListTickers, 5);
+    });
+  })();
+</script>
+
 {%- if section.settings.quick_add == 'standard' -%}
   <script src="{{ 'quick-add.js' | asset_url }}" defer="defer"></script>
   <script src="{{ 'product-form.js' | asset_url }}" defer="defer"></script>
@@ -28,6 +44,10 @@
     padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
   }
 
+  .ptop {
+    padding-top: 1rem;
+  }
+
   @media screen and (min-width: 750px) {
     .section-{{ section.id }}-padding {
       padding-top: {{ section.settings.padding_top }}px;
@@ -37,6 +57,7 @@
 {%- endstyle -%}
 
 <div class="section-{{ section.id }}-padding gradient color-{{ section.settings.color_scheme }}">
+  <h1 class="ptop h2 page-width all-offers-title scroll-trigger animate--slide-in">All Offers</h1>
   {%- paginate collection.products by section.settings.products_per_page -%}
     {% comment %} Sort is the first tabbable element when filter type is vertical {% endcomment %}
     {%- if section.settings.enable_sorting and section.settings.filter_type == 'vertical' -%}
@@ -114,7 +135,6 @@
           %}
         </aside>
       {%- endif -%}
-
       <div
         class="product-grid-container{% if settings.animations_reveal_on_scroll %} scroll-trigger animate--slide-in{% endif %}"
         id="ProductGridContainer"
@@ -145,38 +165,116 @@
               id="product-grid"
               data-id="{{ section.id }}"
               class="
-                grid product-grid grid--{{ section.settings.columns_mobile }}-col-tablet-down
+                grid product-grid grid--1-col-tablet-down
                 grid--{{ section.settings.columns_desktop }}-col-desktop
                 {% if section.settings.quick_add == 'bulk' %} collection-quick-add-bulk{% endif %}
               "
             >
               {% assign skip_card_product_styles = false %}
+
+              <!-- featured offers -->
               {%- for product in collection.products -%}
+                {% assign title_parts = product.title | split: ' ' %}
+                {% assign last_part = title_parts.last %}
+                {% assign ml_check = last_part | slice: -2, 2 %}
+                {% assign is_featured = false %}
+                {% if product.metafields.custom.start_date == null
+                  or product.metafields.custom.start_date == ''
+                  or product.metafields.custom.end_date == null
+                  or product.metafields.custom.end_date == ''
+                %}
+                  {% assign hide_offer = true %}
+                {% else %}
+                  {% assign hide_offer = false %}
+                {% endif %}
+                {% if ml_check == 'ML' %}
+                  {% assign contains_ml = true %}
+                {% else %}
+                  {% assign contains_ml = false %}
+                {% endif %}
                 {% assign lazy_load = false %}
                 {%- if forloop.index > 2 -%}
                   {%- assign lazy_load = true -%}
                 {%- endif -%}
-                <li
-                  class="grid__item{% if settings.animations_reveal_on_scroll %} scroll-trigger animate--slide-in{% endif %}"
-                  {% if settings.animations_reveal_on_scroll %}
-                    data-cascade
-                    style="--animation-order: {{ forloop.index }};"
-                  {% endif %}
-                >
-                  {% render 'card-product',
-                    card_product: product,
-                    media_aspect_ratio: section.settings.image_ratio,
-                    image_shape: section.settings.image_shape,
-                    show_secondary_image: section.settings.show_secondary_image,
-                    show_vendor: section.settings.show_vendor,
-                    show_rating: section.settings.show_rating,
-                    lazy_load: lazy_load,
-                    skip_styles: skip_card_product_styles,
-                    quick_add: section.settings.quick_add,
-                    section_id: section.id
-                  %}
-                </li>
-                {%- assign skip_card_product_styles = true -%}
+                {% if product.tags contains 'featured' %}
+                  {% assign is_featured = true %}
+                {% endif %}
+                {% unless is_featured == false %}
+                  <li
+                    class="grid__item{% if settings.animations_reveal_on_scroll %} scroll-trigger animate--slide-in{% endif %}"
+                    {% if settings.animations_reveal_on_scroll %}
+                      data-cascade
+                      style="--animation-order: {{ forloop.index }};"
+                    {% endif %}
+                  >
+                    {% render 'card-product-list',
+                      card_product: product,
+                      media_aspect_ratio: section.settings.image_ratio,
+                      image_shape: section.settings.image_shape,
+                      show_secondary_image: section.settings.show_secondary_image,
+                      show_vendor: section.settings.show_vendor,
+                      show_rating: section.settings.show_rating,
+                      lazy_load: lazy_load,
+                      skip_styles: skip_card_product_styles,
+                      quick_add: section.settings.quick_add,
+                      section_id: section.id,
+                      placeholder_image: 'https://cdn.shopify.com/s/files/1/0661/5164/5373/files/uc-default-offer-image.png?'
+                    %}
+                  </li>
+                {% endunless %}
+              {%- endfor -%}
+
+              <!-- not featured offers -->
+              {%- for product in collection.products -%}
+                {% assign title_parts = product.title | split: ' ' %}
+                {% assign last_part = title_parts.last %}
+                {% assign ml_check = last_part | slice: -2, 2 %}
+                {% assign is_featured = false %}
+                {% if product.metafields.custom.start_date == null
+                  or product.metafields.custom.start_date == ''
+                  or product.metafields.custom.end_date == null
+                  or product.metafields.custom.end_date == ''
+                %}
+                  {% assign hide_offer = true %}
+                {% else %}
+                  {% assign hide_offer = false %}
+                {% endif %}
+                {% if ml_check == 'ML' %}
+                  {% assign contains_ml = true %}
+                {% else %}
+                  {% assign contains_ml = false %}
+                {% endif %}
+                {% assign lazy_load = false %}
+                {%- if forloop.index > 2 -%}
+                  {%- assign lazy_load = true -%}
+                {%- endif -%}
+                {% if product.tags contains 'featured' %}
+                  {% assign is_featured = true %}
+                {% endif %}
+                {% unless contains_ml or hide_offer or is_featured == true %}
+                  <li
+                    class="grid__item{% if settings.animations_reveal_on_scroll %} scroll-trigger animate--slide-in{% endif %}"
+                    {% if settings.animations_reveal_on_scroll %}
+                      data-cascade
+                      style="--animation-order: {{ forloop.index }};"
+                    {% endif %}
+                  >
+                    {% render 'card-product-list',
+                      card_product: product,
+                      media_aspect_ratio: section.settings.image_ratio,
+                      image_shape: section.settings.image_shape,
+                      show_secondary_image: section.settings.show_secondary_image,
+                      show_vendor: section.settings.show_vendor,
+                      show_rating: section.settings.show_rating,
+                      lazy_load: lazy_load,
+                      skip_styles: skip_card_product_styles,
+                      quick_add: section.settings.quick_add,
+                      section_id: section.id,
+                      placeholder_image: 'https://cdn.shopify.com/s/files/1/0661/5164/5373/files/uc-default-offer-image.png?'
+                    %}
+                  </li>
+                  {%- assign skip_card_product_styles = true -%}
+                {% endunless %}
               {%- endfor -%}
             </ul>
 

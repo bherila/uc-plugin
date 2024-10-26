@@ -34,6 +34,14 @@ class CartItems extends HTMLElement {
       }
       this.onCartUpdate();
     });
+    this.disableQuantityInputs();
+  }
+
+  disableQuantityInputs() {
+    const quantityInputs = this.querySelectorAll('.quantity__input');
+    quantityInputs.forEach(input => {
+      input.disabled = true; 
+    });
   }
 
   disconnectedCallback() {

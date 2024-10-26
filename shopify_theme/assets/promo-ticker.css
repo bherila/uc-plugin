@@ -1,0 +1,169 @@
+.promotional-offer-container {
+  position: relative;
+  overflow: hidden;
+  height: 50px;
+}
+
+.offer-bottles,
+.offer-detail-bottles,
+.offer-list-bottles {
+  height: 50px;
+  background-color: #23212d;
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.buy-in {
+  font-size: 13px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  overflow: hidden;
+}
+
+.buy-in span {
+  font-weight: bold;
+}
+
+.offer-item {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 50px;
+  max-width: 590px;
+  transition: transform 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+}
+
+.offer-item img,
+.offer-item .image-frame {
+  width: 50px;
+  height: 50px;
+}
+
+.no-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: black;
+  height: 50px;
+  width: 50px;
+  color: white;
+  padding: 12px;
+  line-height: 11px;
+}
+
+.no-image span {
+  font-size: 8px;
+  text-align: center;
+}
+
+.offer-details {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  margin: 0 12px;
+  line-height: 16px;
+  position: relative;
+  top: 1px;
+}
+
+.hidden-item {
+  transform: translateY(0%);
+}
+
+.active-item {
+  transform: translateY(-100%);
+}
+
+.offer-price {
+  font-weight: bold;
+  top: 3px;
+  position: relative;
+}
+
+.offer-value {
+  font-size: 9px;
+  top: -1px;
+  position: relative;
+}
+
+.offer-title {
+  border-left: solid 1px #4a4a4a;
+  height: 50px;
+  display: block;
+  padding: 12px;
+  overflow: hidden;
+}
+
+.offer-title span {
+  font-size: 12px;
+  line-height: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+  display: block;
+}
+
+.detail-price,
+.detail-chance {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  transition: opacity 0.6s ease-in-out, visibility 0.6s ease-in-out;
+  height: 50px;
+  min-width: 50px;
+  width: 100%; /* Ensure full width if needed */
+  opacity: 0; /* Start elements as invisible */
+  visibility: hidden; /* Start elements as not visible */
+}
+
+.hidden-detail {
+  opacity: 0;
+  visibility: hidden;
+  display: none;
+}
+
+.visible-detail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: normal;
+  position: relative;
+  opacity: 1;
+  visibility: visible;
+}
+
+/* .ticker-desktop {
+  display: flex;
+}
+.ticker-mobile {
+  display: none;
+} */
+
+@media (max-width: 1024px) {
+  .offer-title span {
+    display: -webkit-box;
+    height: 28px;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+}
+
+@media (max-width: 375px) {
+  /* .ticker-desktop {
+    display: none;
+  }
+  .ticker-mobile {
+    display: flex;
+  } */
+}

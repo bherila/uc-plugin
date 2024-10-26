@@ -57,7 +57,7 @@
           value="{{ product.selected_or_first_available_variant.id }}"
           {% if product.selected_or_first_available_variant.available == false
             or quantity_rule_soldout
-            or product.selected_or_first_available_variant == nil
+            or product.selected_or_first_available_variant == null
           %}
             disabled
           {% endif %}
@@ -78,6 +78,13 @@
               assign quantity_rule_soldout = true
             endif
           -%}
+          {% assign current_date = 'now' | date: '%s' %}
+          {% assign end_date_seconds = product.metafields.custom.end_date | date: '%s' %}
+          {% assign is_expired = false %}
+
+          {% if end_date_seconds <= current_date %}
+            {% assign is_expired = true %}
+          {% endif %}
           <button
             id="ProductSubmitButton-{{ section_id }}"
             type="submit"
@@ -85,16 +92,19 @@
             class="product-form__submit button button--full-width {% if show_dynamic_checkout %}button--secondary{% else %}button--primary{% endif %}"
             {% if product.selected_or_first_available_variant.available == false
               or quantity_rule_soldout
-              or product.selected_or_first_available_variant == nil
+              or product.selected_or_first_available_variant == null
+              or is_expired
             %}
               disabled
             {% endif %}
           >
             <span>
-              {%- if product.selected_or_first_available_variant == nil -%}
+              {%- if product.selected_or_first_available_variant == null -%}
                 {{ 'products.product.unavailable' | t }}
               {%- elsif product.selected_or_first_available_variant.available == false or quantity_rule_soldout -%}
                 {{ 'products.product.sold_out' | t }}
+              {%- elsif is_expired -%}
+                OFFER ENDED
               {%- else -%}
                 {{ 'products.product.add_to_cart' | t }}
               {%- endif -%}

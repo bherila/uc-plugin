@@ -145,18 +145,19 @@
                                 {{ 'products.product.price.regular_price' | t }}
                               </span>
                               <s class="cart-item__old-price product-option">
-                                {{- item.original_price | money -}}
+                                {{- item.original_price | money_without_trailing_zeros -}}
                               </s>
                               <span class="visually-hidden">
                                 {{ 'products.product.price.sale_price' | t }}
                               </span>
                               <strong class="cart-item__final-price product-option">
-                                {{ item.final_price | money }}
+                                {{ item.final_price | money_without_trailing_zeros }}
                               </strong>
                             </div>
                           {%- else -%}
-                            <div class="product-option">
-                              {{ item.original_price | money }}
+                            <div class="product-option per-bottle-price">
+                              {{ item.original_price | money_without_trailing_zeros }}
+                              <span> per bottle</span>
                             </div>
                           {%- endif -%}
 
@@ -227,25 +228,25 @@
                                   {{ 'products.product.price.regular_price' | t }}
                                 </span>
                                 <s class="cart-item__old-price price price--end">
-                                  {{ item.original_line_price | money }}
+                                  {{ item.original_line_price | money_without_trailing_zeros }}
                                 </s>
                                 <span class="visually-hidden">
                                   {{ 'products.product.price.sale_price' | t }}
                                 </span>
                                 <span class="price price--end">
-                                  {{ item.final_line_price | money }}
+                                  {{ item.final_line_price | money_without_trailing_zeros }}
                                 </span>
                               </div>
                             {%- else -%}
                               <span class="price price--end">
-                                {{ item.original_line_price | money }}
+                                {{ item.original_line_price | money_without_trailing_zeros }}
                               </span>
                             {%- endif -%}
 
                             {%- if item.variant.available and item.unit_price_measurement -%}
                               <div class="unit-price caption">
                                 <span class="visually-hidden">{{ 'products.product.price.unit_price' | t }}</span>
-                                {{ item.unit_price | money }}
+                                {{ item.unit_price | money_without_trailing_zeros }}
                                 <span aria-hidden="true">/</span>
                                 <span class="visually-hidden"
                                   >&nbsp;{{ 'accessibility.unit_price_separator' | t }}&nbsp;</span
@@ -278,22 +279,12 @@
                             <div class="cart-item__quantity-wrapper quantity-popover-wrapper">
                               <div class="quantity-popover-container{% if has_qty_rules or has_vol_pricing %} quantity-popover-container--hover{% endif %}">
                                 <quantity-input class="quantity cart-quantity">
-                                  <button class="quantity__button" name="minus" type="button">
-                                    <span class="visually-hidden">
-                                      {{-
-                                        'products.product.quantity.decrease'
-                                        | t: product: item.product.title
-                                        | escape
-                                      -}}
-                                    </span>
-                                    {% render 'icon-minus' %}
-                                  </button>
                                   <input
                                     class="quantity__input"
-                                    type="number"
+                                    type="string"
                                     data-quantity-variant-id="{{ item.variant.id }}"
                                     name="updates[]"
-                                    value="{{ item.quantity }}"
+                                    value="{{ item.quantity }} {% if item.quantity == 1 %}bottle{% else %}bottles{% endif %}"
                                     {% # theme-check-disable %}
                                     data-cart-quantity="{{ cart | item_count_for_variant: item.variant.id }}"
                                     min="0"
@@ -306,17 +297,8 @@
                                     aria-label="{{ 'products.product.quantity.input_label' | t: product: item.product.title | escape }}"
                                     id="Drawer-quantity-{{ item.index | plus: 1 }}"
                                     data-index="{{ item.index | plus: 1 }}"
+                                    disabled
                                   >
-                                  <button class="quantity__button" name="plus" type="button">
-                                    <span class="visually-hidden">
-                                      {{-
-                                        'products.product.quantity.increase'
-                                        | t: product: item.product.title
-                                        | escape
-                                      -}}
-                                    </span>
-                                    {% render 'icon-plus' %}
-                                  </button>
                                 </quantity-input>
                               </div>
                               <cart-remove-button

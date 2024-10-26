@@ -1,1 +1,1 @@
-{"sections":{"main":{"type":"main-login","settings":{"enable_shop_login_button":"true","padding_top":36,"padding_bottom":36}}},"order":["main"]}
+{"sections":{"main":{"type":"main-login","custom_css":["#login,#recover,.form__message,#customer_login {color: #ffffff;}","a[href=\"#recover\"] {color: #eabb69; font-weight: bold; font-size: 12px;}",".field {margin-bottom: 12px;}","button {margin-top: 24px;}","h1 {font-size: 16px;}"],"settings":{"enable_shop_login_button":true,"padding_top":36,"padding_bottom":36}}},"order":["main"]}

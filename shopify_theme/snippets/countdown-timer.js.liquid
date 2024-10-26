@@ -1,0 +1,14 @@
+{%- comment -%}
+  Initializes a countdown timer based on the end_date.
+
+  Accepts:
+  - card_product: {Object} Product Liquid object.
+{%- endcomment -%}
+
+{% assign endDate = card_product.metafields.custom.end_date %}
+
+{% if endDate != '' %}
+  <div id="countdown-timer-{{ card_product.id }}" data-end-time="{{ endDate }}">
+    <div class="countdown-display" id="countdown-display-{{ card_product.id }}">SOLD OUT</div>
+  </div>
+{% endif %}
