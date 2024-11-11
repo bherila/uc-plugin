@@ -15,7 +15,7 @@ const sessionOptions: IronSessionOptions = {
 }
 
 export async function getSession(): Promise<sessionType | null> {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const encryptedSession = cookieStore.get(sessionOptions.cookieName)?.value
   const session = encryptedSession
     ? await unsealData(encryptedSession, {
@@ -30,7 +30,7 @@ export async function encryptSession(session: sessionType): Promise<string> {
 }
 
 export async function saveSession(session: sessionType | null) {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   if (session == null) {
     cookieStore.delete(sessionOptions.cookieName)
   } else {
