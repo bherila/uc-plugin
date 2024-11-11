@@ -90,7 +90,7 @@ const svrLoadShopifyProducts = async (type: MID) => {
     const products = Object.values(response.products.edges)
     products.forEach((productEdge) => {
       const product = productEdge.node
-      if (!product.tags.find(t => t === type)) {
+      if (!product.tags.find((t) => t === type)) {
         return
       }
       product.variants.nodes.forEach((variant) => {
