@@ -51,6 +51,7 @@
     "jest-environment-jsdom": "^29.6.4",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
+    "mysql2": "^3.11.4",
     "next": "^15.0.3",
     "next-compose-plugins": "^2.2.1",
     "nuqs": "^2.1.1",
