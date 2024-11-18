@@ -6,8 +6,16 @@ import shopifyGetOrdersWithLineItems from '@/lib/shopifyGetOrdersWithLineItems'
 import CurrencyDisplay from '@/components/CurrencyDisplay'
 import RenderUTCDate from '@/components/RenderUTCDate'
 import Link from 'next/link'
+import { redirect, RedirectType } from 'next/navigation'
+import { getSession } from '@/lib/session'
+import AuthRoutes from '@/app/auth/AuthRoutes'
 
 export default async function ShopifyOrdersPage({ params }: { params: Promise<{ offer_id: string }> }) {
+  const session = await getSession()
+  if (session?.uid == null || !session?.ax_uc) {
+    return redirect(AuthRoutes.signIn, RedirectType.replace)
+  }
+
   const offer_id = z.coerce.number().parse((await params).offer_id)
 
   const variant_id = (
