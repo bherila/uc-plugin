@@ -7,6 +7,16 @@ const PRODUCT_QUERY = `
     nodes(ids: $IDs) {
       ... on ProductVariant {
         id
+        inventoryItem {
+          id
+          measurement {
+            id
+            weight {
+              unit
+              value
+            }
+          }
+        }
         product {
           id
           title
@@ -49,6 +59,7 @@ export async function shopifyGetProductDataByVariantIds(
         return
       }
       const product = node.product
+      const inventoryItem = node.inventoryItem
       const variantId = node.id
       if (!product || !variantId) {
         return
@@ -65,6 +76,7 @@ export async function shopifyGetProductDataByVariantIds(
         endDate: product.metafields.nodes.find((field: any) => field.key.indexOf('end_date') !== -1)?.jsonValue,
         status: product.status,
         tags: product.tags,
+        weight: inventoryItem?.measurement?.weight?.value,
       }
     })
 
@@ -96,6 +108,7 @@ export async function shopifyGetProductDataFromManifests(manifests: V3Manifest[]
       qty,
       percentChance: (qty / totalQty) * 100,
       title: product.title,
+      weight: product.weight,
     }
   }
   return res

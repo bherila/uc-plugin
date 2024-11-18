@@ -5,7 +5,7 @@ import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
 import Table from 'react-bootstrap/Table'
 import groupBySku from '@/lib/groupBySku'
-import { Alert } from 'react-bootstrap'
+import { Alert, Badge } from 'react-bootstrap'
 import z from 'zod'
 import queryOffer from '@/app/api/manifest/queryOffer'
 import maybeUpdateOfferMetafield from '@/server_lib/maybeUpdateOfferMetafield'
@@ -18,6 +18,7 @@ import svrPutSkuQty from '@/server_lib/svrPutSkuQty'
 import { addManifestAction } from '@/app/offers/[offer_id]/_addManifestServerAction'
 import DeleteButton from '@/components/DeleteButton'
 import MetafieldsClient from '@/app/offers/[offer_id]/MetafieldClient'
+import Link from 'next/link'
 
 async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   const promises = {
@@ -37,26 +38,37 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   const deficit = numManifestsNotAssigned - inventoryQuantity
 
   const shopifyOrderIds = Array.from(new Set(offer?.mf.map((r) => r.assignee_id).filter(Boolean)))
+  const hasOrders = shopifyOrderIds.length > 0
 
   return (
     <Container>
       <MainTitle>
         [{offer?.offer_id}] {offer?.offer_name}
       </MainTitle>
+
       <p>
         Shopify product id {offer?.offerProductData.variantId} ({product?.title}
         ), {inventoryQuantity} inventory
+        {(offer?.offerProductData.weight ?? 0) != 2 ? <Badge bg="danger">Weight should be 2 lbs</Badge> : ''}
       </p>
-      {/*{criticalErrorMessage ? (*/}
-      {/*  <CriticalErrorBanner message={criticalErrorMessage} />*/}
-      {/*) : (*/}
-      <Alert variant="info">
-        <b>Reminder!</b> Ensure that nobody is able to purchase this product online until you are done setting up
-        the bottles. The total number of bottles that can be allocated to the offer is based on the quantity
-        available of the product id listed above.
-      </Alert>
-      {/*)}*/}
-      {deficit && (
+
+      {hasOrders ? (
+        <Row className="mb-4">
+          <Col xs="12">
+            <Link href={`/offers/${offer_id}/shopify_manifests`} className="btn btn-secondary">
+              View order manifests
+            </Link>
+          </Col>
+        </Row>
+      ) : (
+        <Alert variant="info">
+          <b>No orders yet. Reminder!</b> Ensure that nobody is able to purchase this product online until you are
+          done setting up the bottles. The total number of bottles that can be allocated to the offer is based on
+          the quantity available of the product id listed above.
+        </Alert>
+      )}
+
+      {deficit ? (
         <Alert variant="danger">
           <p>
             <b>Error!</b> There are QTY={inventoryQuantity} available of the OFFER SKU available in Shopify store,
@@ -69,7 +81,10 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
             disable ordering the product in order to set the correct quantity.
           </p>
         </Alert>
+      ) : (
+        <div />
       )}
+
       <Row>
         <Col xs={8}>
           <Table responsive striped bordered hover>
@@ -77,10 +92,10 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
               <tr>
                 <th>Product</th>
                 <th># Offered</th>
-                <th># Allocated</th>
-                <th># Remaining</th>
+                {hasOrders ? <th># Allocated</th> : null}
+                {hasOrders ? <th># Remaining</th> : null}
                 <th>% Chance</th>
-                <th>Action</th>
+                {!hasOrders ? <th>Action</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -100,27 +115,30 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
                   revalidatePath('/offers/' + offer_id)
                 }
 
+                const product = offer?.manifestProductData[manifest]
+
                 return (
                   <tr key={manifest}>
                     <td>
-                      {offer?.manifestProductData[manifest]?.title ?? '??'}
+                      {product?.title ?? '??'}
                       <br />
                       <small>{manifest}</small>
+                      {(product?.weight ?? 0) > 1 ? <Badge bg="danger">Weight should be zero</Badge> : ''}
                     </td>
                     <td>{totalQuantity}</td>
-                    <td>{numAllocated}</td>
-                    <td>{totalQuantity - numAllocated}</td>
-                    <td>{offer?.manifestProductData[manifest]?.percentChance.toFixed(2)}%</td>
-                    <td>
-                      {numAllocated == 0 && <DeleteButton onDelete={deleteManifestAction} offerID={offer_id} />}
-                    </td>
+                    {hasOrders ? <td>{numAllocated}</td> : null}
+                    {hasOrders ? <td>{totalQuantity - numAllocated}</td> : null}
+                    <td>{product?.percentChance.toFixed(2)}%</td>
+                    {!hasOrders ? (
+                      <td>
+                        {numAllocated == 0 && <DeleteButton onDelete={deleteManifestAction} offerID={offer_id} />}
+                      </td>
+                    ) : null}
                   </tr>
                 )
               })}
             </tbody>
           </Table>
-          {/*<h2>Orders</h2>*/}
-          {/*<ShopifyOrdersTable shopifyOrderIds={shopifyOrderIds} />*/}
           <MetafieldsClient metafields={offerMetafieldData} />
         </Col>
         <Col xs={4}>
@@ -148,6 +166,16 @@ const QUERY = `query ($id: ID!) {
       product {
         title
       }
+      inventoryItem {
+        id
+        measurement {
+          id
+          weight {
+            unit
+            value
+          }
+        }
+      }
     }
   }
 }`
@@ -158,6 +186,22 @@ const schema = z.object({
   product: z
     .object({
       title: z.string().nullable(),
+    })
+    .nullable(),
+  inventoryItem: z
+    .object({
+      id: z.string().nullable(),
+      measurement: z
+        .object({
+          id: z.string().nullable(),
+          weight: z
+            .object({
+              unit: z.string().nullable(),
+              value: z.coerce.number().nullable(),
+            })
+            .nullable(),
+        })
+        .nullable(),
     })
     .nullable(),
 })

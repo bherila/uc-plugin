@@ -10,6 +10,14 @@ interface ProductVariant {
   price: string
   compareAtPrice: string
   name: string
+  inventoryItem: {
+    measurement: {
+      weight: {
+        unit: string
+        value: string
+      }
+    }
+  }
 }
 
 interface ProductNode {
@@ -70,6 +78,16 @@ const svrLoadShopifyProducts = async (type: MID) => {
               sku
               price
               compareAtPrice
+              inventoryItem {
+                id
+                measurement {
+                  id
+                  weight {
+                    unit
+                    value
+                  }
+                }
+              }
             }
           }
         }
@@ -101,6 +119,7 @@ const svrLoadShopifyProducts = async (type: MID) => {
           variantName: variant.name,
           variantPrice: variant.price?.toString(),
           variantCompareAtPrice: variant.compareAtPrice?.toString(),
+          variantWeight: variant.inventoryItem?.measurement?.weight?.value,
         })
       })
       lastedge = productEdge

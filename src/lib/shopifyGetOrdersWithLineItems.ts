@@ -8,6 +8,7 @@ const schema = z.object({
       id: z.string(),
       cancelledAt: z.string().nullable(),
       createdAt: z.string(),
+      email: z.string(),
       totalPriceSet: z.object({
         presentmentMoney: z.object({
           amount: z.coerce.number(),
@@ -26,6 +27,18 @@ const schema = z.object({
             title: z.string(),
             variant: z.object({
               variant_graphql_id: z.string(),
+              inventoryItem: z
+                .object({
+                  id: z.string(),
+                  measurement: z.object({
+                    id: z.string(),
+                    weight: z.object({
+                      unit: z.string(),
+                      value: z.number(),
+                    }),
+                  }),
+                })
+                .nullable(),
             }),
             discountedTotalSet: z.object({
               shopMoney: z.object({
@@ -46,6 +59,7 @@ const query = `
         id
         cancelledAt
         createdAt
+        email
         totalPriceSet {
           presentmentMoney {
             amount
@@ -63,6 +77,16 @@ const query = `
             title
             variant {
               variant_graphql_id: id
+              inventoryItem {
+                id
+                measurement {
+                  id
+                  weight {
+                    unit
+                    value
+                  }
+                }
+              }
             }
             discountedTotalSet {
               shopMoney {

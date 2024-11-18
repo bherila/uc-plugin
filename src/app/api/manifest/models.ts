@@ -8,6 +8,7 @@ export interface ProductData {
   endDate: string
   status: string
   tags: string[]
+  weight: number | null
 }
 
 export interface ProductDataGrouping {
@@ -17,6 +18,7 @@ export interface ProductDataGrouping {
   featuredImageUrl: string | null
   qty: number
   percentChance: number
+  weight: number | null
 }
 
 export interface V3OfferListItem {

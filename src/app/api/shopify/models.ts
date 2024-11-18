@@ -5,4 +5,5 @@ export interface ShopifyProductVariant {
   variantId: string
   variantPrice?: string
   variantCompareAtPrice?: string
+  variantWeight?: string
 }

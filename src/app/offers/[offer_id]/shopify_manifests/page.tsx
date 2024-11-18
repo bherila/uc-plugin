@@ -5,6 +5,7 @@ import z from 'zod'
 import shopifyGetOrdersWithLineItems from '@/lib/shopifyGetOrdersWithLineItems'
 import CurrencyDisplay from '@/components/CurrencyDisplay'
 import RenderUTCDate from '@/components/RenderUTCDate'
+import Link from 'next/link'
 
 export default async function ShopifyOrdersPage({ params }: { params: Promise<{ offer_id: string }> }) {
   const offer_id = z.coerce.number().parse((await params).offer_id)
@@ -21,14 +22,20 @@ export default async function ShopifyOrdersPage({ params }: { params: Promise<{ 
 
   return (
     <Container>
-      <Row>
+      <Row className="mt-4">
         <Col>
-          <h2>Orders in Shopify</h2>
+          <h2>Shopify Order Manifests (for offer id {offer_id})</h2>
           <ul>
-            <li>Offer id: {offer_id}</li>
             <li>Variant id: {variant_id}</li>
             <li>Order count: {orders.length}</li>
           </ul>
+        </Col>
+      </Row>
+      <Row className="mb-4">
+        <Col xs="12">
+          <Link href={`/offers/${offer_id}`} className="btn btn-secondary">
+            Back
+          </Link>
         </Col>
       </Row>
       <Row>
@@ -37,9 +44,9 @@ export default async function ShopifyOrdersPage({ params }: { params: Promise<{ 
             <thead>
               <tr>
                 <th>Order ID</th>
-                <th>Subtotal</th>
                 <th>Details</th>
                 <th>Shipping price</th>
+                <th>Email</th>
               </tr>
             </thead>
             <tbody>
@@ -69,9 +76,6 @@ export default async function ShopifyOrdersPage({ params }: { params: Promise<{ 
                       </div>
                     </td>
                     <td>
-                      <CurrencyDisplay value={order.totalPriceSet.presentmentMoney.amount} digits={2} />
-                    </td>
-                    <td>
                       {s1.map((li) => (
                         <div key={li.line_item_id} style={{ borderBottom: '1px dashed #666' }}>
                           {li.quantity} &times; {li.title}
@@ -86,6 +90,7 @@ export default async function ShopifyOrdersPage({ params }: { params: Promise<{ 
                     <td>
                       <CurrencyDisplay value={order.totalShippingPriceSet.presentmentMoney.amount} digits={2} />
                     </td>
+                    <td>{order.email}</td>
                   </tr>
                 )
               })}
