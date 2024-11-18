@@ -8,9 +8,9 @@ export default function Loading() {
     <Container>
       <MainTitle>[#] Loading</MainTitle>
       <p>Getting data from Shopify</p>
-      <p>
+      <div>
         <Spinner />
-      </p>
+      </div>
     </Container>
   )
 }
