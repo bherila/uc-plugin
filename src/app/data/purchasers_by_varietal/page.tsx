@@ -6,7 +6,7 @@ import db from '@/lib/db'
 import Table from 'react-bootstrap/Table'
 import Container from 'react-bootstrap/Container'
 import Filter from './filter'
-import currency from "currency.js"
+import currency from 'currency.js'
 import z from 'zod'
 
 export default async function DataPage({
@@ -19,19 +19,21 @@ export default async function DataPage({
     return redirect(AuthRoutes.signIn, RedirectType.replace)
   }
 
-  const params = z.object(
-    {
+  const params = z
+    .object({
       min_amount: z.coerce.number().default(0),
       max_amount: z.coerce.number().default(999999999),
-      varietal: z.string().default('')
-    }
-  ).parse(await searchParams)
+      varietal: z.string().default(''),
+    })
+    .parse(await searchParams)
 
   const varietal = params.varietal + '%'
 
-  const allVarietals: string[] =
-    (await db.query(`select distinct cola_varietal c from computed_buyer_varietals order by cola_varietal`) as any[])
-    .map(row => row.c)
+  const allVarietals: string[] = (
+    (await db.query(
+      `select distinct cola_varietal c from computed_buyer_varietals order by cola_varietal`,
+    )) as any[]
+  ).map((row) => row.c)
 
   const countQuery = (await db.query(
     `
