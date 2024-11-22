@@ -25,6 +25,9 @@ const schema = z.object({
             line_item_id: z.string(),
             quantity: z.number(),
             title: z.string(),
+            product: z.object({
+              tags: z.array(z.string()),
+            }),
             variant: z.object({
               variant_graphql_id: z.string(),
               inventoryItem: z
@@ -80,6 +83,9 @@ const query = `
             line_item_id: id
             quantity
             title
+            product {
+              tags
+            }
             variant {
               variant_graphql_id: id
               inventoryItem {
@@ -111,7 +117,14 @@ const query = `
 `
 
 const shopifyGetOrdersWithLineItems = async (graphqlOrderIds: string[]) => {
-  const response = await shopify.graphql(query, { ids: graphqlOrderIds })
+  const cleanedIds = graphqlOrderIds
+    .map((id) => id.replace('gid://shopify/Order/', ''))
+    .map((id) => z.coerce.bigint().safeParse(id)?.data)
+    .map((id) => `gid://shopify/Order/${id}`)
+  if (cleanedIds.length === 0) {
+    return []
+  }
+  const response = await shopify.graphql(query, { ids: cleanedIds })
   const nodes = schema.parse(response).nodes
   // sort nodes by node.createdAt
   nodes.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())

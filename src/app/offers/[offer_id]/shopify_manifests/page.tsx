@@ -13,7 +13,11 @@ import RenderUTCDate from '@/components/RenderUTCDate'
 import Link from 'next/link'
 import { redirect, RedirectType } from 'next/navigation'
 import { getSession } from '@/lib/session'
+import { revalidatePath } from 'next/cache'
 import AuthRoutes from '@/app/auth/AuthRoutes'
+import shopifyProcessOrder from '@/lib/shopifyProcessOrder'
+import { Form } from 'react-bootstrap'
+import FixButton from './FixButton'
 
 export default async function ShopifyOrdersPage({ params }: { params: Promise<{ offer_id: string }> }) {
   const session = await getSession()
@@ -89,12 +93,19 @@ export default async function ShopifyOrdersPage({ params }: { params: Promise<{ 
             <tbody>
               {ordersFromShopify.map((order) => {
                 const isCancel = order.cancelledAt != null
+                const orderIdNumeric = order.id.replace('gid://shopify/Order/', '')
+
+                async function reProcessShopifyOrder() {
+                  'use server'
+                  await shopifyProcessOrder(order.id)
+                  revalidatePath(`/offers/${offer_id}/shopify_manifests`)
+                }
 
                 return (
                   <tr key={order.id}>
                     <td>
                       <div>
-                        {order.id.replace('gid://shopify/Order/', '')}
+                        {orderIdNumeric}
                         {isCancel ? (
                           <Badge
                             style={{ marginLeft: '7px' }}
@@ -130,8 +141,12 @@ export default async function ShopifyOrdersPage({ params }: { params: Promise<{ 
                       <CurrencyDisplay value={order.totalShippingPriceSet.shopMoney.amount} digits={2} />
                     </td>
                     <td>{order.email}</td>
-                    <td>
-                      <Button variant="outline-primary">View Log</Button>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <Button variant="primary" size="sm" type="button">
+                        View Log
+                      </Button>
+                      &nbsp;
+                      <FixButton onFix={reProcessShopifyOrder} orderId={orderIdNumeric.toString()} />
                     </td>
                   </tr>
                 )

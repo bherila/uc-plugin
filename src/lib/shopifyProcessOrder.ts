@@ -17,7 +17,7 @@ async function log(msg: any, offerId: number | null, orderIdNumeric: bigint | nu
 
 export default async function shopifyProcessOrder(orderIdX: string) {
   try {
-    const orderIdNumeric = z.bigint().safeParse(orderIdX.replace('gid://shopify/Order/', ''))?.data ?? null
+    const orderIdNumeric = z.coerce.bigint().safeParse(orderIdX.replace('gid://shopify/Order/', ''))?.data ?? null
     const orderIdUri = `gid://shopify/Order/${orderIdNumeric}`
     const shopifyOrder = (await shopifyGetOrdersWithLineItems([orderIdUri]))[0]
     const dealSchema = z.object({
@@ -34,16 +34,29 @@ export default async function shopifyProcessOrder(orderIdX: string) {
     let calculatedOrderId: string | null = null
     let offerId: number | null = null
 
+    const dealLineItemFromShopifyOrder = shopifyOrder.lineItems.nodes.filter((node) =>
+      node.product.tags.includes('deal'),
+    )
+
     // map the variant to the order and stash this so we can query for the order later
+    const purchasedDealFields = dealLineItemFromShopifyOrder.map((node) => [
+      orderIdUri, // order id
+      node.variant.variant_graphql_id, // variant id
+      offerIdFromVariantId.get(node.variant.variant_graphql_id), // offer id
+    ])
+    if (purchasedDealFields.length !== 1) {
+      await log(
+        `ERROR: Multiple deals for order ${orderIdNumeric}: ${JSON.stringify(purchasedDealFields)}`,
+        null,
+        orderIdNumeric,
+      )
+      return
+    }
     await db.query(`replace into v3_order_to_variant (order_id, variant_id, offer_id) values ?`, [
-      shopifyOrder.lineItems.nodes.map((node) => [
-        orderIdUri,
-        node.variant.variant_graphql_id,
-        offerIdFromVariantId.get(node.variant.variant_graphql_id),
-      ]),
+      purchasedDealFields,
     ])
 
-    for (const orderLineItem of shopifyOrder.lineItems.nodes) {
+    for (const orderLineItem of dealLineItemFromShopifyOrder) {
       if (!orderLineItem.discountedTotalSet.shopMoney.amount) {
         console.info('Skip free item ' + orderLineItem.line_item_id)
         continue
@@ -119,7 +132,37 @@ export default async function shopifyProcessOrder(orderIdX: string) {
         [assigneeId, offerId],
       )
 
-      if (needQty !== 0) {
+      const preExistingShopifyManifests = shopifyOrder.lineItems.nodes.filter((node) =>
+        node.product.tags.includes('manifest-item'),
+      )
+
+      // remove pre-existing manifests from shopify order
+      if (preExistingShopifyManifests.length > 0) {
+        await log(
+          `Cannot proceed until all ${preExistingShopifyManifests.length} pre-existing manifests are deleted from Shopify order`,
+          offerId,
+          orderIdNumeric,
+        )
+        return
+        // const beginEditResult = await beginEdit({ orderId: orderIdUri })
+        // calculatedOrderId = beginEditResult.orderEditBegin?.calculatedOrder?.id ?? null
+        // if (!calculatedOrderId) {
+        //   await log('CalculatedOrder.id was null, aborting', offerId, orderIdNumeric)
+        //   return
+        // }
+        // await log(`Opened CalculatedOrder ${calculatedOrderId}`, offerId, orderIdNumeric)
+        // ... do stuff
+        // const commitResult = await orderEditCommit({ calculatedOrderId })
+        // await log(commitResult, offerId, orderIdNumeric)
+      }
+
+      const willUpdateShopifyOrder = preExistingShopifyManifests.length < offerManifests.length
+      log(
+        `${willUpdateShopifyOrder ? 'Will update' : 'Will not update'} shopify order, checked if ${preExistingShopifyManifests.length} < ${offerManifests.length}`,
+        offerId,
+        orderIdNumeric,
+      )
+      if (willUpdateShopifyOrder) {
         if (calculatedOrderId == null) {
           const beginEditResult = await beginEdit({ orderId: orderIdUri })
           calculatedOrderId = beginEditResult.orderEditBegin?.calculatedOrder?.id ?? null
@@ -130,42 +173,42 @@ export default async function shopifyProcessOrder(orderIdX: string) {
           await log(`Opened CalculatedOrder ${calculatedOrderId}`, offerId, orderIdNumeric)
         }
 
-        if (needQty > 0) {
-          const groups = groupBySku(offerManifests)
-          for (const variantId of Object.keys(groups)) {
-            const x: AddVariantInput = {
-              calculatedOrderId,
-              quantity: groups[variantId].length,
-              variantId,
-            }
-
-            // add the item to the order
-            await log(
-              `Adding ${variantId} x ${groups[variantId].length}, ${JSON.stringify(x)}`,
-              offerId,
-              orderIdNumeric,
-            )
-            const allocationLineItem = (await addVariant(x)).orderEditAddVariant
-
-            // with a zero cost i.e. 100% discount
-            const discount = await addDiscount({
-              calculatedOrderId,
-              discount: {
-                percentValue: 100,
-                description: 'Allocation from Offer',
-              },
-              lineItemId: allocationLineItem.calculatedLineItem.id,
-            })
-
-            await log(discount, offerId, orderIdNumeric)
+        const groups = groupBySku(offerManifests)
+        for (const variantId of Object.keys(groups)) {
+          const x: AddVariantInput = {
+            calculatedOrderId,
+            quantity: groups[variantId].length,
+            variantId,
           }
+
+          // add the item to the order
+          await log(
+            `Adding ${variantId} x ${groups[variantId].length}, ${JSON.stringify(x)}`,
+            offerId,
+            orderIdNumeric,
+          )
+          const addResult = await addVariant(x)
+          const allocationLineItem = addResult.orderEditAddVariant
+          await log('addVariant: ' + JSON.stringify(addResult), offerId, orderIdNumeric)
+
+          // with a zero cost i.e. 100% discount
+          const discount = await addDiscount({
+            calculatedOrderId,
+            discount: {
+              percentValue: 100,
+              description: 'Allocation from Offer',
+            },
+            lineItemId: allocationLineItem.calculatedLineItem.id,
+          })
+
+          await log('addDiscount: ' + JSON.stringify(discount), offerId, orderIdNumeric)
         }
       }
     }
 
     if (calculatedOrderId != null) {
       const commitResult = await orderEditCommit({ calculatedOrderId })
-      await log(commitResult, offerId, orderIdNumeric)
+      await log('orderEditCommit: ' + JSON.stringify(commitResult), offerId, orderIdNumeric)
     }
 
     await log('done!', offerId, orderIdNumeric)
