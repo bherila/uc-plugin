@@ -17,10 +17,17 @@ import { revalidatePath } from 'next/cache'
 import AuthRoutes from '@/app/auth/AuthRoutes'
 import shopifyProcessOrder from '@/lib/shopifyProcessOrder'
 import FixButton from './FixButton'
+import UpgradesAtTopToggle from './UpgradesAtTopToggle'
 
 export const maxDuration = 60
 
-export default async function ShopifyOrdersPage({ params }: { params: Promise<{ offer_id: string }> }) {
+export default async function ShopifyOrdersPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ offer_id: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
   const session = await getSession()
   if (session?.uid == null || !session?.ax_uc) {
     return redirect(AuthRoutes.signIn, RedirectType.replace)
@@ -51,15 +58,41 @@ export default async function ShopifyOrdersPage({ params }: { params: Promise<{ 
     const totalUpgradeItemsQty = upgradeItems.reduce((total, li) => total + li.quantity, 0)
     const isQtyEqual = totalPurchasedItemsQty === totalUpgradeItemsQty
 
+    // total value of each purchasedItems and upgradeItems
+    const purchasedItemsTotalValue = purchasedItems.reduce(
+      (total, li) => total + li.originalUnitPriceSet.shopMoney.amount * li.quantity,
+      0,
+    )
+    const upgradeItemsTotalValue = upgradeItems.reduce(
+      (total, li) => total + li.originalUnitPriceSet.shopMoney.amount * li.quantity,
+      0,
+    )
+
     return {
       ...order,
       purchasedItems,
       upgradeItems,
       isQtyEqual,
+      totalPurchasedItemsQty,
+      totalUpgradeItemsQty,
+      purchasedItemsTotalValue,
+      upgradeItemsTotalValue,
     }
   })
 
-  // sort ordersFromShopify so that isQtyEqual is false first
+  // sort by the date of the order descending
+  ordersFromShopify.sort((b, a) => {
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  })
+
+  // sort ordersFromShopify by upgradeItemsTotalValue descending
+  if ((await searchParams)['upgradesFirst'] !== 'false') {
+    ordersFromShopify.sort((a, b) => {
+      return b.upgradeItemsTotalValue - a.upgradeItemsTotalValue
+    })
+  }
+
+  // then, sort ordersFromShopify so that isQtyEqual is false first
   ordersFromShopify.sort((a, b) => {
     if (a.isQtyEqual !== b.isQtyEqual) {
       return a.isQtyEqual ? 1 : -1
@@ -67,95 +100,141 @@ export default async function ShopifyOrdersPage({ params }: { params: Promise<{ 
     return 0
   })
 
-  return (
-    <Container>
-      <Row className="mt-4">
-        <Col>
-          <h2>Shopify Order Manifests (for offer id {offer_id})</h2>
-          <ul>
-            <li>Variant id: {variant_id}</li>
-            <li>Order count: {orders.length}</li>
-          </ul>
-        </Col>
-      </Row>
-      <Row className="mb-4">
-        <Col xs="12">
-          <Link href={`/offers/${offer_id}`} className="btn btn-secondary">
-            Back
-          </Link>
-        </Col>
-      </Row>
-      <Row>
-        <Col>
-          <Table striped bordered hover size="sm">
-            <thead>
-              <tr>
-                <th>Order ID</th>
-                <th>Details</th>
-                <th>Shipping price</th>
-                <th>Email</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ordersFromShopify.map((order) => {
-                const isCancel = order.cancelledAt != null
-                const orderIdNumeric = order.id.replace('gid://shopify/Order/', '')
+  // sum totalPurchasedItemsQty and totalUpgradeItemsQty
+  const totalPurchasedItemsQty = ordersFromShopify.reduce(
+    (total, order) => total + order.totalPurchasedItemsQty,
+    0,
+  )
+  const totalUpgradeItemsQty = ordersFromShopify.reduce((total, order) => total + order.totalUpgradeItemsQty, 0)
 
-                return (
-                  <tr key={order.id}>
-                    <td>
-                      <div>
-                        {orderIdNumeric}
-                        {isCancel ? (
-                          <Badge
-                            style={{ marginLeft: '7px' }}
-                            bg="danger"
-                            title={`Cancelled at: ${order.cancelledAt}`}
-                          >
-                            Canceled
-                          </Badge>
-                        ) : null}
-                        {!order.isQtyEqual ? (
-                          <Badge style={{ marginLeft: '7px' }} bg="danger">
-                            Allocation error
-                          </Badge>
-                        ) : null}
-                      </div>
-                      <div>
-                        <RenderUTCDate utcDate={order.createdAt} />
-                      </div>
-                    </td>
-                    <td>
-                      {order.purchasedItems.map((li) => (
-                        <div key={li.line_item_id} style={{ borderBottom: '1px dashed #666' }}>
-                          {li.quantity} &times; {li.title} ({li.discountedTotalSet.shopMoney.amount})
+  const totalPurchasedItemsTotalValue = ordersFromShopify.reduce(
+    (total, order) => total + order.purchasedItemsTotalValue,
+    0,
+  )
+  const totalUpgradeItemsTotalValue = ordersFromShopify.reduce(
+    (total, order) => total + order.upgradeItemsTotalValue,
+    0,
+  )
+
+  return (
+    <>
+      <Container>
+        <Row className="mt-4">
+          <Col>
+            <h2>Shopify Order Manifests (for offer id {offer_id})</h2>
+            <ul>
+              <li>Variant id: {variant_id}</li>
+              <li>Order count: {orders.length}</li>
+              <li>
+                Total Purchased Items Qty: {totalPurchasedItemsQty}, Total Upgrade Items Qty:{' '}
+                {totalUpgradeItemsQty}{' '}
+                {totalPurchasedItemsQty === totalUpgradeItemsQty ? '✅ (equal to purchase qty)' : '❌'}
+              </li>
+              <li>
+                Total Purchased Items Total Value:{' '}
+                <CurrencyDisplay value={totalPurchasedItemsTotalValue} digits={2} />
+              </li>
+              <li>
+                Total Upgrade Items Total Value:{' '}
+                <CurrencyDisplay value={totalUpgradeItemsTotalValue} digits={2} />
+              </li>
+            </ul>
+          </Col>
+        </Row>
+        <Row className="mb-4">
+          <Col xs="12">
+            <Link href={`/offers/${offer_id}`} className="btn btn-secondary">
+              Back
+            </Link>
+          </Col>
+        </Row>
+        <Row className="mb-4">
+          <Col xs="12">
+            <UpgradesAtTopToggle />
+          </Col>
+        </Row>
+      </Container>
+      <Container fluid={true}>
+        <Row>
+          <Col>
+            <Table striped bordered hover size="sm">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Details</th>
+                  <th>Amt paid</th>
+                  <th>Got value</th>
+                  <th>Shipping</th>
+                  <th>Email</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ordersFromShopify.map((order) => {
+                  const isCancel = order.cancelledAt != null
+                  const orderIdNumeric = order.id.replace('gid://shopify/Order/', '')
+
+                  return (
+                    <tr key={order.id}>
+                      <td>
+                        <div>
+                          {orderIdNumeric}
+                          {isCancel ? (
+                            <Badge
+                              style={{ marginLeft: '7px' }}
+                              bg="danger"
+                              title={`Cancelled at: ${order.cancelledAt}`}
+                            >
+                              Canceled
+                            </Badge>
+                          ) : null}
+                          {!order.isQtyEqual ? (
+                            <Badge style={{ marginLeft: '7px' }} bg="danger">
+                              Allocation error
+                            </Badge>
+                          ) : null}
                         </div>
-                      ))}
-                      {order.upgradeItems.map((li) => (
-                        <div key={li.line_item_id} style={{ fontSize: '8pt' }}>
-                          {li.quantity} &times; {li.title}
+                        <div>
+                          <RenderUTCDate utcDate={order.createdAt} />
                         </div>
-                      ))}
-                    </td>
-                    <td>
-                      <CurrencyDisplay value={order.totalShippingPriceSet.shopMoney.amount} digits={2} />
-                    </td>
-                    <td>{order.email}</td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      <Button variant="primary" size="sm" type="button">
-                        View Log
-                      </Button>
-                      &nbsp;
-                      <FixButton onFix={reProcessShopifyOrder} orderId={orderIdNumeric.toString()} />
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </Table>
-        </Col>
-      </Row>
-    </Container>
+                      </td>
+                      <td>
+                        {order.purchasedItems.map((li) => (
+                          <div key={li.line_item_id} style={{ borderBottom: '1px dashed #666' }}>
+                            {li.quantity} &times; {li.title} ({li.discountedTotalSet.shopMoney.amount})
+                          </div>
+                        ))}
+                        {order.upgradeItems.map((li) => (
+                          <div key={li.line_item_id} style={{ fontSize: '8pt' }}>
+                            {li.quantity} &times; {li.title}
+                          </div>
+                        ))}
+                      </td>
+                      <td>
+                        <CurrencyDisplay value={order.purchasedItemsTotalValue} digits={2} />
+                      </td>
+                      <td>
+                        <CurrencyDisplay value={order.upgradeItemsTotalValue} digits={2} />
+                      </td>
+                      <td>
+                        <CurrencyDisplay value={order.totalShippingPriceSet.shopMoney.amount} digits={2} />
+                      </td>
+                      <td>{order.email}</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <Button variant="primary" size="sm" type="button">
+                          View Log
+                        </Button>
+                        &nbsp;
+                        <FixButton onFix={reProcessShopifyOrder} orderId={orderIdNumeric.toString()} />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </Table>
+          </Col>
+        </Row>
+      </Container>
+    </>
   )
 }
