@@ -10,12 +10,12 @@ const schema = z.object({
       createdAt: z.string(),
       email: z.string(),
       totalPriceSet: z.object({
-        presentmentMoney: z.object({
+        shopMoney: z.object({
           amount: z.coerce.number(),
         }),
       }),
       totalShippingPriceSet: z.object({
-        presentmentMoney: z.object({
+        shopMoney: z.object({
           amount: z.coerce.number(),
         }),
       }),
@@ -40,6 +40,11 @@ const schema = z.object({
                 })
                 .nullable(),
             }),
+            originalUnitPriceSet: z.object({
+              shopMoney: z.object({
+                amount: z.coerce.number(),
+              }),
+            }),
             discountedTotalSet: z.object({
               shopMoney: z.object({
                 amount: z.coerce.number(),
@@ -61,12 +66,12 @@ const query = `
         createdAt
         email
         totalPriceSet {
-          presentmentMoney {
+          shopMoney {
             amount
           }
         }
         totalShippingPriceSet {
-          presentmentMoney {
+          shopMoney {
             amount
           }
         }
@@ -86,6 +91,11 @@ const query = `
                     value
                   }
                 }
+              }
+            }
+            originalUnitPriceSet {
+              shopMoney {
+                amount
               }
             }
             discountedTotalSet {

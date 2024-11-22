@@ -117,7 +117,7 @@ export default async function ShopifyOrdersPage({ params }: { params: Promise<{ 
                     <td>
                       {order.purchasedItems.map((li) => (
                         <div key={li.line_item_id} style={{ borderBottom: '1px dashed #666' }}>
-                          {li.quantity} &times; {li.title}
+                          {li.quantity} &times; {li.title} ({li.discountedTotalSet.shopMoney.amount})
                         </div>
                       ))}
                       {order.upgradeItems.map((li) => (
@@ -127,7 +127,7 @@ export default async function ShopifyOrdersPage({ params }: { params: Promise<{ 
                       ))}
                     </td>
                     <td>
-                      <CurrencyDisplay value={order.totalShippingPriceSet.presentmentMoney.amount} digits={2} />
+                      <CurrencyDisplay value={order.totalShippingPriceSet.shopMoney.amount} digits={2} />
                     </td>
                     <td>{order.email}</td>
                     <td>
