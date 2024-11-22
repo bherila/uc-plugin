@@ -13,8 +13,15 @@ async function log(
 ) {
   const txt = typeof msg === 'string' ? msg : JSON.stringify(msg)
   await db.query(
-    'insert into v3_audit_log (event_ts, event_name, event_ext, offer_id, order_id) values (?, ?, ?, ?, ?)',
-    [new Date().toISOString(), 'shopifyProcessOrder', txt, offerId ?? null, orderIdNumeric?.toString() ?? null],
+    'insert into v3_audit_log (event_ts, event_name, event_ext, offer_id, order_id, time_taken_ms) values (?, ?, ?, ?, ?, ?)',
+    [
+      new Date().toISOString(),
+      'shopifyProcessOrder',
+      txt,
+      offerId ?? null,
+      orderIdNumeric?.toString() ?? null,
+      timeTakenMs?.toString() ?? null,
+    ],
   )
   console.info('[allocate] ' + txt)
 }
