@@ -21,9 +21,13 @@ const webhookSchema = z.object({
   admin_graphql_api_id: z.string(),
 })
 
-async function log(msg: any) {
+async function log(msg: any, order_id: bigint | null = null) {
   const txt = typeof msg === 'string' ? msg : JSON.stringify(msg)
-  await db.query('insert into v3_audit_log (event_name, event_ext) values (?, ?)', ['webhook', txt])
+  await db.query('insert into v3_audit_log (event_name, event_ext, order_id) values (?, ?, ?)', [
+    'webhook',
+    txt,
+    order_id?.toString(),
+  ])
 }
 
 export async function POST(req: NextRequest) {
@@ -34,12 +38,17 @@ export async function POST(req: NextRequest) {
 
   // https://shopify.dev/docs/api/webhooks?reference=toml#list-of-topics-orders/paid
   const webhookData = await req.json()
+  let parsedOrderIdBigint: bigint | null = null
   try {
-    await log(webhookData)
     const parsedOrder = webhookSchema.parse(webhookData)
+    parsedOrderIdBigint =
+      z.coerce.bigint().safeParse(parsedOrder.admin_graphql_api_id?.replace('gid://shopify/Order/', '')).data ??
+      null
+    await log('About to process webhook: ' + JSON.stringify(webhookData), parsedOrderIdBigint)
     await shopifyProcessOrder(parsedOrder.admin_graphql_api_id)
   } catch (error) {
-    await log((error instanceof Error ? error.message : error?.toString()) ?? 'null')
+    await log('Error parsing webhook data: ' + JSON.stringify(webhookData), parsedOrderIdBigint)
+    await log((error instanceof Error ? error.message : error?.toString()) ?? 'null', parsedOrderIdBigint)
     return NextResponse.json(null, { status: 400 })
   } finally {
     await db.end()
