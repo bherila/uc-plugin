@@ -1,5 +1,10 @@
 import React from 'react'
-import { Table, Container, Row, Col, Badge } from 'react-bootstrap'
+import Table from 'react-bootstrap/Table'
+import Container from 'react-bootstrap/Container'
+import Row from 'react-bootstrap/Row'
+import Col from 'react-bootstrap/Col'
+import Badge from 'react-bootstrap/Badge'
+import Button from 'react-bootstrap/Button'
 import db from '@/lib/db'
 import z from 'zod'
 import shopifyGetOrdersWithLineItems from '@/lib/shopifyGetOrdersWithLineItems'
@@ -26,7 +31,30 @@ export default async function ShopifyOrdersPage({ params }: { params: Promise<{ 
     variant_id,
   ])) as any[]
 
-  const ordersFromShopify = await shopifyGetOrdersWithLineItems(orders.map((o) => o.order_id))
+  const ordersFromShopify = (await shopifyGetOrdersWithLineItems(orders.map((o) => o.order_id))).map((order) => {
+    const purchasedItems = order.lineItems.nodes.filter((li) => li.discountedTotalSet.shopMoney.amount > 0)
+    const upgradeItems = order.lineItems.nodes.filter((li) => li.discountedTotalSet.shopMoney.amount <= 0)
+
+    // check if total qty of each purchasedItems equals total qty of upgradeItems
+    const totalPurchasedItemsQty = purchasedItems.reduce((total, li) => total + li.quantity, 0)
+    const totalUpgradeItemsQty = upgradeItems.reduce((total, li) => total + li.quantity, 0)
+    const isQtyEqual = totalPurchasedItemsQty === totalUpgradeItemsQty
+
+    return {
+      ...order,
+      purchasedItems,
+      upgradeItems,
+      isQtyEqual,
+    }
+  })
+
+  // sort ordersFromShopify so that isQtyEqual is false first
+  ordersFromShopify.sort((a, b) => {
+    if (a.isQtyEqual !== b.isQtyEqual) {
+      return a.isQtyEqual ? 1 : -1
+    }
+    return 0
+  })
 
   return (
     <Container>
@@ -55,13 +83,11 @@ export default async function ShopifyOrdersPage({ params }: { params: Promise<{ 
                 <th>Details</th>
                 <th>Shipping price</th>
                 <th>Email</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {ordersFromShopify.map((order) => {
-                const s1 = order.lineItems.nodes.filter((li) => li.discountedTotalSet.shopMoney.amount > 0)
-                const s2 = order.lineItems.nodes.filter((li) => li.discountedTotalSet.shopMoney.amount <= 0)
-
                 const isCancel = order.cancelledAt != null
 
                 return (
@@ -78,18 +104,23 @@ export default async function ShopifyOrdersPage({ params }: { params: Promise<{ 
                             Canceled
                           </Badge>
                         ) : null}
+                        {!order.isQtyEqual ? (
+                          <Badge style={{ marginLeft: '7px' }} bg="danger">
+                            Allocation error
+                          </Badge>
+                        ) : null}
                       </div>
                       <div>
                         <RenderUTCDate utcDate={order.createdAt} />
                       </div>
                     </td>
                     <td>
-                      {s1.map((li) => (
+                      {order.purchasedItems.map((li) => (
                         <div key={li.line_item_id} style={{ borderBottom: '1px dashed #666' }}>
                           {li.quantity} &times; {li.title}
                         </div>
                       ))}
-                      {s2.map((li) => (
+                      {order.upgradeItems.map((li) => (
                         <div key={li.line_item_id} style={{ fontSize: '8pt' }}>
                           {li.quantity} &times; {li.title}
                         </div>
@@ -99,6 +130,9 @@ export default async function ShopifyOrdersPage({ params }: { params: Promise<{ 
                       <CurrencyDisplay value={order.totalShippingPriceSet.presentmentMoney.amount} digits={2} />
                     </td>
                     <td>{order.email}</td>
+                    <td>
+                      <Button variant="outline-primary">View Log</Button>
+                    </td>
                   </tr>
                 )
               })}
