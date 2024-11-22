@@ -16,8 +16,9 @@ import { getSession } from '@/lib/session'
 import { revalidatePath } from 'next/cache'
 import AuthRoutes from '@/app/auth/AuthRoutes'
 import shopifyProcessOrder from '@/lib/shopifyProcessOrder'
-import { Form } from 'react-bootstrap'
 import FixButton from './FixButton'
+
+export const maxDuration = 60
 
 export default async function ShopifyOrdersPage({ params }: { params: Promise<{ offer_id: string }> }) {
   const session = await getSession()
@@ -26,6 +27,12 @@ export default async function ShopifyOrdersPage({ params }: { params: Promise<{ 
   }
 
   const offer_id = z.coerce.number().parse((await params).offer_id)
+
+  async function reProcessShopifyOrder(order_id: string) {
+    'use server'
+    await shopifyProcessOrder(order_id)
+    revalidatePath(`/offers/${offer_id}/shopify_manifests`)
+  }
 
   const variant_id = (
     (await db.query(`select offer_variant_id from v3_offer where offer_id = ?`, [offer_id])) as any[]
@@ -94,12 +101,6 @@ export default async function ShopifyOrdersPage({ params }: { params: Promise<{ 
               {ordersFromShopify.map((order) => {
                 const isCancel = order.cancelledAt != null
                 const orderIdNumeric = order.id.replace('gid://shopify/Order/', '')
-
-                async function reProcessShopifyOrder() {
-                  'use server'
-                  await shopifyProcessOrder(order.id)
-                  revalidatePath(`/offers/${offer_id}/shopify_manifests`)
-                }
 
                 return (
                   <tr key={order.id}>

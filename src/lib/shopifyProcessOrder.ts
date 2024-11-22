@@ -1,9 +1,12 @@
+import 'server-only'
 import z from 'zod'
 import db from '@/lib/db'
 import { V3Manifest } from '@/app/api/manifest/models'
 import groupBySku from '@/lib/groupBySku'
 import shopify from '@/lib/shopify'
 import shopifyGetOrdersWithLineItems from '@/lib/shopifyGetOrdersWithLineItems'
+
+export const maxDuration = 60
 
 async function log(
   msg: any,
