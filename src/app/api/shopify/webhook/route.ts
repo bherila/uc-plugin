@@ -1,9 +1,10 @@
-import shopify from '@/lib/shopify'
-import crypto from 'crypto'
+import 'server-only'
 import { NextRequest, NextResponse } from 'next/server'
 import z from 'zod'
 import db from '@/lib/db'
 import shopifyProcessOrder from '@/lib/shopifyProcessOrder'
+
+export const maxDuration = 60
 
 // const verifyHmac = (req: NextRequest, secret: string) => {
 //   const hmacHeader = req.headers.get('X-Shopify-Hmac-SHA256');
