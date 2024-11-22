@@ -7,15 +7,15 @@ import shopifyGetOrdersWithLineItems from '@/lib/shopifyGetOrdersWithLineItems'
 
 async function log(msg: any, offerId: number | null, orderIdNumeric: bigint | null) {
   const txt = typeof msg === 'string' ? msg : JSON.stringify(msg)
-  await db.query('insert into v3_audit_log (event_name, event_ext, offer_id) values (?, ?, ?)', [
-    'shopifyProcessOrder',
-    txt,
-    offerId ?? null,
-  ])
+  await db.query(
+    'insert into v3_audit_log (event_ts, event_name, event_ext, offer_id, order_id) values (?, ?, ?, ?, ?)',
+    [new Date().toISOString(), 'shopifyProcessOrder', txt, offerId ?? null, orderIdNumeric?.toString() ?? null],
+  )
   console.info('[allocate] ' + txt)
 }
 
 export default async function shopifyProcessOrder(orderIdX: string) {
+  const logPromises: Promise<void>[] = []
   try {
     const orderIdNumeric = z.coerce.bigint().safeParse(orderIdX.replace('gid://shopify/Order/', ''))?.data ?? null
     const orderIdUri = `gid://shopify/Order/${orderIdNumeric}`
@@ -88,12 +88,13 @@ export default async function shopifyProcessOrder(orderIdX: string) {
         shopifyOrder.cancelledAt == null
           ? orderLineItem.quantity - alreadyHaveQty // ALLOCATE if not canceled
           : -alreadyHaveQty // RELEASE if canceled
-      await log(
-        `${alreadyHaveQty} already allocated to ${assigneeId}, need ${needQty} more`,
-        offerId,
-        orderIdNumeric,
+      logPromises.push(
+        log(
+          `${alreadyHaveQty} already allocated to ${assigneeId}, need ${needQty} more`,
+          offerId,
+          orderIdNumeric,
+        ),
       )
-
       if (needQty > 0) {
         // ALLOCATE bottles.
         const updateResult = await db.query(
@@ -107,7 +108,7 @@ export default async function shopifyProcessOrder(orderIdX: string) {
           `,
           [assigneeId, offerId, needQty],
         )
-        await log(updateResult, offerId, orderIdNumeric)
+        logPromises.push(log(updateResult, offerId, orderIdNumeric))
       } else if (needQty < 0) {
         // RELEASE (unallocate) bottles
         const updateResult = await db.query(
@@ -121,7 +122,7 @@ export default async function shopifyProcessOrder(orderIdX: string) {
           `,
           [assigneeId, offerId, -needQty],
         )
-        await log(updateResult, offerId, orderIdNumeric)
+        logPromises.push(log(updateResult, offerId, orderIdNumeric))
       }
 
       const offerManifests: V3Manifest[] = await db.query(
@@ -138,10 +139,12 @@ export default async function shopifyProcessOrder(orderIdX: string) {
 
       // remove pre-existing manifests from shopify order
       if (preExistingShopifyManifests.length > 0) {
-        await log(
-          `Cannot proceed until all ${preExistingShopifyManifests.length} pre-existing manifests are deleted from Shopify order`,
-          offerId,
-          orderIdNumeric,
+        logPromises.push(
+          log(
+            `Cannot proceed until all ${preExistingShopifyManifests.length} pre-existing manifests are deleted from Shopify order`,
+            offerId,
+            orderIdNumeric,
+          ),
         )
         return
         // const beginEditResult = await beginEdit({ orderId: orderIdUri })
@@ -167,10 +170,10 @@ export default async function shopifyProcessOrder(orderIdX: string) {
           const beginEditResult = await beginEdit({ orderId: orderIdUri })
           calculatedOrderId = beginEditResult.orderEditBegin?.calculatedOrder?.id ?? null
           if (!calculatedOrderId) {
-            await log('CalculatedOrder.id was null, aborting', offerId, orderIdNumeric)
+            logPromises.push(log('CalculatedOrder.id was null, aborting', offerId, orderIdNumeric))
             return
           }
-          await log(`Opened CalculatedOrder ${calculatedOrderId}`, offerId, orderIdNumeric)
+          logPromises.push(log(`Opened CalculatedOrder ${calculatedOrderId}`, offerId, orderIdNumeric))
         }
 
         const groups = groupBySku(offerManifests)
@@ -182,14 +185,16 @@ export default async function shopifyProcessOrder(orderIdX: string) {
           }
 
           // add the item to the order
-          await log(
-            `Adding ${variantId} x ${groups[variantId].length}, ${JSON.stringify(x)}`,
-            offerId,
-            orderIdNumeric,
+          logPromises.push(
+            log(
+              `Adding ${variantId} x ${groups[variantId].length}, ${JSON.stringify(x)}`,
+              offerId,
+              orderIdNumeric,
+            ),
           )
           const addResult = await addVariant(x)
           const allocationLineItem = addResult.orderEditAddVariant
-          await log('addVariant: ' + JSON.stringify(addResult), offerId, orderIdNumeric)
+          logPromises.push(log('addVariant: ' + JSON.stringify(addResult), offerId, orderIdNumeric))
 
           // with a zero cost i.e. 100% discount
           const discount = await addDiscount({
@@ -201,18 +206,20 @@ export default async function shopifyProcessOrder(orderIdX: string) {
             lineItemId: allocationLineItem.calculatedLineItem.id,
           })
 
-          await log('addDiscount: ' + JSON.stringify(discount), offerId, orderIdNumeric)
+          logPromises.push(log('addDiscount: ' + JSON.stringify(discount), offerId, orderIdNumeric))
         }
       }
     }
 
     if (calculatedOrderId != null) {
       const commitResult = await orderEditCommit({ calculatedOrderId })
-      await log('orderEditCommit: ' + JSON.stringify(commitResult), offerId, orderIdNumeric)
+      logPromises.push(log('orderEditCommit: ' + JSON.stringify(commitResult), offerId, orderIdNumeric))
     }
 
-    await log('done!', offerId, orderIdNumeric)
+    await Promise.allSettled(logPromises)
+    logPromises.push(log('done!', offerId, orderIdNumeric))
   } finally {
+    await Promise.allSettled(logPromises)
     await db.end()
   }
 }
