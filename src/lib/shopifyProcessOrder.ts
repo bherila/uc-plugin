@@ -5,7 +5,7 @@ import groupBySku from '@/lib/groupBySku'
 import shopify from '@/lib/shopify'
 import shopifyGetOrdersWithLineItems from '@/lib/shopifyGetOrdersWithLineItems'
 
-async function log(msg: any, offerId: number | null) {
+async function log(msg: any, offerId: number | null, orderIdNumeric: bigint | null) {
   const txt = typeof msg === 'string' ? msg : JSON.stringify(msg)
   await db.query('insert into v3_audit_log (event_name, event_ext, offer_id) values (?, ?, ?)', [
     'shopifyProcessOrder',
@@ -15,10 +15,11 @@ async function log(msg: any, offerId: number | null) {
   console.info('[allocate] ' + txt)
 }
 
-export default async function shopifyProcessOrder(orderId: string) {
+export default async function shopifyProcessOrder(orderIdX: string) {
   try {
-    const shopifyOrder = (await shopifyGetOrdersWithLineItems([orderId]))[0]
-
+    const orderIdNumeric = z.bigint().safeParse(orderIdX.replace('gid://shopify/Order/', ''))?.data ?? null
+    const orderIdUri = `gid://shopify/Order/${orderIdNumeric}`
+    const shopifyOrder = (await shopifyGetOrdersWithLineItems([orderIdUri]))[0]
     const dealSchema = z.object({
       offer_id: z.number(),
       offer_variant_id: z.string(),
@@ -36,7 +37,7 @@ export default async function shopifyProcessOrder(orderId: string) {
     // map the variant to the order and stash this so we can query for the order later
     await db.query(`replace into v3_order_to_variant (order_id, variant_id, offer_id) values ?`, [
       shopifyOrder.lineItems.nodes.map((node) => [
-        orderId,
+        orderIdUri,
         node.variant.variant_graphql_id,
         offerIdFromVariantId.get(node.variant.variant_graphql_id),
       ]),
@@ -53,16 +54,18 @@ export default async function shopifyProcessOrder(orderId: string) {
         await log(
           `LineItem: ${orderLineItem.line_item_id} => No match to offer for variant ${lineItemVariantId}`,
           null,
+          orderIdNumeric,
         )
         continue
       } else {
         await log(
           `LineItem: ${orderLineItem.line_item_id} => Match offer_id: ${offerId} for variant ${lineItemVariantId}`,
           offerId,
+          orderIdNumeric,
         )
       }
 
-      const assigneeId = orderId
+      const assigneeId = orderIdUri
       const existingManifests: { c: number }[] = await db.query(
         'select count(*) as c from v3_offer_manifest where assignee_id = ? and offer_id = ?',
         [assigneeId, offerId],
@@ -72,7 +75,11 @@ export default async function shopifyProcessOrder(orderId: string) {
         shopifyOrder.cancelledAt == null
           ? orderLineItem.quantity - alreadyHaveQty // ALLOCATE if not canceled
           : -alreadyHaveQty // RELEASE if canceled
-      await log(`${alreadyHaveQty} already allocated to ${assigneeId}, need ${needQty} more`, offerId)
+      await log(
+        `${alreadyHaveQty} already allocated to ${assigneeId}, need ${needQty} more`,
+        offerId,
+        orderIdNumeric,
+      )
 
       if (needQty > 0) {
         // ALLOCATE bottles.
@@ -87,7 +94,7 @@ export default async function shopifyProcessOrder(orderId: string) {
           `,
           [assigneeId, offerId, needQty],
         )
-        await log(updateResult, offerId)
+        await log(updateResult, offerId, orderIdNumeric)
       } else if (needQty < 0) {
         // RELEASE (unallocate) bottles
         const updateResult = await db.query(
@@ -101,7 +108,7 @@ export default async function shopifyProcessOrder(orderId: string) {
           `,
           [assigneeId, offerId, -needQty],
         )
-        await log(updateResult, offerId)
+        await log(updateResult, offerId, orderIdNumeric)
       }
 
       const offerManifests: V3Manifest[] = await db.query(
@@ -114,13 +121,13 @@ export default async function shopifyProcessOrder(orderId: string) {
 
       if (needQty !== 0) {
         if (calculatedOrderId == null) {
-          const beginEditResult = await beginEdit({ orderId })
+          const beginEditResult = await beginEdit({ orderId: orderIdUri })
           calculatedOrderId = beginEditResult.orderEditBegin?.calculatedOrder?.id ?? null
           if (!calculatedOrderId) {
-            await log('CalculatedOrder.id was null, aborting', offerId)
+            await log('CalculatedOrder.id was null, aborting', offerId, orderIdNumeric)
             return
           }
-          await log(`Opened CalculatedOrder ${calculatedOrderId}`, offerId)
+          await log(`Opened CalculatedOrder ${calculatedOrderId}`, offerId, orderIdNumeric)
         }
 
         if (needQty > 0) {
@@ -133,7 +140,11 @@ export default async function shopifyProcessOrder(orderId: string) {
             }
 
             // add the item to the order
-            await log(`Adding ${variantId} x ${groups[variantId].length}, ${JSON.stringify(x)}`, offerId)
+            await log(
+              `Adding ${variantId} x ${groups[variantId].length}, ${JSON.stringify(x)}`,
+              offerId,
+              orderIdNumeric,
+            )
             const allocationLineItem = (await addVariant(x)).orderEditAddVariant
 
             // with a zero cost i.e. 100% discount
@@ -146,7 +157,7 @@ export default async function shopifyProcessOrder(orderId: string) {
               lineItemId: allocationLineItem.calculatedLineItem.id,
             })
 
-            await log(discount, offerId)
+            await log(discount, offerId, orderIdNumeric)
           }
         }
       }
@@ -154,10 +165,10 @@ export default async function shopifyProcessOrder(orderId: string) {
 
     if (calculatedOrderId != null) {
       const commitResult = await orderEditCommit({ calculatedOrderId })
-      await log(commitResult, offerId)
+      await log(commitResult, offerId, orderIdNumeric)
     }
 
-    await log('done!', offerId)
+    await log('done!', offerId, orderIdNumeric)
   } finally {
     await db.end()
   }
@@ -338,7 +349,14 @@ const addDiscountSchema = z.object({
         id: z.string(),
       }),
     }),
-    userErrors: z.any().nullable(),
+    userErrors: z
+      .array(
+        z.object({
+          field: z.array(z.string()),
+          message: z.string(),
+        }),
+      )
+      .nullable(),
   }),
 })
 
