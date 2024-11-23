@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react'
-import { Button } from 'react-bootstrap'
+import Button from 'react-bootstrap/Button'
 import FontAwesomeIcon from '@/lib/FontAwesomeIcon'
 import { faTrash } from '@fortawesome/free-solid-svg-icons/faTrash'
 

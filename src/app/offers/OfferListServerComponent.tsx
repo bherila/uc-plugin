@@ -14,10 +14,8 @@ import svrLoadShopifyProducts from '@/server_lib/svrLoadShopifyProducts'
 import svrDeleteOffer from '@/server_lib/svrDeleteOffer'
 import { z } from 'zod'
 import svrCreateOffer from '@/server_lib/svrCreateOffer'
-import RenderUTCDate from '@/components/RenderUTCDate'
-import Countdown from '@/components/Countdown'
 import RenderRelativeTimeInterval from '@/components/RenderRelativeTimeInterval'
-import { Stack } from 'react-bootstrap'
+import Stack from 'react-bootstrap/Stack'
 import Badge from 'react-bootstrap/Badge'
 
 export default async function OfferListServerComponent() {

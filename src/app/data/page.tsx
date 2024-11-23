@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Container } from 'react-bootstrap'
+import Container from 'react-bootstrap/Container'
 
 const HomePage = () => {
   return (

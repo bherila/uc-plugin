@@ -1,5 +1,5 @@
 import React from 'react'
-import { Badge } from 'react-bootstrap'
+import Badge from 'react-bootstrap/Badge'
 
 function RequiredBadge() {
   return <Badge bg="danger">Required</Badge>

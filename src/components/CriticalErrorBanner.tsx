@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Alert } from 'react-bootstrap'
+import Alert from 'react-bootstrap/Alert'
 
 interface CriticalErrorBannerProps {
   message: string
