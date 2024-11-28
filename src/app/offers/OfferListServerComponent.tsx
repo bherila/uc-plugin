@@ -67,7 +67,7 @@ export default async function OfferListServerComponent() {
               <tr>
                 <th style={{ width: '40px' }}>Offer ID</th>
                 <th>Offer Name</th>
-                <th>Product ID</th>
+                <th>Deal SKU</th>
                 <th>Date from Shopify Metafield</th>
                 <th>Shopify Status</th>
                 <th style={{ textAlign: 'right', width: '130px' }}>&nbsp;</th>
@@ -80,15 +80,16 @@ export default async function OfferListServerComponent() {
                   <td>
                     <Link href={`/offers/${offer.offer_id}/`}>{offer.offer_name}</Link>
                   </td>
-                  <td style={{ whiteSpace: 'pre' }}>
+                  <td>
+                    {shopifyData.find((d) => d.variantId === offer.offerProductData?.variantId)?.productName}{' '}
                     {offer.offerProductData && (
                       <VariantLink type="deal" variantURI={offer.offerProductData.variantId} />
-                    )}
-                    <Stack direction="horizontal" gap={1}>
-                      {offer.offerProductData.tags.map((tag) => (
-                        <Badge key={tag}>{tag}</Badge>
-                      ))}
-                    </Stack>
+                    )}{' '}
+                    {offer.offerProductData.tags.map((tag) => (
+                      <>
+                        <Badge key={tag}>{tag}</Badge>{' '}
+                      </>
+                    ))}
                   </td>
                   <td style={{ whiteSpace: 'pre' }}>
                     <RenderRelativeTimeInterval

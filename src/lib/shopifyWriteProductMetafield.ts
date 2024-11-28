@@ -5,7 +5,6 @@ import z from 'zod'
 async function log(msg: any) {
   const txt = typeof msg === 'string' ? msg : JSON.stringify(msg)
   await db.query('insert into v3_audit_log (event_name, event_ext) values (?, ?)', ['metaField', txt])
-  console.info('[metaField] ' + txt)
 }
 
 // Define the GraphQL mutation to update the metafield

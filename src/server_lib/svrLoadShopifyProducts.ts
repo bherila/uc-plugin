@@ -115,6 +115,7 @@ const svrLoadShopifyProducts = async (type: MID) => {
         result.push({
           productId: product.id,
           productName: product.title,
+          variantSku: variant.sku,
           variantId: variant.id,
           variantName: variant.name,
           variantPrice: variant.price?.toString(),
