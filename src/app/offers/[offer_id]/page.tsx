@@ -1,7 +1,7 @@
 import React from 'react'
 import OfferDetailsServerComponent from '@/app/offers/[offer_id]/OfferDetailsServerComponent'
 import z from 'zod'
-import { getSession } from '@/lib/session'
+import { getSession } from '@/server_lib/session'
 import { redirect } from 'next/navigation'
 import AuthRoutes from '@/app/auth/AuthRoutes'
 import { RedirectType } from 'next/dist/client/components/redirect'

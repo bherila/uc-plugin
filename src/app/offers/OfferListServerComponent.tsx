@@ -15,7 +15,6 @@ import svrDeleteOffer from '@/server_lib/svrDeleteOffer'
 import { z } from 'zod'
 import svrCreateOffer from '@/server_lib/svrCreateOffer'
 import RenderRelativeTimeInterval from '@/components/RenderRelativeTimeInterval'
-import Stack from 'react-bootstrap/Stack'
 import Badge from 'react-bootstrap/Badge'
 
 export default async function OfferListServerComponent() {

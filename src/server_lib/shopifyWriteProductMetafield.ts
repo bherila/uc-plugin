@@ -1,5 +1,6 @@
-import db from '@/lib/db'
-import shopify from '@/lib/shopify'
+import 'server-only'
+import db from '@/server_lib/db'
+import shopify from '@/server_lib/shopify'
 import z from 'zod'
 
 async function log(msg: any) {
@@ -9,18 +10,19 @@ async function log(msg: any) {
 
 // Define the GraphQL mutation to update the metafield
 const UPDATE_METAFIELD_MUTATION = `
-  mutation UpdateMetafield($variantId: ID!, $key: String!, $value: String!) {
-    productVariantUpdate(input: {
-      id: $variantId,
+  mutation UpdateProductMetafield($productId: ID!, $key: String!, $value: String!) {
+    productUpdate(input: {
+      id: $productId,
       metafields: [
         {
+          namespace: "custom",
           key: $key,
           value: $value,
           type: "json",
         },
       ],
     }) {
-      productVariant {
+      product {
         id
         metafields(first: 10) {
           edges {
@@ -36,17 +38,16 @@ const UPDATE_METAFIELD_MUTATION = `
 `
 
 // Function to update the metafield
-async function shopifyWriteVariantMetafield(variantId: string, key: string, value: string) {
+async function shopifyWriteProductMetafield(productId: string, key: string, value: string) {
+  let result: { [key: string]: any } = {}
   try {
-    const vars = {
-      variantId,
+    result.vars = {
+      productId,
       key,
       value,
     }
-    await log(vars)
-    const response = await shopify.graphql(UPDATE_METAFIELD_MUTATION, vars)
-    const edges = response.data.productVariantUpdate.productVariant.metafields.edges
-    await log(edges)
+    const response = await shopify.graphql(UPDATE_METAFIELD_MUTATION, result.vars)
+    result.edges = response.productUpdate.product.metafields.edges
     return z
       .array(
         z.object({
@@ -56,10 +57,12 @@ async function shopifyWriteVariantMetafield(variantId: string, key: string, valu
           }),
         }),
       )
-      .parse(edges)
-  } catch (error) {
-    await log(error)
+      .parse(result.edges)
+  } catch (error: any) {
+    result['error'] = error?.toString()
+  } finally {
+    await log(result)
   }
 }
 
-export default shopifyWriteVariantMetafield
+export default shopifyWriteProductMetafield

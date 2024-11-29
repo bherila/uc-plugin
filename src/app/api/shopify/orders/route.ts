@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import z from 'zod'
-import shopifyGetOrdersWithLineItems from '@/lib/shopifyGetOrdersWithLineItems'
-import { getSession } from '@/lib/session'
+import shopifyGetOrdersWithLineItems from '@/server_lib/shopifyGetOrdersWithLineItems'
+import { getSession } from '@/server_lib/session'
 
 export interface OrderSummary {
   id: string

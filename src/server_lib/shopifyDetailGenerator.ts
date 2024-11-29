@@ -1,6 +1,7 @@
+import 'server-only'
 import z from 'zod'
-import db from '@/lib/db'
-import shopify from '@/lib/shopify'
+import db from '@/server_lib/db'
+import shopify from '@/server_lib/shopify'
 
 const QUERY = `query ($id: ID!) {
   node(id: $id) {

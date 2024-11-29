@@ -1,6 +1,7 @@
 import 'server-only'
+
 import { ShopifyProductVariant } from '@/app/api/shopify/models'
-import shopify from '@/lib/shopify'
+import shopify from '@/server_lib/shopify'
 import { unstable_cache } from 'next/cache'
 
 // <generated>

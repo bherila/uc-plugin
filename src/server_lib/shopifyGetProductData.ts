@@ -1,4 +1,5 @@
-import shopify from '@/lib/shopify'
+import 'server-only'
+import shopify from '@/server_lib/shopify'
 import { ProductData, ProductDataGrouping, V3Manifest } from '@/app/api/manifest/models'
 import groupBySku from '@/lib/groupBySku'
 

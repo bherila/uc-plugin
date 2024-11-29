@@ -1,5 +1,5 @@
 import { SkuQty, V3Manifest, V3ManifestForInsert, V3Offer } from '@/app/api/manifest/models'
-import db from '@/lib/db'
+import db from '@/server_lib/db'
 import queryOffer from '@/app/api/manifest/queryOffer'
 import groupBySku from '@/lib/groupBySku'
 

@@ -1,7 +1,7 @@
 import 'server-only'
 import { V3OfferListItem } from '@/app/api/manifest/models'
-import db from '@/lib/db'
-import { shopifyGetProductDataByVariantIds } from '@/lib/shopifyGetProductData'
+import db from '@/server_lib/db'
+import { shopifyGetProductDataByVariantIds } from '@/server_lib/shopifyGetProductData'
 import { cache } from 'react'
 
 const svrLoadOfferList = cache(async () => {

@@ -1,6 +1,6 @@
+import 'server-only'
 import { z } from 'zod'
-import shopify from '@/lib/shopify'
-import { create } from 'lodash'
+import shopify from '@/server_lib/shopify'
 
 const schema = z.object({
   nodes: z.array(

@@ -1,6 +1,6 @@
 import 'server-only'
 import { NextRequest, NextResponse } from 'next/server'
-import { getSession } from '@/lib/session'
+import { getSession } from '@/server_lib/session'
 import svrLoadShopifyProducts, { MID } from '@/server_lib/svrLoadShopifyProducts'
 import z from 'zod'
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import z from 'zod'
-import shopifyProcessOrder from '@/lib/shopifyProcessOrder'
+import shopifyProcessOrder from '@/server_lib/shopifyProcessOrder'
 
 export async function POST(req: NextRequest) {
   // https://shopify.dev/docs/api/webhooks?reference=toml#list-of-topics-orders/paid

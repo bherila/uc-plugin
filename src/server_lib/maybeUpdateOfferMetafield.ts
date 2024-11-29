@@ -1,6 +1,6 @@
 import 'server-only'
 import { V3Offer } from '@/app/api/manifest/models'
-import shopifyWriteProductMetafield from '@/lib/shopifyWriteProductMetafield'
+import shopifyWriteProductMetafield from '@/server_lib/shopifyWriteProductMetafield'
 import currency from 'currency.js'
 import { ShopifyOfferMetafields } from '@/lib/ShopifyOfferMetafields'
 

@@ -16,7 +16,7 @@ import { addManifestAction } from '@/app/offers/[offer_id]/_addManifestServerAct
 import DeleteButton from '@/components/DeleteButton'
 import MetafieldServerComponent from './MetafieldServerComponent'
 import Link from 'next/link'
-import genShopifyDetail from './shopifyDetailGenerator'
+import genShopifyDetail from '@/server_lib/shopifyDetailGenerator'
 
 async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   const promises = {

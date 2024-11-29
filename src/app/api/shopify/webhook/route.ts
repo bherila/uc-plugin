@@ -1,8 +1,8 @@
 import 'server-only'
 import { NextRequest, NextResponse } from 'next/server'
 import z from 'zod'
-import db from '@/lib/db'
-import shopifyProcessOrder from '@/lib/shopifyProcessOrder'
+import db from '@/server_lib/db'
+import shopifyProcessOrder from '@/server_lib/shopifyProcessOrder'
 
 export const maxDuration = 60
 
