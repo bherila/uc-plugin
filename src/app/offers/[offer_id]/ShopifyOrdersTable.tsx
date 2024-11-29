@@ -1,7 +1,6 @@
-import Button from 'react-bootstrap/Button'
 import Table from 'react-bootstrap/Table'
-import React, { useCallback, useState } from 'react'
-import { post } from '@/lib/fetchWrapper'
+import React from 'react'
+import ShopifyOrdersTableRow from './ShopifyOrdersTableRow'
 
 export function ShopifyOrdersTable({ shopifyOrderIds }: { shopifyOrderIds: (string | null)[] }) {
   return (
@@ -14,30 +13,10 @@ export function ShopifyOrdersTable({ shopifyOrderIds }: { shopifyOrderIds: (stri
       </thead>
       <tbody>
         {shopifyOrderIds.map(
-          (shopifyOrderId) => shopifyOrderId && <Row key={shopifyOrderId} shopifyOrderId={shopifyOrderId} />,
+          (shopifyOrderId) =>
+            shopifyOrderId && <ShopifyOrdersTableRow key={shopifyOrderId} shopifyOrderId={shopifyOrderId} />,
         )}
       </tbody>
     </Table>
-  )
-}
-function Row({ shopifyOrderId }: { shopifyOrderId: string }) {
-  const [loading, setLoading] = useState(false)
-  const reprocess = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault()
-      setLoading(true)
-      post('/api/shopify/reprocessOrder/', { shopifyOrderId }).then(() => setLoading(false))
-    },
-    [setLoading],
-  )
-  return (
-    <tr>
-      <td>{shopifyOrderId}</td>
-      <td>
-        <Button size="sm" variant="outline-warning" onClick={reprocess}>
-          Reprocess
-        </Button>
-      </td>
-    </tr>
   )
 }
