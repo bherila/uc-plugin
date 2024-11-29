@@ -7,7 +7,7 @@ import React from 'react'
 import maybeUpdateOfferMetafield from '@/server_lib/maybeUpdateOfferMetafield'
 
 export default async function MetafieldServerComponent({ offer }: { offer: any }) {
-  const metafields = await maybeUpdateOfferMetafield(offer);
+  const metafields = await maybeUpdateOfferMetafield(offer)
   return (
     metafields && (
       <Accordion defaultActiveKey="-1" className="mb-3">

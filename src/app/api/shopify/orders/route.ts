@@ -16,17 +16,24 @@ export async function POST(req: NextRequest) {
   }
 
   const webhookData = await req.json()
-  const input = z.object({ orderGraphqlIDs: z.array(z.string()) }).parse(webhookData)
+  try {
+    const input = z.object({ orderGraphqlIDs: z.array(z.string()) }).parse(webhookData)
 
-  const result: OrderSummary[] = []
-  const orders = await shopifyGetOrdersWithLineItems(input.orderGraphqlIDs)
-  for (const order of orders) {
-    result.push({
-      id: order.id,
-      canceledAt: order.cancelledAt,
-      lineItemCount: order.lineItems.nodes.length,
-    })
+    const result: OrderSummary[] = []
+    const orders = await shopifyGetOrdersWithLineItems(input.orderGraphqlIDs)
+    for (const order of orders) {
+      result.push({
+        id: order.id,
+        canceledAt: order.cancelledAt,
+        lineItemCount: order.lineItems.nodes.length,
+      })
+    }
+
+    return NextResponse.json(result, { status: 200 })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    }
+    throw error
   }
-
-  return NextResponse.json(result, { status: 200 })
 }

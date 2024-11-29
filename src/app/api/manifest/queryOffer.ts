@@ -1,7 +1,10 @@
 import { V3Manifest, V3Offer } from '@/app/api/manifest/models'
 import db from '@/server_lib/db'
 import z from 'zod'
-import { shopifyGetProductDataByVariantId, shopifyGetProductDataFromManifests } from '@/server_lib/shopifyGetProductData'
+import {
+  shopifyGetProductDataByVariantId,
+  shopifyGetProductDataFromManifests,
+} from '@/server_lib/shopifyGetProductData'
 
 interface OfferDbSchemaRow {
   offer_id: number
