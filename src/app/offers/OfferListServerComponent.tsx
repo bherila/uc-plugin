@@ -86,9 +86,9 @@ export default async function OfferListServerComponent() {
                       <VariantLink type="deal" variantURI={offer.offerProductData.variantId} />
                     )}{' '}
                     {offer.offerProductData.tags.map((tag) => (
-                      <>
-                        <Badge key={tag}>{tag}</Badge>{' '}
-                      </>
+                      <span key={tag} className="px-1">
+                        <Badge>{tag}</Badge>{' '}
+                      </span>
                     ))}
                   </td>
                   <td style={{ whiteSpace: 'pre' }}>

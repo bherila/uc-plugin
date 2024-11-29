@@ -7,19 +7,16 @@ import Table from 'react-bootstrap/Table'
 import groupBySku from '@/lib/groupBySku'
 import Alert from 'react-bootstrap/Alert'
 import Badge from 'react-bootstrap/Badge'
-import z from 'zod'
 import queryOffer from '@/app/api/manifest/queryOffer'
-import maybeUpdateOfferMetafield from '@/server_lib/maybeUpdateOfferMetafield'
-import db from '@/lib/db'
-import shopify from '@/lib/shopify'
 import svrLoadShopifyProducts from '@/server_lib/svrLoadShopifyProducts'
 import AddManifestForm from '@/app/offers/[offer_id]/AddManifestForm'
 import { revalidatePath } from 'next/cache'
 import svrPutSkuQty from '@/server_lib/svrPutSkuQty'
 import { addManifestAction } from '@/app/offers/[offer_id]/_addManifestServerAction'
 import DeleteButton from '@/components/DeleteButton'
-import MetafieldsClient from '@/app/offers/[offer_id]/MetafieldClient'
+import MetafieldClient from '@/app/offers/[offer_id]/MetafieldClient'
 import Link from 'next/link'
+import genShopifyDetail from './shopifyDetailGenerator'
 
 async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   const promises = {
@@ -32,7 +29,6 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   const offer = await promises.offer
   const manifestGroups = groupBySku(offer?.mf ?? [])
 
-  const offerMetafieldData = await maybeUpdateOfferMetafield(offer)
   const { inventoryQuantity, product } = await promises.shopifyOfferDetail
 
   const numManifestsNotAssigned = offer?.mf?.filter((r) => r.assignee_id == null).length ?? 0
@@ -140,7 +136,7 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
               })}
             </tbody>
           </Table>
-          <MetafieldsClient metafields={offerMetafieldData} />
+          <MetafieldClient offer={offer} />
         </Col>
         <Col xs={4}>
           <h2>Add bottles to Offer</h2>
@@ -157,68 +153,6 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
       </Row>
     </Container>
   )
-}
-
-const QUERY = `query ($id: ID!) {
-  node(id: $id) {
-    ... on ProductVariant {
-      availableForSale
-      inventoryQuantity
-      product {
-        title
-      }
-      inventoryItem {
-        id
-        measurement {
-          id
-          weight {
-            unit
-            value
-          }
-        }
-      }
-    }
-  }
-}`
-
-const schema = z.object({
-  availableForSale: z.coerce.number().int(),
-  inventoryQuantity: z.coerce.number().int(),
-  product: z
-    .object({
-      title: z.string().nullable(),
-    })
-    .nullable(),
-  inventoryItem: z
-    .object({
-      id: z.string().nullable(),
-      measurement: z
-        .object({
-          id: z.string().nullable(),
-          weight: z
-            .object({
-              unit: z.string().nullable(),
-              value: z.coerce.number().nullable(),
-            })
-            .nullable(),
-        })
-        .nullable(),
-    })
-    .nullable(),
-})
-
-async function genShopifyDetail(offerId: number): Promise<z.infer<typeof schema>> {
-  try {
-    // get the offer variant name
-    const rows: any = await db.query(`select offer_variant_id from v3_offer where offer_id = ?`, [offerId])
-    const offerVariant = z.string().parse(rows[0].offer_variant_id)
-
-    // get the product quantity
-    const gqlRoot: any = await shopify.graphql(QUERY, { id: offerVariant })
-    return schema.parse(gqlRoot?.node)
-  } finally {
-    await db.end()
-  }
 }
 
 export default OfferDetailsServerComponent

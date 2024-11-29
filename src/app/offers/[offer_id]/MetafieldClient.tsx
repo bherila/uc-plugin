@@ -1,13 +1,13 @@
-'use client'
+import 'server-only'
 import Accordion from 'react-bootstrap/Accordion'
 import AccordionButton from 'react-bootstrap/esm/AccordionButton'
 import AccordionItem from 'react-bootstrap/esm/AccordionItem'
 import AccordionCollapse from 'react-bootstrap/AccordionCollapse'
-import { ShopifyOfferMetafields } from '@/lib/ShopifyOfferMetafields'
 import React from 'react'
+import maybeUpdateOfferMetafield from '@/server_lib/maybeUpdateOfferMetafield'
 
-export default function MetafieldsClient(props: { metafields: ShopifyOfferMetafields | null }) {
-  const { metafields } = props
+export default async function MetafieldClient({ offer }: { offer: any }) {
+  const metafields = await maybeUpdateOfferMetafield(offer);
   return (
     metafields && (
       <Accordion defaultActiveKey="-1" className="mb-3">
