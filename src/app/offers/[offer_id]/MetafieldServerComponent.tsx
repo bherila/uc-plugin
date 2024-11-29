@@ -6,7 +6,7 @@ import AccordionCollapse from 'react-bootstrap/AccordionCollapse'
 import React from 'react'
 import maybeUpdateOfferMetafield from '@/server_lib/maybeUpdateOfferMetafield'
 
-export default async function MetafieldClient({ offer }: { offer: any }) {
+export default async function MetafieldServerComponent({ offer }: { offer: any }) {
   const metafields = await maybeUpdateOfferMetafield(offer);
   return (
     metafields && (

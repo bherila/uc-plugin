@@ -14,7 +14,7 @@ import { revalidatePath } from 'next/cache'
 import svrPutSkuQty from '@/server_lib/svrPutSkuQty'
 import { addManifestAction } from '@/app/offers/[offer_id]/_addManifestServerAction'
 import DeleteButton from '@/components/DeleteButton'
-import MetafieldClient from '@/app/offers/[offer_id]/MetafieldClient'
+import MetafieldServerComponent from './MetafieldServerComponent'
 import Link from 'next/link'
 import genShopifyDetail from './shopifyDetailGenerator'
 
@@ -136,7 +136,7 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
               })}
             </tbody>
           </Table>
-          <MetafieldClient offer={offer} />
+          <MetafieldServerComponent offer={offer} />
         </Col>
         <Col xs={4}>
           <h2>Add bottles to Offer</h2>
