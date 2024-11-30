@@ -96,30 +96,30 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
               </tr>
             </thead>
             <tbody>
-              {Object.keys(manifestGroups).map((manifest) => {
-                const totalQuantity = manifestGroups[manifest].length
+              {Object.keys(manifestGroups).map((shopifyPVURI) => {
+                const totalQuantity = manifestGroups[shopifyPVURI].length
                 const numAllocated =
-                  offer?.mf?.filter((m) => m && m.variant_id == manifest && m.assignee_id).length ?? 0
+                  offer?.mf?.filter((m) => m && m.variant_id == shopifyPVURI && m.assignee_id).length ?? 0
 
                 const deleteManifestAction = async () => {
                   'use server'
                   await svrPutSkuQty(offer_id, [
                     {
-                      variant_id: manifest,
+                      variant_id: shopifyPVURI,
                       qty: 0,
                     },
                   ])
                   revalidatePath('/offers/' + offer_id)
                 }
 
-                const product = offer?.manifestProductData[manifest]
+                const product = offer?.manifestProductData[shopifyPVURI]
 
                 return (
-                  <tr key={manifest}>
+                  <tr key={shopifyPVURI}>
                     <td>
                       {product?.title ?? '??'}
                       <br />
-                      <small>{manifest}</small>
+                      <small>{shopifyPVURI}</small>
                       {(product?.weight ?? 0) > 1 ? <Badge bg="danger">Weight should be zero</Badge> : ''}
                     </td>
                     <td>{totalQuantity}</td>
