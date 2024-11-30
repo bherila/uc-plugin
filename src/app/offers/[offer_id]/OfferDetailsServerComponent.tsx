@@ -17,6 +17,7 @@ import DeleteButton from '@/components/DeleteButton'
 import MetafieldServerComponent from './MetafieldServerComponent'
 import Link from 'next/link'
 import genShopifyDetail from '@/server_lib/shopifyDetailGenerator'
+import VariantLink from '../VariantLink'
 
 async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   const promises = {
@@ -100,6 +101,7 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
                 const totalQuantity = manifestGroups[shopifyPVURI].length
                 const numAllocated =
                   offer?.mf?.filter((m) => m && m.variant_id == shopifyPVURI && m.assignee_id).length ?? 0
+                const product = offer?.manifestProductData[shopifyPVURI]
 
                 const deleteManifestAction = async () => {
                   'use server'
@@ -112,14 +114,12 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
                   revalidatePath('/offers/' + offer_id)
                 }
 
-                const product = offer?.manifestProductData[shopifyPVURI]
-
                 return (
                   <tr key={shopifyPVURI}>
                     <td>
                       {product?.title ?? '??'}
                       <br />
-                      <small>{shopifyPVURI}</small>
+                      <VariantLink type="manifest-item" variantURI={shopifyPVURI} />
                       {(product?.weight ?? 0) > 1 ? <Badge bg="danger">Weight should be zero</Badge> : ''}
                     </td>
                     <td>{totalQuantity}</td>
