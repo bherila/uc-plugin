@@ -5,29 +5,12 @@ import db from '@/server_lib/db'
 
 const CANCEL_ORDER_MUTATION = `
   mutation cancelOrder($id: ID!, $restockInventory: Boolean = false) {
-    orderCancel(input: { id: $id, restockInventory: $restockInventory }) {
-      order {
-        id
-        cancelledAt
-      }
-      userErrors {
-        field
-        message
-      }
-    }
-  }
-`
-
-const REFUND_ORDER_MUTATION = `
-  mutation refundOrder($id: ID!) {
-    refundCreate(input: {
-      orderId: $id,
-      shipping: { fullRefund: true },
-      refundLineItems: { restockType: NO_RESTOCK }
-    }) {
-      refund {
-        id
-      }
+    orderCancel(
+      orderId: $id, 
+      refund: true, 
+      restock: $restockInventory, 
+      reason: OTHER
+    ) {
       userErrors {
         field
         message
@@ -43,28 +26,6 @@ async function log(msg: any) {
 
 const cancelResponseSchema = z.object({
   orderCancel: z.object({
-    order: z
-      .object({
-        id: z.string(),
-        cancelledAt: z.string(),
-      })
-      .nullable(),
-    userErrors: z.array(
-      z.object({
-        field: z.array(z.string()),
-        message: z.string(),
-      }),
-    ),
-  }),
-})
-
-const refundResponseSchema = z.object({
-  refundCreate: z.object({
-    refund: z
-      .object({
-        id: z.string(),
-      })
-      .nullable(),
     userErrors: z.array(
       z.object({
         field: z.array(z.string()),
@@ -75,6 +36,10 @@ const refundResponseSchema = z.object({
 })
 
 export async function shopifyCancelOrder(orderId: string, restockInventory: boolean = false) {
+  // validate the orderId is in the shopify uri format
+  if (!orderId.startsWith('gid://shopify/Order/')) {
+    throw new Error('Invalid order id')
+  }
   try {
     await log({ orderId, restockInventory })
 
@@ -85,13 +50,7 @@ export async function shopifyCancelOrder(orderId: string, restockInventory: bool
     const cancelResult = cancelResponseSchema.parse(cancelResponse)
     await log(cancelResult)
 
-    const refundResponse = await shopify.graphql(REFUND_ORDER_MUTATION, {
-      id: orderId,
-    })
-    const refundResult = refundResponseSchema.parse(refundResponse)
-    await log(refundResult)
-
-    return { cancelResult, refundResult }
+    return { cancelResult }
   } catch (error) {
     await log(error)
     throw error

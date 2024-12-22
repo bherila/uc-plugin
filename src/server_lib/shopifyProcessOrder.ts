@@ -149,11 +149,19 @@ export default async function shopifyProcessOrder(orderIdX: string) {
           pushLog(`Reverted ${rowsAffected} rows due to insufficient allocation`)
 
           // Call shopifyCancelOrder and shopifySetVariantQty
-          await shopifyCancelOrder(orderIdUri)
-          pushLog(`Cancelled Shopify order ${orderIdUri}`)
+          pushLog(`Attempting to cancel order ${orderIdUri}`)
+          try {
+            await shopifyCancelOrder(orderIdUri)
+          } catch (error) {
+            pushLog(error)
+          }
 
-          await shopifySetVariantQuantity(purchasedDealVariantUri, 0)
           pushLog(`Set variant quantity to 0 for offer ${offerIdFromVariantId.get(assigneeId)}`)
+          try {
+            await shopifySetVariantQuantity(purchasedDealVariantUri, 0)
+          } catch (error) {
+            pushLog(error)
+          }
         }
       } else if (needQty < 0) {
         // RELEASE (unallocate) bottles

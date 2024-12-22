@@ -30,6 +30,10 @@ const SET_INVENTORY_LEVEL_MUTATION = `
 `
 
 export async function shopifySetVariantQuantity(variantId: string, availableQuantity: number) {
+  // validate the variant id is in the shopify uri format
+  if (!variantId.startsWith('gid://shopify/ProductVariant/')) {
+    throw new Error('Invalid variant id')
+  }
   try {
     // Get the first location ID
     const data = await shopify.graphql(`

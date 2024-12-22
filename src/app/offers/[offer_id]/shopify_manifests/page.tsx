@@ -210,7 +210,7 @@ export default async function ShopifyOrdersPage({
                     <tr key={order.id}>
                       <td>
                         <div>
-                          {orderIdNumeric}
+                          <Link href={`/offers/${offer_id}/order/${orderIdNumeric}`}>{orderIdNumeric}</Link>
                           {isCancel ? (
                             <Badge
                               style={{ marginLeft: '7px' }}
