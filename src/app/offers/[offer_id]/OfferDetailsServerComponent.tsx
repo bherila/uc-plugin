@@ -18,6 +18,8 @@ import MetafieldServerComponent from './MetafieldServerComponent'
 import Link from 'next/link'
 import genShopifyDetail from '@/server_lib/shopifyDetailGenerator'
 import VariantLink from '../VariantLink'
+import { setShopifyQtyAction } from './_setShopifyQtyAction'
+import CriticalErrorBanner from '@/components/CriticalErrorBanner'
 
 async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   const promises = {
@@ -74,10 +76,28 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
             deal not allocating correctly.
           </p>
           <p>
-            <b>To fix it:</b> Set the quantity available in Shopify to {numManifestsNotAssigned}
-            and then refresh this page. If people are actively buying the deal, you might have to temporarily
-            disable ordering the product in order to set the correct quantity.
+            <b>To fix it:</b> Set the quantity available in Shopify to <span>{numManifestsNotAssigned}</span>, and
+            then refresh this page. If people are actively buying the deal, you might have to temporarily disable
+            ordering the product in order to set the correct quantity.
           </p>
+          <form
+            action={async () => {
+              'use server'
+              if (!offer?.offerProductData.variantId) return
+              const result = await setShopifyQtyAction(
+                offer.offerProductData.variantId,
+                offer_id,
+                numManifestsNotAssigned,
+              )
+              if (!result.success) {
+                return <CriticalErrorBanner message={result.error || 'Failed to set quantity to zero'} />
+              }
+            }}
+          >
+            <button type="submit" className="btn btn-warning">
+              Set Shopify Quantity to {numManifestsNotAssigned}
+            </button>
+          </form>
         </Alert>
       ) : (
         <div />

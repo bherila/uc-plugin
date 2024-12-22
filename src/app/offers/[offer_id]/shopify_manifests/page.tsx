@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import Table from 'react-bootstrap/Table'
 import Container from 'react-bootstrap/Container'
+import Alert from 'react-bootstrap/Alert'
 import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
 import Badge from 'react-bootstrap/Badge'
@@ -11,15 +12,28 @@ import shopifyGetOrdersWithLineItems from '@/server_lib/shopifyGetOrdersWithLine
 import CurrencyDisplay from '@/components/CurrencyDisplay'
 import RenderUTCDate from '@/components/RenderUTCDate'
 import Link from 'next/link'
-import { redirect, RedirectType } from 'next/navigation'
+import { redirect, RedirectType, useSearchParams } from 'next/navigation'
 import { getSession } from '@/server_lib/session'
 import { revalidatePath } from 'next/cache'
 import AuthRoutes from '@/app/auth/AuthRoutes'
 import shopifyProcessOrder from '@/server_lib/shopifyProcessOrder'
 import FixButton from './FixButton'
 import UpgradesAtTopToggle from './UpgradesAtTopToggle'
+import { shopifyCancelOrder } from '@/server_lib/shopifyCancelOrder'
 
 export const maxDuration = 60
+
+async function cancelOrder(orderId: string, offerId: number) {
+  'use server'
+  try {
+    await shopifyCancelOrder(`gid://shopify/Order/${orderId}`, true)
+    revalidatePath(`/offers/${offerId}/shopify_manifests`)
+    return { success: true }
+  } catch (error) {
+    console.error('Error canceling order:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' }
+  }
+}
 
 export default async function ShopifyOrdersPage({
   params,
@@ -119,6 +133,16 @@ export default async function ShopifyOrdersPage({
   return (
     <>
       <Container>
+        {(await searchParams)['status'] === 'success' && (
+          <Alert variant="success" className="mt-4">
+            Order successfully canceled
+          </Alert>
+        )}
+        {(await searchParams)['error'] && (
+          <Alert variant="danger" className="mt-4">
+            {(await searchParams).error}
+          </Alert>
+        )}
         <Row className="mt-4">
           <Col>
             <h2>Shopify Order Manifests (for offer id {offer_id})</h2>
@@ -148,11 +172,11 @@ export default async function ShopifyOrdersPage({
             </Link>
           </Col>
         </Row>
-        <Row className="mb-4">
+        {/* <Row className="mb-4">
           <Col xs="12">
             <UpgradesAtTopToggle />
           </Col>
-        </Row>
+        </Row> */}
       </Container>
       <Container fluid={true}>
         <Row>
@@ -173,7 +197,15 @@ export default async function ShopifyOrdersPage({
                 {ordersFromShopify.map((order) => {
                   const isCancel = order.cancelledAt != null
                   const orderIdNumeric = order.id.replace('gid://shopify/Order/', '')
-
+                  const cancelAction = async () => {
+                    'use server'
+                    const result = await cancelOrder(orderIdNumeric.toString(), offer_id)
+                    redirect(
+                      result.success
+                        ? `/offers/${offer_id}/shopify_manifests?status=success`
+                        : `/offers/${offer_id}/shopify_manifests?error=${encodeURIComponent(result.error || 'Failed to cancel order')}`,
+                    )
+                  }
                   return (
                     <tr key={order.id}>
                       <td>
@@ -221,11 +253,26 @@ export default async function ShopifyOrdersPage({
                       </td>
                       <td>{order.email}</td>
                       <td style={{ whiteSpace: 'nowrap' }}>
-                        <Button variant="primary" size="sm" type="button">
+                        <Link
+                          href={`/offers/${offer_id}/order/${orderIdNumeric}/`}
+                          className="btn btn-primary btn-sm"
+                        >
                           View Log
-                        </Button>
+                        </Link>
                         &nbsp;
-                        <FixButton onFix={reProcessShopifyOrder} orderId={orderIdNumeric.toString()} />
+                        {!order.isQtyEqual && (
+                          <FixButton onFix={reProcessShopifyOrder} orderId={orderIdNumeric.toString()} />
+                        )}
+                        {!order.isQtyEqual && !isCancel && (
+                          <>
+                            &nbsp;
+                            <form action={cancelAction}>
+                              <Button variant="danger" size="sm" type="submit">
+                                Cancel Order
+                              </Button>
+                            </form>
+                          </>
+                        )}
                       </td>
                     </tr>
                   )

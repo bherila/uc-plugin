@@ -1,6 +1,8 @@
 import 'server-only'
 import { z } from 'zod'
 import shopify from '@/server_lib/shopify'
+import { cache } from 'react'
+import { unstable_cache } from 'next/cache'
 
 const schema = z.object({
   nodes: z.array(
@@ -116,7 +118,7 @@ const query = `
   }
 `
 
-const shopifyGetOrdersWithLineItems = async (graphqlOrderIds: string[]) => {
+const shopifyGetOrdersWithLineItems = unstable_cache(async (graphqlOrderIds: string[]) => {
   const cleanedIds = graphqlOrderIds
     .map((id) => id.replace('gid://shopify/Order/', ''))
     .map((id) => z.coerce.bigint().safeParse(id)?.data)
@@ -129,6 +131,6 @@ const shopifyGetOrdersWithLineItems = async (graphqlOrderIds: string[]) => {
   // sort nodes by node.createdAt
   nodes.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
   return nodes
-}
+})
 
 export default shopifyGetOrdersWithLineItems

@@ -3,17 +3,23 @@ import shopify from '@/server_lib/shopify'
 import z from 'zod'
 import db from '@/server_lib/db'
 
-const SET_INVENTORY_QUANTITY_MUTATION = `
-  mutation inventorySetQuantity($inventoryItemId: ID!, $locationId: ID!, $quantity: Int!) {
-    inventorySetOnHandQuantity: inventoryAdjustQuantity(input: {
-      inventoryItemId: $inventoryItemId,
-      locationId: $locationId,
-      quantity: $quantity,
-      reason: "OTHER"
-    }) {
-      inventoryLevel {
-        id
-        quantity
+async function log(msg: any) {
+  const txt = typeof msg === 'string' ? msg : JSON.stringify(msg)
+  console.log(txt)
+  await db.query('insert into v3_audit_log (event_name, event_ext) values (?, ?)', ['setVariantQty', txt])
+}
+
+const SET_INVENTORY_LEVEL_MUTATION = `
+  mutation SetInventoryLevel($input: InventorySetQuantitiesInput!) {
+    inventorySetQuantities(input: $input) {
+      inventoryAdjustmentGroup {
+        createdAt
+        reason
+        referenceDocumentUri
+        changes {
+          name
+          delta
+        }
       }
       userErrors {
         field
@@ -23,63 +29,62 @@ const SET_INVENTORY_QUANTITY_MUTATION = `
   }
 `
 
-async function log(msg: any) {
-  const txt = typeof msg === 'string' ? msg : JSON.stringify(msg)
-  await db.query('insert into v3_audit_log (event_name, event_ext) values (?, ?)', ['setVariantQty', txt])
-}
-
-const responseSchema = z.object({
-  inventorySetOnHandQuantity: z.object({
-    inventoryLevel: z
-      .object({
-        id: z.string(),
-        quantity: z.number(),
-      })
-      .nullable(),
-    userErrors: z.array(
-      z.object({
-        field: z.array(z.string()),
-        message: z.string(),
-      }),
-    ),
-  }),
-})
-
-export async function shopifySetVariantQuantity(variantId: string, quantity: number) {
+export async function shopifySetVariantQuantity(variantId: string, availableQuantity: number) {
   try {
-    // First get the inventory item ID and location ID
-    const GET_INVENTORY_ITEM = `
-      query getInventoryItem($id: ID!) {
-        productVariant(id: $id) {
+    // Get the first location ID
+    const data = await shopify.graphql(`
+      query GetFirstLocation {
+        locations(first: 1) {
+          edges {
+            node {
+              id
+            }
+          }
+        }
+      }
+    `)
+    const locationId = data.locations.edges[0].node.id
+    if (!locationId) {
+      throw new Error('No locations found')
+    }
+
+    // Get the inventory item ID
+    const inventoryItemResponse = await shopify.graphql(
+      `
+      query GetInventoryItem($variantId: ID!) {
+        productVariant(id: $variantId) {
           inventoryItem {
             id
           }
         }
-        location(first: true) {
-          id
-        }
       }
-    `
-
-    const inventoryData = await shopify.graphql(GET_INVENTORY_ITEM, { id: variantId })
-    const inventoryItemId = inventoryData.productVariant?.inventoryItem?.id
-    const locationId = inventoryData.location?.id
-
-    if (!inventoryItemId || !locationId) {
-      throw new Error('Could not find inventory item or location')
+    `,
+      {
+        variantId,
+      },
+    )
+    const inventoryItem = inventoryItemResponse.productVariant.inventoryItem
+    if (!inventoryItem) {
+      throw new Error('No inventory item found')
     }
+    const inventoryItemId = inventoryItem.id
+    const input = {
+      name: 'available',
+      reason: 'correction',
+      ignoreCompareQuantity: true,
+      quantities: [
+        {
+          inventoryItemId,
+          locationId,
+          quantity: availableQuantity,
+        },
+      ],
+    }
+    console.log(input)
 
-    await log({ variantId, inventoryItemId, locationId })
-
-    const response = await shopify.graphql(SET_INVENTORY_QUANTITY_MUTATION, {
-      inventoryItemId,
-      locationId,
-      quantity,
-    })
-
-    const result = responseSchema.parse(response)
+    // Set the available quantity
+    const result = await shopify.graphql(SET_INVENTORY_LEVEL_MUTATION, { input })
     await log(result)
-
     return result
   } catch (error) {
     await log(error)

@@ -5,6 +5,9 @@ import { V3Manifest } from '@/app/api/manifest/models'
 import groupBySku from '@/lib/groupBySku'
 import shopify from '@/server_lib/shopify'
 import shopifyGetOrdersWithLineItems from '@/server_lib/shopifyGetOrdersWithLineItems'
+import { ResultSetHeader } from 'mysql2'
+import { shopifyCancelOrder } from './shopifyCancelOrder'
+import { shopifySetVariantQuantity } from './shopifySetVariantQuantity'
 
 export const maxDuration = 60
 
@@ -68,6 +71,17 @@ export default async function shopifyProcessOrder(orderIdX: string) {
       )
       return
     }
+
+    const purchasedDealVariantUri = purchasedDealFields[0][1]?.toString() ?? null
+    if (purchasedDealVariantUri == null) {
+      await log(
+        `ERROR: No deal for order ${orderIdNumeric}: ${JSON.stringify(purchasedDealFields)}`,
+        null,
+        orderIdNumeric,
+      )
+      return
+    }
+
     await db.query(`replace into v3_order_to_variant (order_id, variant_id, offer_id) values ?`, [
       purchasedDealFields,
     ])
@@ -105,7 +119,7 @@ export default async function shopifyProcessOrder(orderIdX: string) {
       pushLog(`${alreadyHaveQty} already allocated to ${assigneeId}, need ${needQty} more`)
       if (needQty > 0) {
         // ALLOCATE bottles.
-        const updateResult = await db.query(
+        const updateResult: ResultSetHeader = await db.query(
           `
             UPDATE v3_offer_manifest
             SET assignee_id = ?
@@ -117,6 +131,30 @@ export default async function shopifyProcessOrder(orderIdX: string) {
           [assigneeId, offerId, needQty],
         )
         pushLog(updateResult)
+
+        const rowsAffected = updateResult.affectedRows
+        if (rowsAffected < needQty) {
+          // Set the assignee_id for those rows back to null
+          await db.query(
+            `
+              UPDATE v3_offer_manifest
+              SET assignee_id = null
+              WHERE assignee_id = ?
+          AND offer_id = ?
+              ORDER BY assignment_ordering
+              LIMIT ?;
+            `,
+            [assigneeId, offerId, rowsAffected],
+          )
+          pushLog(`Reverted ${rowsAffected} rows due to insufficient allocation`)
+
+          // Call shopifyCancelOrder and shopifySetVariantQty
+          await shopifyCancelOrder(orderIdUri)
+          pushLog(`Cancelled Shopify order ${orderIdUri}`)
+
+          await shopifySetVariantQuantity(purchasedDealVariantUri, 0)
+          pushLog(`Set variant quantity to 0 for offer ${offerIdFromVariantId.get(assigneeId)}`)
+        }
       } else if (needQty < 0) {
         // RELEASE (unallocate) bottles
         const updateResult = await db.query(
