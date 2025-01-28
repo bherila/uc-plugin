@@ -17,6 +17,10 @@ const PRODUCT_QUERY = `
               value
             }
           }
+          unitCost {
+            amount
+            currencyCode
+          }
         }
         product {
           id
@@ -77,7 +81,8 @@ export async function shopifyGetProductDataByVariantIds(
         endDate: product.metafields.nodes.find((field: any) => field.key.indexOf('end_date') !== -1)?.jsonValue,
         status: product.status,
         tags: product.tags,
-        weight: inventoryItem?.measurement?.weight?.value,
+        weight: inventoryItem?.measurement?.weight?.value ?? null,
+        unitCost: inventoryItem?.unitCost,
       }
     })
 
@@ -109,7 +114,8 @@ export async function shopifyGetProductDataFromManifests(manifests: V3Manifest[]
       qty,
       percentChance: (qty / totalQty) * 100,
       title: product.title,
-      weight: product.weight,
+      weight: product.weight ?? null,
+      unitCost: product.unitCost,
     }
   }
   return res

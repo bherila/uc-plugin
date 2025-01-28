@@ -92,8 +92,8 @@ export default async function OfferListServerComponent() {
                   </td>
                   <td style={{ whiteSpace: 'pre' }}>
                     <RenderRelativeTimeInterval
-                      startDate={offer.offerProductData.startDate}
-                      endDate={offer.offerProductData.endDate}
+                      startDate={offer.offerProductData.startDate!}
+                      endDate={offer.offerProductData.endDate!}
                     />
                   </td>
                   <td>{offer.offerProductData.status}</td>

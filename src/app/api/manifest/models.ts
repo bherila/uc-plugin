@@ -4,11 +4,15 @@ export interface ProductData {
   title: string
   maxVariantPriceAmount: string
   featuredImageUrl: string | null
-  startDate: string
-  endDate: string
+  startDate: string | null
+  endDate: string | null
   status: string
   tags: string[]
   weight: number | null
+  unitCost?: {
+    amount: string
+    currencyCode: string
+  }
 }
 
 export interface ProductDataGrouping {
@@ -19,6 +23,10 @@ export interface ProductDataGrouping {
   qty: number
   percentChance: number
   weight: number | null
+  unitCost?: {
+    amount: string
+    currencyCode: string
+  }
 }
 
 export interface V3OfferListItem {

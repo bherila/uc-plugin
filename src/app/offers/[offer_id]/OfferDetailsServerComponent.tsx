@@ -52,15 +52,24 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
         {(offer?.offerProductData.weight ?? 0) != 2 ? <Badge bg="danger">Weight should be 2 lbs</Badge> : ''}
       </p>
 
-      {hasOrders ? (
-        <Row className="mb-4">
-          <Col xs="12">
-            <Link href={`/offers/${offer_id}/shopify_manifests`} className="btn btn-secondary">
+      <Row className="mb-4">
+        <Col xs="12">
+          <div className="mb-2">
+            <Link
+              href={`/offers/${offer_id}/shopify_manifests`}
+              className="btn btn-secondary me-2"
+              style={{ pointerEvents: hasOrders ? 'auto' : 'none', opacity: hasOrders ? 1 : 0.6 }}
+            >
               View order manifests
             </Link>
-          </Col>
-        </Row>
-      ) : (
+            <Link href={`/offers/${offer_id}/profitability`} className="btn btn-secondary">
+              View Profitability
+            </Link>
+          </div>
+        </Col>
+      </Row>
+
+      {hasOrders ? null : (
         <Alert variant="info">
           <b>No orders yet. Reminder!</b> Ensure that nobody is able to purchase this product online until you are
           done setting up the bottles. The total number of bottles that can be allocated to the offer is based on
