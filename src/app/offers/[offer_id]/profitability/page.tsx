@@ -11,6 +11,7 @@ import z from 'zod'
 import Row from 'react-bootstrap/esm/Row'
 import Col from 'react-bootstrap/esm/Col'
 import ProfitabilityUI from './Profitability.client'
+import currency from 'currency.js'
 
 export default async function ProfitabilityPage({ params }: { params: Promise<{ offer_id: string }> }) {
   const session = await getSession()
@@ -36,7 +37,10 @@ export default async function ProfitabilityPage({ params }: { params: Promise<{ 
       </Row>
 
       <MainTitle>Profitability Analysis for {offer.offer_name}</MainTitle>
-      <ProfitabilityUI manifestProductData={offer.manifestProductData} />
+      <ProfitabilityUI
+        offerPrice={currency(offer.offerProductData.maxVariantPriceAmount).value}
+        manifestProductData={offer.manifestProductData}
+      />
     </Container>
   )
 }

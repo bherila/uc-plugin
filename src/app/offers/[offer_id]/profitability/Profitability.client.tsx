@@ -2,27 +2,29 @@
 import { ProductDataGrouping } from '@/app/api/manifest/models'
 import Container from '@/components/container'
 import CurrencyDisplay from '@/components/CurrencyDisplay'
+import currency from 'currency.js'
 import { useState } from 'react'
 import Col from 'react-bootstrap/esm/Col'
 import Row from 'react-bootstrap/esm/Row'
 import Table from 'react-bootstrap/Table'
 
 export default function ProfitabilityUI({
+  offerPrice,
   manifestProductData,
 }: {
+  offerPrice: number
   manifestProductData: { [key: string]: ProductDataGrouping }
 }) {
-  // Sell through percentage
-  const [sellThru, setSellThru] = useState<number>(0)
-
   // Calculate profitability metrics
   let totalRevenue = 0
   let totalCost = 0
   const profitByProduct = Object.entries(manifestProductData).map(([variantId, product]) => {
+    const qty = product.qty
+    const revenue = currency(offerPrice).multiply(qty).value
     const retailPrice = parseFloat(product.maxVariantPriceAmount)
     const unitCost = product.unitCost ? parseFloat(product.unitCost.amount) : 0
-    const qty = product.qty
-    const revenue = retailPrice * qty
+    const profitPerUnit = currency(offerPrice).subtract(unitCost).value
+
     const cost = unitCost * qty
     const profit = revenue - cost
     const marginPercent = revenue > 0 ? (profit / revenue) * 100 : 0
@@ -40,11 +42,75 @@ export default function ProfitabilityUI({
       cost,
       profit,
       marginPercent,
+      profitPerUnit,
     }
   })
 
   const totalProfit = totalRevenue - totalCost
   const totalMarginPercent = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
+
+  // Sort products by profit margin for best/worst case calculations
+  const sortedByProfitPerUnit = [...profitByProduct].sort((a, b) => b.profitPerUnit - a.profitPerUnit)
+  const totalQuantity = profitByProduct.reduce((sum, product) => sum + product.qty, 0)
+
+  // Calculate sell-through scenarios
+  const sellThroughScenarios = []
+  for (let sellQty = 0; sellQty <= totalQuantity; sellQty++) {
+    let bestCaseProfit = 0
+    let worstCaseProfit = 0
+    let bestCaseRevenue = 0
+    let worstCaseRevenue = 0
+    let bestCaseCost = 0
+    let worstCaseCost = 0
+    let remainingQty = sellQty
+
+    // Best case: sell highest margin products first
+    for (const product of sortedByProfitPerUnit) {
+      const qtyToSell = Math.min(remainingQty, product.qty)
+      if (qtyToSell > 0) {
+        bestCaseProfit += qtyToSell * product.profitPerUnit
+        bestCaseRevenue += qtyToSell * offerPrice
+        bestCaseCost += qtyToSell * product.unitCost
+        remainingQty -= qtyToSell
+      }
+    }
+
+    // Worst case: sell lowest margin products first
+    remainingQty = sellQty
+    for (const product of [...sortedByProfitPerUnit].reverse()) {
+      const qtyToSell = Math.min(remainingQty, product.qty)
+      if (qtyToSell > 0) {
+        worstCaseProfit += qtyToSell * product.profitPerUnit
+        worstCaseRevenue += qtyToSell * offerPrice
+        worstCaseCost += qtyToSell * product.unitCost
+        remainingQty -= qtyToSell
+      }
+    }
+
+    sellThroughScenarios.push({
+      quantity: sellQty,
+      bestCaseProfit,
+      worstCaseProfit,
+      bestCaseRevenue,
+      worstCaseRevenue,
+      bestCaseCost,
+      worstCaseCost,
+      sellThroughPercent: (sellQty / totalQuantity) * 100,
+    })
+  }
+
+  // Find minimum quantity for guaranteed profit
+  const minQuantityForProfit =
+    sellThroughScenarios.find((scenario) => scenario.worstCaseProfit > 0)?.quantity ?? totalQuantity
+  const minQuantityPercent = (minQuantityForProfit / totalQuantity) * 100
+
+  // Find absolute best and worst case profits across all scenarios
+  const bestCaseScenario = sellThroughScenarios.reduce((best, current) =>
+    current.bestCaseProfit > best.bestCaseProfit ? current : best,
+  )
+  const worstCaseScenario = sellThroughScenarios.reduce((worst, current) =>
+    current.worstCaseProfit < worst.worstCaseProfit ? current : worst,
+  )
 
   return (
     <Container fluid>
@@ -59,18 +125,17 @@ export default function ProfitabilityUI({
             Total Profit: <CurrencyDisplay value={totalProfit} digits={2} />
             <br />
             Overall Margin: {totalMarginPercent.toFixed(2)}%
+            <br />
+            <br />
+            Min Quantity for Profit: {minQuantityForProfit} ({minQuantityPercent.toFixed(1)}% sell-through)
+            <br />
+            <br />
+            Best Case Profit: <CurrencyDisplay value={bestCaseScenario.bestCaseProfit} digits={2} /> at Qty{' '}
+            {bestCaseScenario.quantity}
+            <br />
+            Worst Case Profit: <CurrencyDisplay value={worstCaseScenario.worstCaseProfit} digits={2} /> at Qty{' '}
+            {worstCaseScenario.quantity}
           </p>
-        </Col>
-
-        <Col xs={4} className="mb-4">
-          <h3>Sell Through %</h3>
-
-          <input type="number" value={sellThru} onChange={(e) => setSellThru(parseFloat(e.target.value))} />
-          <ul>
-            <li>Sell Through %: {sellThru}</li>
-            <li>Max profit: </li>
-            <li>Min profit: </li>
-          </ul>
         </Col>
       </Row>
 
@@ -82,7 +147,11 @@ export default function ProfitabilityUI({
             <th>Quantity</th>
             <th>Retail Price</th>
             <th>Unit Cost</th>
-            <th>Total Revenue</th>
+            <th>
+              Total Revenue
+              <br />
+              <small>(offer price {currency(offerPrice).format()})</small>
+            </th>
             <th>Total Cost</th>
             <th>Total Profit</th>
             <th>Margin %</th>
@@ -109,6 +178,48 @@ export default function ProfitabilityUI({
                 <CurrencyDisplay value={item.profit} digits={2} />
               </td>
               <td>{item.marginPercent.toFixed(2)}%</td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+
+      <h3>Sell-Through Scenarios</h3>
+      <Table size="sm" striped hover>
+        <thead>
+          <tr>
+            <th>Quantity Sold</th>
+            <th>Sell-Through %</th>
+            <th>Best Case Revenue</th>
+            <th>Best Case Cost</th>
+            <th>Best Case Profit</th>
+            <th>Worst Case Revenue</th>
+            <th>Worst Case Cost</th>
+            <th>Worst Case Profit</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sellThroughScenarios.map((scenario) => (
+            <tr key={scenario.quantity}>
+              <td>{scenario.quantity}</td>
+              <td>{scenario.sellThroughPercent.toFixed(1)}%</td>
+              <td>
+                <CurrencyDisplay value={scenario.bestCaseRevenue} digits={2} />
+              </td>
+              <td>
+                <CurrencyDisplay value={scenario.bestCaseCost} digits={2} />
+              </td>
+              <td>
+                <CurrencyDisplay value={scenario.bestCaseProfit} digits={2} />
+              </td>
+              <td>
+                <CurrencyDisplay value={scenario.worstCaseRevenue} digits={2} />
+              </td>
+              <td>
+                <CurrencyDisplay value={scenario.worstCaseCost} digits={2} />
+              </td>
+              <td>
+                <CurrencyDisplay value={scenario.worstCaseProfit} digits={2} />
+              </td>
             </tr>
           ))}
         </tbody>

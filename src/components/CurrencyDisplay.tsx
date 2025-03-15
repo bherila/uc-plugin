@@ -4,7 +4,7 @@ import React from 'react'
 export default function CurrencyDisplay({ value, digits = 2 }: { value: number | currency; digits: number }) {
   if (typeof value === 'number') {
     if (value < 0) {
-      return <span>${value.toFixed(digits)}</span>
+      return <span className="text-danger">(${-value.toFixed(digits)})</span>
     } else {
       return <span>${value.toFixed(digits)}</span>
     }
