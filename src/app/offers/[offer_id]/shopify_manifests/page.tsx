@@ -20,6 +20,9 @@ import shopifyProcessOrder from '@/server_lib/shopifyProcessOrder'
 import FixButton from './FixButton'
 import UpgradesAtTopToggle from './UpgradesAtTopToggle'
 import { shopifyCancelOrder } from '@/server_lib/shopifyCancelOrder'
+import SoldManifestsDetails, { SoldManifestItem } from './SoldManifestsDetails.client'
+import queryOffer from '@/app/api/manifest/queryOffer'
+import currency from 'currency.js'
 
 export const maxDuration = 60
 
@@ -63,13 +66,42 @@ export default async function ShopifyOrdersPage({
     variant_id,
   ])) as any[]
 
+  const allManifests: SoldManifestItem[] = []
+  const offerData = await queryOffer({ offer_id })
+  const offerSkuVariantId = offerData?.offerProductData.variantId
+  const offerPrice = offerData?.offerProductData.maxVariantPriceAmount ?? 0
+
   const ordersFromShopify = (await shopifyGetOrdersWithLineItems(orders.map((o) => o.order_id))).map((order) => {
-    const purchasedItems = order.lineItems.nodes.filter((li) => li.discountedTotalSet.shopMoney.amount > 0)
-    const upgradeItems = order.lineItems.nodes.filter((li) => li.discountedTotalSet.shopMoney.amount <= 0)
+    const orderLineItems = order.lineItems.nodes
+    const purchasedItems = orderLineItems.filter((li) => li.discountedTotalSet.shopMoney.amount > 0)
+    const upgradeItems = orderLineItems.filter((li) => li.discountedTotalSet.shopMoney.amount <= 0)
+
+    let amountPaid = currency(purchasedItems[0]?.discountedTotalSet.shopMoney.amount ?? 0).divide(
+      upgradeItems.length,
+    )
+    for (const item of upgradeItems ?? []) {
+      if (item.variant.variant_graphql_id !== offerSkuVariantId) {
+        allManifests.push({
+          wineName: item.title,
+          winnerEmail: order.email ?? '',
+          amountPaid: amountPaid.value,
+          wineValue: item.originalUnitPriceSet.shopMoney.amount,
+          wineCost: currency(
+            offerData?.manifestProductData[item.variant.variant_graphql_id]?.unitCost?.amount ?? 0,
+          ).value,
+        })
+      }
+    }
 
     // check if total qty of each purchasedItems equals total qty of upgradeItems
     const totalPurchasedItemsQty = purchasedItems.reduce((total, li) => total + li.quantity, 0)
-    const totalUpgradeItemsQty = upgradeItems.reduce((total, li) => total + li.quantity, 0)
+    const totalUpgradeItemsQty = upgradeItems.reduce((total, li) => {
+      // Free items don't count against allocation
+      const isFreeItem =
+        li.originalUnitPriceSet.shopMoney.amount == 0 &&
+        currency(offerData?.manifestProductData[li.variant.variant_graphql_id]?.unitCost?.amount ?? 0).value == 0
+      return isFreeItem ? total : total + li.quantity
+    }, 0)
     const isQtyEqual = totalPurchasedItemsQty === totalUpgradeItemsQty
 
     // total value of each purchasedItems and upgradeItems
@@ -81,6 +113,10 @@ export default async function ShopifyOrdersPage({
       (total, li) => total + li.originalUnitPriceSet.shopMoney.amount * li.quantity,
       0,
     )
+    const upgradeItemsTotalCost = upgradeItems.reduce((total, li) => {
+      const unitCost = offerData?.manifestProductData[li.variant.variant_graphql_id]?.unitCost?.amount ?? 0
+      return total.add(currency(unitCost).multiply(li.quantity))
+    }, currency(0)).value
 
     return {
       ...order,
@@ -91,6 +127,7 @@ export default async function ShopifyOrdersPage({
       totalUpgradeItemsQty,
       purchasedItemsTotalValue,
       upgradeItemsTotalValue,
+      upgradeItemsTotalCost,
     }
   })
 
@@ -129,6 +166,10 @@ export default async function ShopifyOrdersPage({
     (total, order) => total + order.upgradeItemsTotalValue,
     0,
   )
+  const totalUpgradeItemsTotalCost = ordersFromShopify.reduce(
+    (total, order) => total + order.upgradeItemsTotalCost,
+    0,
+  )
 
   return (
     <>
@@ -146,23 +187,60 @@ export default async function ShopifyOrdersPage({
         <Row className="mt-4">
           <Col>
             <h2>Shopify Order Manifests (for offer id {offer_id})</h2>
-            <ul>
-              <li>Variant id: {variant_id}</li>
-              <li>Order count: {orders.length}</li>
-              <li>
-                Total Purchased Items Qty: {totalPurchasedItemsQty}, Total Upgrade Items Qty:{' '}
-                {totalUpgradeItemsQty}{' '}
-                {totalPurchasedItemsQty === totalUpgradeItemsQty ? '✅ (equal to purchase qty)' : '❌'}
-              </li>
-              <li>
-                Total Purchased Items Total Value:{' '}
-                <CurrencyDisplay value={totalPurchasedItemsTotalValue} digits={2} />
-              </li>
-              <li>
-                Total Upgrade Items Total Value:{' '}
-                <CurrencyDisplay value={totalUpgradeItemsTotalValue} digits={2} />
-              </li>
-            </ul>
+            <Table striped bordered hover size="sm" style={{ width: '60%' }}>
+              <tbody>
+                <tr>
+                  <td>Shopify Variant ID</td>
+                  <td>{variant_id}</td>
+                </tr>
+                <tr>
+                  <td>Order Count</td>
+                  <td>{orders.length}</td>
+                </tr>
+                <tr>
+                  <td>Total PURCHASED Items Qty</td>
+                  <td>{totalPurchasedItemsQty}</td>
+                </tr>
+                <tr>
+                  <td>Total UPGRADE Items Qty</td>
+                  <td>
+                    {totalUpgradeItemsQty}{' '}
+                    {totalPurchasedItemsQty === totalUpgradeItemsQty ? '✅ (equal to purchase qty)' : '❌'}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Total Purchased Items (Amount Spent by Customer)</td>
+                  <td>
+                    <CurrencyDisplay value={totalPurchasedItemsTotalValue} digits={2} />
+                  </td>
+                </tr>
+                <tr>
+                  <td>Total Upgrade Items Value</td>
+                  <td>
+                    <CurrencyDisplay value={totalUpgradeItemsTotalValue} digits={2} /> and total cost{' '}
+                    <CurrencyDisplay value={totalUpgradeItemsTotalCost} digits={2} />
+                  </td>
+                </tr>
+                <tr>
+                  <td>Net 'Consumer Surplus' from Offer</td>
+                  <td>
+                    <CurrencyDisplay
+                      value={totalUpgradeItemsTotalValue - totalPurchasedItemsTotalValue}
+                      digits={2}
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <td>Net Profit from Offer (Excluding Shipping &amp; Handling)</td>
+                  <td>
+                    <CurrencyDisplay
+                      value={totalPurchasedItemsTotalValue - totalUpgradeItemsTotalCost}
+                      digits={2}
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </Table>
           </Col>
         </Row>
         <Row className="mb-4">
@@ -170,6 +248,11 @@ export default async function ShopifyOrdersPage({
             <Link href={`/offers/${offer_id}`} className="btn btn-secondary">
               Back
             </Link>
+          </Col>
+        </Row>
+        <Row className="mb-4">
+          <Col xs="12">
+            <SoldManifestsDetails soldManifestItems={allManifests} />
           </Col>
         </Row>
         {/* <Row className="mb-4">
@@ -188,6 +271,12 @@ export default async function ShopifyOrdersPage({
                   <th>Details</th>
                   <th>Amt paid</th>
                   <th>Got value</th>
+                  <th>Wine cost</th>
+                  <th>
+                    Net profit
+                    <br />
+                    before s&h
+                  </th>
                   <th>Shipping</th>
                   <th>Email</th>
                   <th>Actions</th>
@@ -247,6 +336,15 @@ export default async function ShopifyOrdersPage({
                       </td>
                       <td>
                         <CurrencyDisplay value={order.upgradeItemsTotalValue} digits={2} />
+                      </td>
+                      <td>
+                        <CurrencyDisplay value={order.upgradeItemsTotalCost} digits={2} />
+                      </td>
+                      <td>
+                        <CurrencyDisplay
+                          value={order.purchasedItemsTotalValue - order.upgradeItemsTotalCost}
+                          digits={2}
+                        />
                       </td>
                       <td>
                         <CurrencyDisplay value={order.totalShippingPriceSet.shopMoney.amount} digits={2} />
