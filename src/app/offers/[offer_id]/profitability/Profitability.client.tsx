@@ -112,6 +112,14 @@ export default function ProfitabilityUI({
     current.worstCaseProfit < worst.worstCaseProfit ? current : worst,
   )
 
+  // Add state for filtering sell-through scenarios
+  const [showEvery3Qty, setShowEvery3Qty] = useState(true)
+
+  // Filter sell-through scenarios based on checkbox
+  const filteredSellThroughScenarios = showEvery3Qty
+    ? sellThroughScenarios.filter((scenario) => scenario.quantity % 3 === 0)
+    : sellThroughScenarios
+
   return (
     <Container fluid>
       <Row>
@@ -184,6 +192,16 @@ export default function ProfitabilityUI({
       </Table>
 
       <h3>Sell-Through Scenarios</h3>
+      <div className="mb-2">
+        <input
+          type="checkbox"
+          id="showEvery3Qty"
+          checked={showEvery3Qty}
+          onChange={(e) => setShowEvery3Qty(e.target.checked)}
+          className="me-2"
+        />
+        <label htmlFor="showEvery3Qty">Show only every 3 quantity</label>
+      </div>
       <Table size="sm" striped hover>
         <thead>
           <tr>
@@ -198,7 +216,7 @@ export default function ProfitabilityUI({
           </tr>
         </thead>
         <tbody>
-          {sellThroughScenarios.map((scenario) => (
+          {filteredSellThroughScenarios.map((scenario) => (
             <tr key={scenario.quantity}>
               <td>{scenario.quantity}</td>
               <td>{scenario.sellThroughPercent.toFixed(1)}%</td>
