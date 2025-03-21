@@ -19,7 +19,6 @@ import Link from 'next/link'
 import genShopifyDetail from '@/server_lib/shopifyDetailGenerator'
 import VariantLink from '../VariantLink'
 import { setShopifyQtyAction } from './_setShopifyQtyAction'
-import CriticalErrorBanner from '@/components/CriticalErrorBanner'
 
 async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   const promises = {
@@ -90,17 +89,14 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
             ordering the product in order to set the correct quantity.
           </p>
           <form
-            action={async () => {
+            action={async (_: FormData): Promise<void> => {
               'use server'
               if (!offer?.offerProductData.variantId) return
-              const result = await setShopifyQtyAction(
+              await setShopifyQtyAction(
                 offer.offerProductData.variantId,
                 offer_id,
                 numManifestsNotAssigned,
               )
-              if (!result.success) {
-                return <CriticalErrorBanner message={result.error || 'Failed to set quantity to zero'} />
-              }
             }}
           >
             <button type="submit" className="btn btn-warning">

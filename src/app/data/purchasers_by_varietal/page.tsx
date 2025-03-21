@@ -1,7 +1,6 @@
 import { getSession } from '@/server_lib/session'
-import { redirect } from 'next/navigation'
+import { redirect, RedirectType } from 'next/navigation'
 import AuthRoutes from '@/app/auth/AuthRoutes'
-import { RedirectType } from 'next/dist/client/components/redirect'
 import db from '@/server_lib/db'
 import Table from 'react-bootstrap/Table'
 import Container from 'react-bootstrap/Container'
