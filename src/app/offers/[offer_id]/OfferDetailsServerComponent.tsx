@@ -9,12 +9,9 @@ import Alert from 'react-bootstrap/Alert'
 import Badge from 'react-bootstrap/Badge'
 import queryOffer from '@/app/api/manifest/queryOffer'
 import svrLoadShopifyProducts from '@/server_lib/svrLoadShopifyProducts'
-import AddManifestForm from '@/app/offers/[offer_id]/AddManifestForm'
 import { revalidatePath } from 'next/cache'
 import svrPutSkuQty from '@/server_lib/svrPutSkuQty'
-import { addManifestAction } from '@/app/offers/[offer_id]/_addManifestServerAction'
 import DeleteButton from '@/components/DeleteButton'
-import MetafieldServerComponent from './MetafieldServerComponent'
 import Link from 'next/link'
 import genShopifyDetail from '@/server_lib/shopifyDetailGenerator'
 import VariantLink from '../VariantLink'
@@ -27,7 +24,6 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
     shopifyOfferDetail: genShopifyDetail(offer_id),
   }
 
-  const manifestOptions = await promises.shopifyProducts
   const offer = await promises.offer
   const manifestGroups = groupBySku(offer?.mf ?? [])
 
@@ -38,6 +34,8 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
 
   const shopifyOrderIds = Array.from(new Set(offer?.mf.map((r) => r.assignee_id).filter(Boolean)))
   const hasOrders = shopifyOrderIds.length > 0
+  
+  const hasManifestProducts = Object.keys(manifestGroups).length > 0
 
   return (
     <Container>
@@ -55,14 +53,37 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
         <Col xs="12">
           <div className="mb-2">
             <Link
+              href={`/offers/${offer_id}/add-manifest`}
+              className="btn btn-primary me-2"
+            >
+              Add Bottles to Offer
+            </Link>
+            <Link
               href={`/offers/${offer_id}/shopify_manifests`}
               className="btn btn-secondary me-2"
               style={{ pointerEvents: hasOrders ? 'auto' : 'none', opacity: hasOrders ? 1 : 0.6 }}
             >
               View order manifests
             </Link>
-            <Link href={`/offers/${offer_id}/profitability`} className="btn btn-secondary">
+            <Link 
+              href={`/offers/${offer_id}/profitability`} 
+              className="btn btn-secondary me-2"
+              style={{ 
+                pointerEvents: hasManifestProducts ? 'auto' : 'none', 
+                opacity: hasManifestProducts ? 1 : 0.6 
+              }}
+            >
               View Profitability
+            </Link>
+            <Link 
+              href={`/offers/${offer_id}/metafields`} 
+              className="btn btn-secondary"
+              style={{ 
+                pointerEvents: hasManifestProducts ? 'auto' : 'none', 
+                opacity: hasManifestProducts ? 1 : 0.6 
+              }}
+            >
+              View Metafields
             </Link>
           </div>
         </Col>
@@ -109,7 +130,7 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
       )}
 
       <Row>
-        <Col xs={8}>
+        <Col xs={12}>
           <Table responsive striped bordered hover>
             <thead>
               <tr>
@@ -161,19 +182,6 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
               })}
             </tbody>
           </Table>
-          <MetafieldServerComponent offer={offer} />
-        </Col>
-        <Col xs={4}>
-          <h2>Add bottles to Offer</h2>
-          <AddManifestForm
-            availableManifestSKUs={manifestOptions}
-            offerId={offer_id}
-            submitAction={addManifestAction}
-          />
-          <p>
-            You must add the tag <span className="badge badge-info">manifest-item</span> in Shopify and then
-            reload this page to see the item available to add to an offer here.
-          </p>
         </Col>
       </Row>
     </Container>
