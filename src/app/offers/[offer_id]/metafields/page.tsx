@@ -25,7 +25,7 @@ export default async function MetafieldsPage({ params }: { params: { offer_id: s
   return (
     <Container>
       <MainTitle>Metafields for Offer [{offer_id}]</MainTitle>
-      
+
       <Row className="mb-4">
         <Col xs="12">
           <Link href={`/offers/${offer_id}`} className="btn btn-secondary">
@@ -38,18 +38,10 @@ export default async function MetafieldsPage({ params }: { params: { offer_id: s
         <Row>
           <Col xs={12}>
             <h3>offer_v3</h3>
-            <textarea 
-              style={{ width: '100%', height: '200px' }} 
-              readOnly 
-              value={metafields.offerV3} 
-            />
+            <textarea style={{ width: '100%', height: '200px' }} readOnly value={metafields.offerV3} />
 
             <h3 className="mt-4">offer_v3_array</h3>
-            <textarea 
-              style={{ width: '100%', height: '200px' }} 
-              readOnly 
-              value={metafields.offerV3Array} 
-            />
+            <textarea style={{ width: '100%', height: '200px' }} readOnly value={metafields.offerV3Array} />
           </Col>
         </Row>
       ) : (

@@ -1,5 +1,5 @@
 import { getSession } from '@/server_lib/session'
-import { redirect, RedirectType} from 'next/navigation'
+import { redirect, RedirectType } from 'next/navigation'
 import AuthRoutes from '@/app/auth/AuthRoutes'
 
 export default async function DataPage() {

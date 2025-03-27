@@ -32,7 +32,7 @@ export default async function AddManifestPage({ params }: { params: { offer_id: 
   return (
     <Container>
       <MainTitle>Add Bottles to Offer [{offer_id}]</MainTitle>
-      
+
       <Row className="mb-4">
         <Col xs="12">
           <Link href={`/offers/${offer_id}`} className="btn btn-secondary">

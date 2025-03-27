@@ -34,7 +34,7 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
 
   const shopifyOrderIds = Array.from(new Set(offer?.mf.map((r) => r.assignee_id).filter(Boolean)))
   const hasOrders = shopifyOrderIds.length > 0
-  
+
   const hasManifestProducts = Object.keys(manifestGroups).length > 0
 
   return (
@@ -52,10 +52,7 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
       <Row className="mb-4">
         <Col xs="12">
           <div className="mb-2">
-            <Link
-              href={`/offers/${offer_id}/add-manifest`}
-              className="btn btn-primary me-2"
-            >
+            <Link href={`/offers/${offer_id}/add-manifest`} className="btn btn-primary me-2">
               Add Bottles to Offer
             </Link>
             <Link
@@ -65,22 +62,22 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
             >
               View order manifests
             </Link>
-            <Link 
-              href={`/offers/${offer_id}/profitability`} 
+            <Link
+              href={`/offers/${offer_id}/profitability`}
               className="btn btn-secondary me-2"
-              style={{ 
-                pointerEvents: hasManifestProducts ? 'auto' : 'none', 
-                opacity: hasManifestProducts ? 1 : 0.6 
+              style={{
+                pointerEvents: hasManifestProducts ? 'auto' : 'none',
+                opacity: hasManifestProducts ? 1 : 0.6,
               }}
             >
               View Profitability
             </Link>
-            <Link 
-              href={`/offers/${offer_id}/metafields`} 
+            <Link
+              href={`/offers/${offer_id}/metafields`}
               className="btn btn-secondary"
-              style={{ 
-                pointerEvents: hasManifestProducts ? 'auto' : 'none', 
-                opacity: hasManifestProducts ? 1 : 0.6 
+              style={{
+                pointerEvents: hasManifestProducts ? 'auto' : 'none',
+                opacity: hasManifestProducts ? 1 : 0.6,
               }}
             >
               View Metafields
@@ -113,11 +110,7 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
             action={async (_: FormData): Promise<void> => {
               'use server'
               if (!offer?.offerProductData.variantId) return
-              await setShopifyQtyAction(
-                offer.offerProductData.variantId,
-                offer_id,
-                numManifestsNotAssigned,
-              )
+              await setShopifyQtyAction(offer.offerProductData.variantId, offer_id, numManifestsNotAssigned)
             }}
           >
             <button type="submit" className="btn btn-warning">
