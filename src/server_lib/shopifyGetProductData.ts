@@ -2,6 +2,7 @@ import 'server-only'
 import shopify from '@/server_lib/shopify'
 import { ProductData, ProductDataGrouping, V3Manifest } from '@/app/api/manifest/models'
 import groupBySku from '@/lib/groupBySku'
+import { cache } from 'react'
 
 const PRODUCT_QUERY = `
   query($IDs: [ID!]!) {
@@ -53,9 +54,9 @@ const PRODUCT_QUERY = `
   }
 `
 
-export async function shopifyGetProductDataByVariantIds(
+export const shopifyGetProductDataByVariantIds = cache(async (
   variantIds: string[],
-): Promise<{ [variantId: string]: ProductData }> {
+): Promise<{ [variantId: string]: ProductData }> => {
   try {
     const result = await shopify.graphql(PRODUCT_QUERY, { IDs: variantIds })
     const productData: { [id: string]: ProductData } = {}
@@ -92,12 +93,12 @@ export async function shopifyGetProductDataByVariantIds(
     console.error(err)
     return {}
   }
-}
+});
 
-export async function shopifyGetProductDataByVariantId(variantId: string) {
+export const shopifyGetProductDataByVariantId = cache(async (variantId: string) => {
   const result = await shopifyGetProductDataByVariantIds([variantId])
   return result[variantId]
-}
+});
 
 export async function shopifyGetProductDataFromManifests(manifests: V3Manifest[]) {
   const groupedManifests = groupBySku(manifests)

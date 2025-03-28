@@ -5,6 +5,7 @@ import {
   shopifyGetProductDataByVariantId,
   shopifyGetProductDataFromManifests,
 } from '@/server_lib/shopifyGetProductData'
+import { cache } from 'react'
 
 interface OfferDbSchemaRow {
   offer_id: number
@@ -12,10 +13,10 @@ interface OfferDbSchemaRow {
   offer_variant_id: string
 }
 
-export default async function queryOffer(query: {
+const queryOffer = async (query: {
   offer_id?: number
   offer_name?: string
-}): Promise<V3Offer | null> {
+}): Promise<V3Offer | null> => {
   console.info('Querying offer ' + query.offer_id)
   try {
     const { offer_id, offer_name } = z
@@ -100,3 +101,5 @@ export default async function queryOffer(query: {
     await db.end()
   }
 }
+
+export default cache(queryOffer);
