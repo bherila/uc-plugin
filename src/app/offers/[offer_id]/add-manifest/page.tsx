@@ -8,7 +8,6 @@ import { getSession } from '@/server_lib/session'
 import { redirect, RedirectType } from 'next/navigation'
 import AuthRoutes from '@/app/auth/AuthRoutes'
 import z from 'zod'
-import queryOffer from '@/app/api/manifest/queryOffer'
 import svrLoadShopifyProducts from '@/server_lib/svrLoadShopifyProducts'
 import AddManifestForm from '@/app/offers/[offer_id]/AddManifestForm'
 import { addManifestAction } from '@/app/offers/[offer_id]/_addManifestServerAction'
@@ -22,12 +21,10 @@ export default async function AddManifestPage({ params }: { params: Promise<{ of
   const offer_id = z.coerce.number().parse((await params).offer_id)
 
   const promises = {
-    offer: queryOffer({ offer_id }),
     shopifyProducts: svrLoadShopifyProducts('manifest-item'),
   }
 
   const manifestOptions = await promises.shopifyProducts
-  const offer = await promises.offer
 
   return (
     <Container>

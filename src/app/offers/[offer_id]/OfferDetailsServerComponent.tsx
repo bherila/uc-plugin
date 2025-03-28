@@ -42,10 +42,12 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   )
 
   const otherOffersQtyByVariant: { [variantId: string]: number } = {}
-  for (const otherOffer of otherActiveOffers) {
-    const otherOfferDetails = (await queryOffer({ offer_id: otherOffer.offer_id })) as V3Offer
+  const otherOfferPromises: (V3Offer | null)[] = await Promise.all(
+    otherActiveOffers.map((otherOffer) => queryOffer({ offer_id: otherOffer.offer_id })),
+  )
+  for (const otherOfferDetails of otherOfferPromises) {
+    if (!otherOfferDetails) continue
     const otherManifestGroups = groupBySku(otherOfferDetails?.mf ?? [])
-
     Object.keys(otherManifestGroups).forEach((variantId) => {
       otherOffersQtyByVariant[variantId] =
         (otherOffersQtyByVariant[variantId] || 0) + otherManifestGroups[variantId].length

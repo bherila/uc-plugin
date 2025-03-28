@@ -8,11 +8,12 @@ export interface ProductData {
   endDate: string | null
   status: string
   tags: string[]
-  weight: number | null
   unitCost?: {
     amount: string
     currencyCode: string
   }
+  variantInventoryQuantity: number
+  weight: number | null
 }
 
 export interface ProductDataGrouping {

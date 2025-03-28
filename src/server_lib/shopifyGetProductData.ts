@@ -22,6 +22,7 @@ const PRODUCT_QUERY = `
             currencyCode
           }
         }
+        inventoryQuantity
         product {
           id
           title
@@ -58,7 +59,6 @@ export async function shopifyGetProductDataByVariantIds(
   try {
     const result = await shopify.graphql(PRODUCT_QUERY, { IDs: variantIds })
     const productData: { [id: string]: ProductData } = {}
-
     result.nodes.forEach((node: any) => {
       if (!node) {
         return
@@ -83,6 +83,7 @@ export async function shopifyGetProductDataByVariantIds(
         tags: product.tags,
         weight: inventoryItem?.measurement?.weight?.value ?? null,
         unitCost: inventoryItem?.unitCost,
+        variantInventoryQuantity: inventoryItem?.inventoryQuantity ?? 0,
       }
     })
 
@@ -112,6 +113,7 @@ export async function shopifyGetProductDataFromManifests(manifests: V3Manifest[]
       maxVariantPriceAmount: product.maxVariantPriceAmount,
       productId: product.productId,
       qty,
+      variantInventoryQuantity: product.variantInventoryQuantity,
       percentChance: (qty / totalQty) * 100,
       title: product.title,
       weight: product.weight ?? null,

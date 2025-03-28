@@ -16,6 +16,7 @@ export default async function queryOffer(query: {
   offer_id?: number
   offer_name?: string
 }): Promise<V3Offer | null> {
+  console.info('Querying offer ' + query.offer_id)
   try {
     const { offer_id, offer_name } = z
       .object({
