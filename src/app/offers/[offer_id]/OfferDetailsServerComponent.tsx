@@ -35,19 +35,19 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   const { offerListItems } = await promises.offerList
 
   const otherActiveOffers = offerListItems.filter(
-    (otherOffer) => 
-      otherOffer.offer_id !== offer_id && 
-      new Date(otherOffer.offerProductData.startDate ?? 0) <= new Date() && 
-      new Date(otherOffer.offerProductData.endDate ?? Date.now()) >= new Date()
+    (otherOffer) =>
+      otherOffer.offer_id !== offer_id &&
+      new Date(otherOffer.offerProductData.startDate ?? 0) <= new Date() &&
+      new Date(otherOffer.offerProductData.endDate ?? Date.now()) >= new Date(),
   )
 
   const otherOffersQtyByVariant: { [variantId: string]: number } = {}
   for (const otherOffer of otherActiveOffers) {
-    const otherOfferDetails = await queryOffer({ offer_id: otherOffer.offer_id }) as V3Offer
+    const otherOfferDetails = (await queryOffer({ offer_id: otherOffer.offer_id })) as V3Offer
     const otherManifestGroups = groupBySku(otherOfferDetails?.mf ?? [])
-    
-    Object.keys(otherManifestGroups).forEach(variantId => {
-      otherOffersQtyByVariant[variantId] = 
+
+    Object.keys(otherManifestGroups).forEach((variantId) => {
+      otherOffersQtyByVariant[variantId] =
         (otherOffersQtyByVariant[variantId] || 0) + otherManifestGroups[variantId].length
     })
   }
@@ -190,7 +190,7 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
                     {hasOrders ? <td>{numAllocated}</td> : null}
                     {hasOrders ? <td>{totalQuantity - numAllocated}</td> : null}
                     <td>{product?.percentChance.toFixed(2)}%</td>
-                    <td>{shopifyProducts.find(p => p.variantId === shopifyPVURI)?.variantInventoryQuantity}</td>
+                    <td>{shopifyProducts.find((p) => p.variantId === shopifyPVURI)?.variantInventoryQuantity}</td>
                     <td>{otherOffersQtyByVariant[shopifyPVURI] || 0}</td>
                     {!hasOrders ? (
                       <td>

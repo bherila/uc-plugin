@@ -13,13 +13,13 @@ import svrLoadShopifyProducts from '@/server_lib/svrLoadShopifyProducts'
 import AddManifestForm from '@/app/offers/[offer_id]/AddManifestForm'
 import { addManifestAction } from '@/app/offers/[offer_id]/_addManifestServerAction'
 
-export default async function AddManifestPage({ params }: { params: { offer_id: string } }) {
+export default async function AddManifestPage({ params }: { params: Promise<{ offer_id: string }> }) {
   const session = await getSession()
   if (session?.uid == null || !session?.ax_uc) {
     return redirect(AuthRoutes.signIn, RedirectType.replace)
   }
 
-  const offer_id = z.coerce.number().parse(params.offer_id)
+  const offer_id = z.coerce.number().parse((await params).offer_id)
 
   const promises = {
     offer: queryOffer({ offer_id }),

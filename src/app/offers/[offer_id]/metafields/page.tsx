@@ -11,13 +11,13 @@ import z from 'zod'
 import queryOffer from '@/app/api/manifest/queryOffer'
 import maybeUpdateOfferMetafield from '@/server_lib/maybeUpdateOfferMetafield'
 
-export default async function MetafieldsPage({ params }: { params: { offer_id: string } }) {
+export default async function MetafieldsPage({ params }: { params: Promise<{ offer_id: string }> }) {
   const session = await getSession()
   if (session?.uid == null || !session?.ax_uc) {
     return redirect(AuthRoutes.signIn, RedirectType.replace)
   }
 
-  const offer_id = z.coerce.number().parse(params.offer_id)
+  const offer_id = z.coerce.number().parse((await params).offer_id)
 
   const offer = await queryOffer({ offer_id })
   const metafields = await maybeUpdateOfferMetafield(offer)
