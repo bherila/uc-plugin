@@ -24,7 +24,6 @@ const cfg: Shopify.IPublicShopifyConfig | Shopify.IPrivateShopifyConfig = {
 // Initialize the Shopify client
 const shopify = new Shopify(cfg)
 
-shopify.on('callGraphqlLimits',
-  (limits: Shopify.ICallGraphqlLimits) => console.info(limits));
+shopify.on('callGraphqlLimits', (limits: Shopify.ICallGraphqlLimits) => console.info(limits))
 
 export default shopify

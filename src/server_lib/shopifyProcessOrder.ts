@@ -32,6 +32,8 @@ async function log(
   console.info('[allocate] ' + txt)
 }
 
+function groupByVariantGraphqlId() {}
+
 export default async function shopifyProcessOrder(orderIdX: string) {
   const logPromises: Promise<void>[] = []
   const startTime = Date.now()
@@ -53,9 +55,20 @@ export default async function shopifyProcessOrder(orderIdX: string) {
     let calculatedOrderId: string | null = null
     let offerId: number | null = null
 
-    const dealLineItemFromShopifyOrder = shopifyOrder.lineItems.nodes.filter((node) =>
-      node.product.tags.includes('deal'),
-    )
+    // combine dealLineItemFromShopifyOrder by variant_graphql_id (adding up quantities)
+    const variant2DealItemMap = new Map<string, (typeof shopifyOrder.lineItems.nodes)[0]>()
+    for (const dealLineItem of shopifyOrder.lineItems.nodes) {
+      if (dealLineItem.product.tags.includes('deal')) {
+        const key = dealLineItem.variant.variant_graphql_id
+        const existingItem = variant2DealItemMap.get(key)
+        if (existingItem != null) {
+          existingItem.quantity += dealLineItem.quantity
+        } else {
+          variant2DealItemMap.set(key, dealLineItem)
+        }
+      }
+    }
+    const dealLineItemFromShopifyOrder = Array.from(variant2DealItemMap.values())
 
     // map the variant to the order and stash this so we can query for the order later
     const purchasedDealFields = dealLineItemFromShopifyOrder.map((node) => [

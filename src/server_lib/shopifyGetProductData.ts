@@ -54,51 +54,51 @@ const PRODUCT_QUERY = `
   }
 `
 
-export const shopifyGetProductDataByVariantIds = cache(async (
-  variantIds: string[],
-): Promise<{ [variantId: string]: ProductData }> => {
-  try {
-    const result = await shopify.graphql(PRODUCT_QUERY, { IDs: variantIds })
-    const productData: { [id: string]: ProductData } = {}
-    result.nodes.forEach((node: any) => {
-      if (!node) {
-        return
-      }
-      const product = node.product
-      const inventoryItem = node.inventoryItem
-      const variantId = node.id
-      if (!product || !variantId) {
-        return
-      }
-      const productId = product.id
-      productData[variantId] = {
-        variantId,
-        productId,
-        title: product.title,
-        maxVariantPriceAmount: product.priceRangeV2?.maxVariantPrice?.amount ?? '0.00',
-        featuredImageUrl: product.featuredImage?.url ?? null,
-        startDate: product.metafields.nodes.find((field: any) => field.key.indexOf('start_date') !== -1)
-          ?.jsonValue,
-        endDate: product.metafields.nodes.find((field: any) => field.key.indexOf('end_date') !== -1)?.jsonValue,
-        status: product.status,
-        tags: product.tags,
-        weight: inventoryItem?.measurement?.weight?.value ?? null,
-        unitCost: inventoryItem?.unitCost,
-        variantInventoryQuantity: inventoryItem?.inventoryQuantity ?? 0,
-      }
-    })
+export const shopifyGetProductDataByVariantIds = cache(
+  async (variantIds: string[]): Promise<{ [variantId: string]: ProductData }> => {
+    try {
+      const result = await shopify.graphql(PRODUCT_QUERY, { IDs: variantIds })
+      const productData: { [id: string]: ProductData } = {}
+      result.nodes.forEach((node: any) => {
+        if (!node) {
+          return
+        }
+        const product = node.product
+        const inventoryItem = node.inventoryItem
+        const variantId = node.id
+        if (!product || !variantId) {
+          return
+        }
+        const productId = product.id
+        productData[variantId] = {
+          variantId,
+          productId,
+          title: product.title,
+          maxVariantPriceAmount: product.priceRangeV2?.maxVariantPrice?.amount ?? '0.00',
+          featuredImageUrl: product.featuredImage?.url ?? null,
+          startDate: product.metafields.nodes.find((field: any) => field.key.indexOf('start_date') !== -1)
+            ?.jsonValue,
+          endDate: product.metafields.nodes.find((field: any) => field.key.indexOf('end_date') !== -1)?.jsonValue,
+          status: product.status,
+          tags: product.tags,
+          weight: inventoryItem?.measurement?.weight?.value ?? null,
+          unitCost: inventoryItem?.unitCost,
+          variantInventoryQuantity: inventoryItem?.inventoryQuantity ?? 0,
+        }
+      })
 
-    return productData
-  } catch (err) {
-    console.error(err)
-    return {}
-  }
-});
+      return productData
+    } catch (err) {
+      console.error(err)
+      return {}
+    }
+  },
+)
 
 export const shopifyGetProductDataByVariantId = cache(async (variantId: string) => {
   const result = await shopifyGetProductDataByVariantIds([variantId])
   return result[variantId]
-});
+})
 
 export async function shopifyGetProductDataFromManifests(manifests: V3Manifest[]) {
   const groupedManifests = groupBySku(manifests)

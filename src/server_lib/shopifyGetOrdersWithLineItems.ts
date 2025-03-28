@@ -1,6 +1,7 @@
 import 'server-only'
 import { z } from 'zod'
 import shopify from '@/server_lib/shopify'
+import { cache } from 'react'
 
 const schema = z.object({
   nodes: z.array(
@@ -131,4 +132,4 @@ const shopifyGetOrdersWithLineItems = async (graphqlOrderIds: string[]) => {
   return nodes
 }
 
-export default shopifyGetOrdersWithLineItems
+export default cache(shopifyGetOrdersWithLineItems)

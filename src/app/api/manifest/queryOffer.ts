@@ -13,10 +13,7 @@ interface OfferDbSchemaRow {
   offer_variant_id: string
 }
 
-const queryOffer = async (query: {
-  offer_id?: number
-  offer_name?: string
-}): Promise<V3Offer | null> => {
+const queryOffer = async (query: { offer_id?: number; offer_name?: string }): Promise<V3Offer | null> => {
   console.info('Querying offer ' + query.offer_id)
   try {
     const { offer_id, offer_name } = z
@@ -102,4 +99,4 @@ const queryOffer = async (query: {
   }
 }
 
-export default cache(queryOffer);
+export default cache(queryOffer)
