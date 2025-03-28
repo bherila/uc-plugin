@@ -5,6 +5,7 @@ export interface ShopifyProductVariant {
   variantId: string
   variantPrice?: string
   variantCompareAtPrice?: string
+  variantInventoryQuantity: number
   variantSku: string
   variantWeight?: string
 }

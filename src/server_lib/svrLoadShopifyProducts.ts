@@ -19,6 +19,7 @@ interface ProductVariant {
       }
     }
   }
+  inventoryQuantity: number
 }
 
 interface ProductNode {
@@ -79,6 +80,7 @@ const svrLoadShopifyProducts = async (type: MID) => {
               sku
               price
               compareAtPrice
+              inventoryQuantity
               inventoryItem {
                 id
                 measurement {
@@ -121,6 +123,7 @@ const svrLoadShopifyProducts = async (type: MID) => {
           variantName: variant.name,
           variantPrice: variant.price?.toString(),
           variantCompareAtPrice: variant.compareAtPrice?.toString(),
+          variantInventoryQuantity: variant.inventoryQuantity,
           variantWeight: variant.inventoryItem?.measurement?.weight?.value,
         })
       })

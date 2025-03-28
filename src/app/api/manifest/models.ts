@@ -20,6 +20,7 @@ export interface ProductDataGrouping {
   title: string
   maxVariantPriceAmount: string
   featuredImageUrl: string | null
+  variantInventoryQuantity: number
   qty: number
   percentChance: number
   weight: number | null

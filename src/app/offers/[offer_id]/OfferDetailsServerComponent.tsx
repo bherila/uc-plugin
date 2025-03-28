@@ -16,18 +16,41 @@ import Link from 'next/link'
 import genShopifyDetail from '@/server_lib/shopifyDetailGenerator'
 import VariantLink from '../VariantLink'
 import { setShopifyQtyAction } from './_setShopifyQtyAction'
+import svrLoadOfferList from '@/server_lib/svrLoadOfferList'
+import { V3Offer } from '@/app/api/manifest/models'
 
 async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   const promises = {
     offer: queryOffer({ offer_id }),
     shopifyProducts: svrLoadShopifyProducts('manifest-item'),
     shopifyOfferDetail: genShopifyDetail(offer_id),
+    offerList: svrLoadOfferList(),
   }
 
   const offer = await promises.offer
   const manifestGroups = groupBySku(offer?.mf ?? [])
 
   const { inventoryQuantity, product } = await promises.shopifyOfferDetail
+  const shopifyProducts = await promises.shopifyProducts
+  const { offerListItems } = await promises.offerList
+
+  const otherActiveOffers = offerListItems.filter(
+    (otherOffer) => 
+      otherOffer.offer_id !== offer_id && 
+      new Date(otherOffer.offerProductData.startDate ?? 0) <= new Date() && 
+      new Date(otherOffer.offerProductData.endDate ?? Date.now()) >= new Date()
+  )
+
+  const otherOffersQtyByVariant: { [variantId: string]: number } = {}
+  for (const otherOffer of otherActiveOffers) {
+    const otherOfferDetails = await queryOffer({ offer_id: otherOffer.offer_id }) as V3Offer
+    const otherManifestGroups = groupBySku(otherOfferDetails?.mf ?? [])
+    
+    Object.keys(otherManifestGroups).forEach(variantId => {
+      otherOffersQtyByVariant[variantId] = 
+        (otherOffersQtyByVariant[variantId] || 0) + otherManifestGroups[variantId].length
+    })
+  }
 
   const numManifestsNotAssigned = offer?.mf?.filter((r) => r.assignee_id == null).length ?? 0
   const deficit = numManifestsNotAssigned - inventoryQuantity
@@ -132,6 +155,8 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
                 {hasOrders ? <th># Allocated</th> : null}
                 {hasOrders ? <th># Remaining</th> : null}
                 <th>% Chance</th>
+                <th>Shopify Inventory</th>
+                <th>Qty in other offers</th>
                 {!hasOrders ? <th>Action</th> : null}
               </tr>
             </thead>
@@ -165,6 +190,8 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
                     {hasOrders ? <td>{numAllocated}</td> : null}
                     {hasOrders ? <td>{totalQuantity - numAllocated}</td> : null}
                     <td>{product?.percentChance.toFixed(2)}%</td>
+                    <td>{shopifyProducts.find(p => p.variantId === shopifyPVURI)?.variantInventoryQuantity}</td>
+                    <td>{otherOffersQtyByVariant[shopifyPVURI] || 0}</td>
                     {!hasOrders ? (
                       <td>
                         {numAllocated == 0 && <DeleteButton onDelete={deleteManifestAction} offerID={offer_id} />}
