@@ -1,0 +1,438 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["typedSql"]
+  binaryTargets   = ["native", "debian-openssl-3.0.x"]
+}
+
+generator zod {
+  provider = "zod-prisma-types"
+  output   = "../src/.prisma/generated/zod"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model customer_list_july_2023 {
+  customer_name String?  @db.VarChar(34)
+  email         String   @id @db.VarChar(58)
+  orders        Int?
+  ltv           Decimal? @db.Decimal(8, 2)
+  first_order   String?  @db.VarChar(16)
+  last_order    String?  @db.VarChar(16)
+}
+
+model item_detail {
+  itemdetail_guid     String  @id @db.VarChar(36)
+  cola_id             String? @db.VarChar(50)
+  cola_name           String? @db.VarChar(200)
+  cola_region         String? @db.VarChar(200)
+  cola_appellation    String? @db.VarChar(200)
+  cola_varietal       String? @db.VarChar(200)
+  cola_vintage        String? @db.Char(4)
+  cola_abv            Float?  @db.Float
+  about_wine          String? @db.LongText
+  tasting_notes       String? @db.LongText
+  winemaker_notes     String? @db.LongText
+  label_img_url       String? @db.VarChar(512)
+  bottle_img_url      String? @db.VarChar(512)
+  retail_price        Float?  @db.Float
+  winery_id           String? @db.Char(36)
+  url_key             String? @db.VarChar(256)
+  brand               String? @db.VarChar(256)
+  country_code        String? @db.Char(2)
+  upc                 String? @db.MediumText
+  is_wine             String? @db.Char(1)
+  is_beer             String? @db.Char(1)
+  is_liquor           String? @db.Char(1)
+  is_sparkling        String? @db.Char(1)
+  is_cult             String? @db.Char(1)
+  is_small_production String? @db.Char(1)
+  ct_wine_id          Int?
+  ct_producer_id      Int?
+  ct_likes            Int?
+  ct_tasting_notes    Int?
+  ct_review           Int?
+  ct_community_score  String? @db.VarChar(20)
+  ct_qty              Int?
+  wine_vineyard       String? @db.VarChar(50)
+  wine_web_url        String? @db.VarChar(512)
+  wine_drink_start    String? @db.VarChar(20)
+  wine_drink_end      String? @db.VarChar(20)
+  wine_producer_uuid  String? @db.VarChar(36)
+  redirect_to         String? @db.Text
+  item_tsv            String? @db.MediumText
+  wine_ml             String? @db.Text
+  cola_fanciful_name  String? @db.MediumText
+  wd_varietal         String? @db.VarChar(50)
+  wd_region           String? @db.VarChar(50)
+  is_blend            String? @db.Char(1)
+  price_range         String? @db.VarChar(50)
+  item_lbs            String? @db.VarChar(20)
+  category            String? @db.VarChar(50)
+  blur_bottle_img     String? @db.VarChar(256)
+  blur_label_img      String? @db.VarChar(256)
+
+  @@index([cola_appellation], map: "cola_appellation")
+  @@index([cola_region], map: "cola_region")
+  @@index([cola_varietal], map: "cola_varietal")
+  @@index([retail_price], map: "retail_price")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model item_sku {
+  sku                        String    @id @db.VarChar(255)
+  srp                        Decimal?  @db.Decimal(10, 2)
+  is_autographed             Boolean?
+  is_taxable                 Boolean?
+  is_counted_for_shipment    Boolean?
+  drink_by_date              DateTime? @db.Timestamp(0)
+  sku_itemdetail_guid        String?   @db.TinyText
+  index                      Int?
+  last_order_date            DateTime? @db.DateTime(0)
+  last_restock               DateTime? @db.DateTime(0)
+  last_stock_update          DateTime? @db.DateTime(0)
+  last_stock_qty             Int       @default(0)
+  next_delivery_date         DateTime? @db.Timestamp(0)
+  last_count_owed            Int       @default(0)
+  x_friendly_name            String?   @db.VarChar(255)
+  scramble_letters           String?   @db.VarChar(255)
+  scramble_qty_allowed       Int       @default(0)
+  sku_allowed_states         String?   @db.VarChar(255)
+  comment                    String?   @db.Text
+  sku_tsv                    String?   @db.Text
+  sku_cogs_unit              Decimal   @default(0.00) @db.Decimal(10, 2)
+  is_pallet_program          Boolean   @default(false)
+  is_deprecated              Boolean?
+  sku_varietal               String?   @db.TinyText
+  sku_region                 String?   @db.TinyText
+  last_count_shipped         Int       @default(0)
+  is_in_wd                   Boolean   @default(false)
+  sku_was_swap               Boolean   @default(false)
+  sku_sort                   Int       @default(0)
+  sku_preswap                String?   @db.Text
+  sku_postswap               String?   @db.Text
+  sku_qty_reserved           Int?      @default(0)
+  sku_cogs_is_estimated      Boolean   @default(false)
+  sku_taxset_id              String?   @db.TinyText
+  qty_offsite                Int       @default(0)
+  sku_external_id            String?   @db.VarChar(32)
+  sku_fq_lo                  Int       @default(0)
+  sku_fq_hi                  Int       @default(35)
+  sku_velocity               Decimal   @default(0.00) @db.Decimal(10, 2)
+  last_vip_qty               Int       @default(0)
+  last_open_xfer_qty         Int       @default(0)
+  sku_is_dropship            Boolean   @default(false)
+  sku_ship_alone             Boolean   @default(false)
+  sku_supplier_guid          String?   @db.TinyText
+  next_stock_update          DateTime? @db.DateTime(0)
+  sku_exclude_metrics        Boolean?  @default(false)
+  netsuite_synced            DateTime? @db.DateTime(0)
+  category                   String?   @db.VarChar(30)
+  country_code               String?   @db.VarChar(255)
+  unlimited_allocation_until DateTime? @db.DateTime(0)
+  avg_purchase_price         Decimal?  @db.Decimal(10, 2)
+  last_purchase_price        Decimal?  @db.Decimal(10, 2)
+  dont_buy_after             DateTime? @db.DateTime(0)
+  pack_size                  Int?
+}
+
+model new_customer_data_after_bk_from_lcc {
+  Customer_ID                 BigInt   @id @default(autoincrement()) @map("Customer ID")
+  Customer_Created_At         String?  @map("Customer Created At") @db.VarChar(10)
+  First_Order_Date            String?  @map("First Order Date") @db.VarChar(10)
+  Email                       String?  @db.VarChar(44)
+  First_Name                  String?  @map("First Name") @db.VarChar(25)
+  Last_Name                   String?  @map("Last Name") @db.VarChar(21)
+  Billing_Address_First_Name  String?  @map("Billing Address First Name") @db.VarChar(32)
+  Billing_Address_Last_Name   String?  @map("Billing Address Last Name") @db.VarChar(44)
+  Billing_Address_Company     String?  @map("Billing Address Company") @db.VarChar(60)
+  Billing_Address_Address_1   String?  @map("Billing Address Address 1") @db.VarChar(81)
+  Billing_Address_Address_2   String?  @map("Billing Address Address 2") @db.VarChar(60)
+  Billing_Address_City        String?  @map("Billing Address City") @db.VarChar(38)
+  Billing_Address_State       String?  @map("Billing Address State") @db.VarChar(2)
+  Billing_Address_Postcode    String?  @map("Billing Address Postcode") @db.VarChar(10)
+  Billing_Address_Country     String?  @map("Billing Address Country") @db.VarChar(2)
+  Billing_Address_Email       String?  @map("Billing Address Email") @db.VarChar(44)
+  Billing_Address_Phone       String?  @map("Billing Address Phone") @db.VarChar(16)
+  Shipping_Address_First_Name String?  @map("Shipping Address First Name") @db.VarChar(10)
+  Shipping_Address_Last_Name  String?  @map("Shipping Address Last Name") @db.VarChar(10)
+  Shipping_Address_Company    String?  @map("Shipping Address Company") @db.VarChar(10)
+  Shipping_Address_Address_1  String?  @map("Shipping Address Address 1") @db.VarChar(10)
+  Shipping_Address_Address_2  String?  @map("Shipping Address Address 2") @db.VarChar(10)
+  Shipping_Address_City       String?  @map("Shipping Address City") @db.VarChar(10)
+  Shipping_Address_State      String?  @map("Shipping Address State") @db.VarChar(10)
+  Shipping_Address_Postcode   String?  @map("Shipping Address Postcode") @db.VarChar(10)
+  Shipping_Address_Country    String?  @map("Shipping Address Country") @db.VarChar(10)
+  Total_Spent                 Decimal? @map("Total Spent") @db.Decimal(7, 2)
+  Order_Count                 Int?     @map("Order Count")
+  Item_Count                  Int?     @map("Item Count")
+  Last_Order_Date             String?  @map("Last Order Date") @db.VarChar(10)
+
+  @@index([Email], map: "Email")
+}
+
+model old_order_data_500k_orders {
+  order_guid             String    @id @db.Char(36)
+  order_user             String?   @db.Char(36)
+  order_qty              Int?
+  order_total_price      Decimal?  @db.Decimal(7, 2)
+  order_timestamp        DateTime? @db.DateTime(0)
+  order_offer_id         String?   @db.Char(36)
+  order_user_nth         String?   @db.VarChar(10)
+  order_auth_date        DateTime? @db.DateTime(0)
+  order_transaction_id   BigInt?
+  order_yymm_pst         String?   @db.VarChar(7)
+  order_type             String?   @db.VarChar(16)
+  offer_guid             String?   @db.Char(36)
+  offer_title            String?   @db.VarChar(100)
+  offer_price            String?   @db.VarChar(4)
+  offer_meta_title       String?   @db.VarChar(132)
+  offer_subtitle         String?   @db.VarChar(243)
+  offer_primary_varietal String?   @db.VarChar(25)
+}
+
+model order_list {
+  order_guid                        String                                        @id @db.VarChar(36)
+  order_sku_list                    String?                                       @db.MediumText
+  order_user                        String?                                       @db.VarChar(36)
+  order_billing_address             String?                                       @db.VarChar(36)
+  order_qty                         Int?
+  order_total_price                 Decimal?                                      @db.Decimal(8, 2)
+  order_discount                    Decimal?                                      @db.Decimal(8, 2)
+  order_credit_discount             Decimal?                                      @db.Decimal(8, 2)
+  order_tax                         Decimal?                                      @db.Decimal(8, 2)
+  order_timestamp                   String?                                       @db.VarChar(26)
+  order_status                      String?                                       @db.VarChar(14)
+  order_payment_status              String?                                       @db.VarChar(15)
+  order_offer_id                    String?                                       @db.VarChar(36)
+  order_utm_source                  String?                                       @db.Text
+  order_utm_medium                  String?                                       @db.Text
+  order_utm_campaign                String?                                       @db.Text
+  order_user_nth                    Int?
+  order_auth_code                   String?                                       @db.VarChar(12)
+  order_auth_date                   String?                                       @db.VarChar(26)
+  order_billing_instrument          String?                                       @db.VarChar(36)
+  order_transaction_id              String?                                       @db.VarChar(12)
+  x_user_email                      String?                                       @db.VarChar(44)
+  order_unit_price                  Decimal?                                      @db.Decimal(8, 2)
+  order_promo_code                  String?                                       @db.VarChar(36)
+  x_order_is_authorized_or_captured order_list_x_order_is_authorized_or_captured?
+  cohort_mth                        String?                                       @db.VarChar(2)
+  order_reveal_date                 String?                                       @db.VarChar(26)
+  cohort_fp_mth                     Decimal?                                      @db.Decimal(8, 2)
+  is_test_order                     String?                                       @db.VarChar(5)
+  order_rejected_dt                 String?                                       @db.VarChar(26)
+  order_upgraded_value              Decimal?                                      @db.Decimal(8, 2)
+  order_allocated_cogs              Decimal?                                      @db.Decimal(8, 2)
+  order_cohort_fpdate               String?                                       @db.VarChar(26)
+  order_cc_fee                      Decimal?                                      @db.Decimal(8, 2)
+  order_refund_transaction_id       String?                                       @db.VarChar(27)
+  order_original_mf                 String?                                       @db.VarChar(10)
+  order_yymm_pst                    String?                                       @db.VarChar(7)
+  order_mc_eid                      String?                                       @db.VarChar(12)
+  order_mc_cid                      String?                                       @db.VarChar(10)
+  order_subscription_id             String?                                       @db.VarChar(10)
+  order_is_void                     order_list_order_is_void?
+  order_cash_in                     Decimal?                                      @db.Decimal(8, 2)
+  order_disc_c                      Decimal?                                      @db.Decimal(8, 2)
+  order_disc_f                      Decimal?                                      @db.Decimal(8, 2)
+  order_disc_s                      Decimal?                                      @db.Decimal(8, 2)
+  order_disc_r                      Decimal?                                      @db.Decimal(8, 2)
+  order_disc_t                      Decimal?                                      @db.Decimal(8, 2)
+  order_disc_m                      Decimal?                                      @db.Decimal(8, 2)
+  order_disc_g                      Decimal?                                      @db.Decimal(8, 2)
+  order_disc_other                  Decimal?                                      @db.Decimal(8, 2)
+  order_ship_revenue                Decimal?                                      @db.Decimal(8, 2)
+  order_previous_order              String?                                       @db.VarChar(36)
+  utm_content                       String?                                       @db.VarChar(112)
+  utm_term                          String?                                       @db.VarChar(70)
+  netsuite_synced                   String?                                       @db.VarChar(33)
+  payment_intent_id                 String?                                       @db.VarChar(27)
+  utm_device                        String?                                       @db.VarChar(10)
+  utm_placement                     String?                                       @db.VarChar(25)
+  utm_site                          String?                                       @db.VarChar(39)
+  order_type                        order_list_order_type?
+}
+
+model user_list {
+  user_guid                 String    @id @db.Char(36)
+  user_birthday             String?   @db.VarChar(23)
+  user_default_address      String?   @db.VarChar(36)
+  user_email                String?   @db.VarChar(58)
+  user_fname                String?   @db.VarChar(25)
+  user_lname                String?   @db.VarChar(26)
+  user_is21                 String?   @db.VarChar(1)
+  user_is_testaccount       String?   @db.VarChar(1)
+  user_image_url            String?   @db.VarChar(97)
+  user_url_profile          String?   @db.VarChar(66)
+  user_name                 String?   @db.VarChar(32)
+  user_login_dt             String?   @db.VarChar(26)
+  user_signup_dt            String?   @db.VarChar(26)
+  user_last_purchase_dt     DateTime? @db.DateTime(0)
+  user_first_purchase_dt    DateTime? @db.DateTime(0)
+  user_referred_by_id       String?   @db.VarChar(36)
+  user_referral_domain      String?   @db.VarChar(10)
+  session_utm_source        String?   @db.VarChar(73)
+  session_utm_campaign      String?   @db.VarChar(99)
+  session_utm_medium        String?   @db.VarChar(35)
+  x_life_credit             Decimal?  @db.Decimal(8, 2)
+  x_total_qty               Int?
+  x_life_spend              Decimal?  @db.Decimal(8, 2)
+  x_life_discount           Decimal?  @db.Decimal(7, 2)
+  x_acquisition_cost        Decimal?  @db.Decimal(10, 2)
+  x_achievement_points      Int?
+  user_is_private           String?   @db.VarChar(1)
+  user_is_red_buyer         String?   @db.VarChar(1)
+  user_is_white_buyer       String?   @db.VarChar(1)
+  user_is_largeformat_buyer String?   @db.VarChar(1)
+  user_min_price            String?   @db.VarChar(3)
+  user_max_price            String?   @db.VarChar(3)
+  user_avg_price            String?   @db.VarChar(8)
+  user_is_push              String?   @db.VarChar(1)
+  user_outreach_dt          String?   @db.VarChar(26)
+  ls_is_student             String?   @db.VarChar(1)
+  ls_is_personal_email      String?   @db.VarChar(1)
+  ls_grade                  String?   @db.VarChar(23)
+  ls_company_state_code     String?   @db.VarChar(2)
+  ls_fname                  String?   @db.VarChar(10)
+  ls_lname                  String?   @db.VarChar(12)
+  ls_location_state         String?   @db.VarChar(20)
+  ls_company_name           String?   @db.VarChar(48)
+  ls_company_industry       String?   @db.VarChar(32)
+  ls_company_country        String?   @db.VarChar(2)
+  ls_company_emps           String?   @db.VarChar(5)
+  ls_is_spam                String?   @db.VarChar(1)
+  ls_customer_fit           String?   @db.VarChar(9)
+  ls_customer_fit_ext       String?   @db.VarChar(336)
+  x_order_count             Int?
+  user_inactive_dt          String?   @db.VarChar(26)
+  user_email_n              String?   @db.VarChar(10)
+  user_note                 String?   @db.VarChar(91)
+  user_expiry               String?   @db.VarChar(26)
+  user_last_ship_date       String?   @db.VarChar(26)
+  x_cloud_value             Decimal?  @db.Decimal(7, 2)
+  x_cloud_count             Int?
+  user_is_vip               String?   @db.VarChar(1)
+  user_signup_ym_pst        String?   @db.VarChar(7)
+  suspended_at              String?   @db.VarChar(29)
+  last_synced_at            String?   @db.VarChar(29)
+  is_admin                  String?   @db.VarChar(1)
+  utm_content               String?   @db.VarChar(85)
+  utm_term                  String?   @db.VarChar(72)
+  user_password             String?   @db.VarChar(64)
+  stripe_customer_id        String?   @db.VarChar(18)
+  google_id                 String?   @db.VarChar(21)
+  utm_device                String?   @db.VarChar(10)
+  utm_placement             String?   @db.VarChar(119)
+  utm_site                  String?   @db.VarChar(91)
+  holdout_num               String?   @db.VarChar(3)
+
+  @@index([user_email], map: "user_email")
+}
+
+model users {
+  uid       BigInt   @id @default(autoincrement())
+  email     String   @unique(map: "users_pk") @db.VarChar(50)
+  pw        String?  @db.VarChar(100)
+  salt      BigInt   @default(0)
+  alias     String?  @db.VarChar(50)
+  ax_maxmin Boolean  @default(false)
+  ax_homes  Boolean? @default(false)
+  ax_tax    Boolean  @default(false)
+  ax_evdb   Boolean? @default(false)
+  ax_spgp   Boolean  @default(false)
+  ax_uc     Boolean  @default(false)
+}
+
+model v3_audit_log {
+  id            BigInt   @id @default(autoincrement())
+  event_ts      DateTime @default(now()) @db.Timestamp(0)
+  event_name    String   @db.VarChar(50)
+  event_ext     String?  @db.MediumText
+  event_userid  BigInt?
+  offer_id      Int?
+  order_id      BigInt?  @db.UnsignedBigInt
+  time_taken_ms Int?
+}
+
+model v3_offer {
+  offer_id         Int    @id @default(autoincrement())
+  offer_name       String @unique(map: "v3_offer_unique_name") @db.VarChar(100)
+  offer_variant_id String @unique(map: "v3_offer_pk") @db.VarChar(100)
+}
+
+model v3_offer_manifest {
+  m_id                BigInt  @id @default(autoincrement())
+  offer_id            BigInt
+  mf_variant          String  @db.VarChar(50)
+  assignee_id         String? @db.VarChar(50)
+  assignment_ordering Float   @db.Float
+
+  @@index([offer_id, assignment_ordering], map: "manifest_v2_offer_id_assign_order_index")
+}
+
+model v3_order_to_variant {
+  order_id   String @db.VarChar(100)
+  variant_id String @db.VarChar(100)
+  offer_id   Int?
+
+  @@unique([variant_id, order_id], map: "v3_order_to_variant_variant_id_order_id_uindex")
+}
+
+model inventory {
+  sku             String   @id @db.VarChar(19)
+  description     String?  @db.VarChar(121)
+  units_on_hand   Int?
+  cost_basis_unit Decimal? @db.Decimal(6, 2)
+  srp_unit        Decimal? @db.Decimal(7, 2)
+
+  @@map("2023_05_31_inventory")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model computed_buyer_varietals {
+  id            Int     @id @default(autoincrement())
+  winner_guid   String  @db.Char(36)
+  cola_varietal String  @db.VarChar(50)
+  total_paid    Decimal @db.Decimal(19, 5)
+
+  @@index([cola_varietal], map: "cola_varietal")
+}
+
+model member_list_export_2023_07_06 {
+  Email          String? @db.VarChar(67)
+  Klaviyo_ID     String  @id @map("Klaviyo ID") @db.VarChar(26)
+  First_Name     String? @map("First Name") @db.VarChar(52)
+  Last_Name      String? @map("Last Name") @db.VarChar(55)
+  Phone_Number   String? @map("Phone Number") @db.VarChar(11)
+  Address        String? @db.VarChar(45)
+  Address_2      String? @map("Address 2") @db.VarChar(10)
+  City           String? @db.VarChar(33)
+  State___Region String? @map("State / Region") @db.VarChar(35)
+  Country        String? @db.VarChar(24)
+  Zip_Code       String? @map("Zip Code") @db.VarChar(10)
+}
+
+enum order_list_x_order_is_authorized_or_captured {
+  false
+  true
+}
+
+enum order_list_order_is_void {
+  false
+  true
+}
+
+enum order_list_order_type {
+  TastingRoom
+  SignupGift
+  UCAdminSingleSKU
+  Online_Web       @map("Online-Web")
+  ScrambleLetter
+  UCGrant
+  ScramblePrize
+  Offer
+  WineClub
+}
