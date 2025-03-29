@@ -1,7 +1,7 @@
 import 'server-only'
 import shopify from '@/server_lib/shopify'
 import z from 'zod'
-import db from '@/server_lib/db'
+import { prisma } from '@/server_lib/prisma'
 
 const CANCEL_ORDER_MUTATION = `
   mutation cancelOrder($id: ID!, $restockInventory: Boolean = false) {
@@ -21,7 +21,12 @@ const CANCEL_ORDER_MUTATION = `
 
 async function log(msg: any) {
   const txt = typeof msg === 'string' ? msg : JSON.stringify(msg)
-  await db.query('insert into v3_audit_log (event_name, event_ext) values (?, ?)', ['cancelOrder', txt])
+  await prisma.v3_audit_log.create({
+    data: {
+      event_name: 'cancelOrder',
+      event_ext: txt,
+    },
+  })
 }
 
 const cancelResponseSchema = z.object({

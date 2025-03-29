@@ -3,6 +3,7 @@ import shopify from '@/server_lib/shopify'
 import { ProductData, ProductDataGrouping, V3Manifest } from '@/app/api/manifest/models'
 import groupBySku from '@/lib/groupBySku'
 import { cache } from 'react'
+import { prisma } from '@/server_lib/prisma'
 
 const PRODUCT_QUERY = `
   query($IDs: [ID!]!) {
@@ -54,6 +55,16 @@ const PRODUCT_QUERY = `
   }
 `
 
+async function logError(err: any) {
+  const errorMessage = err instanceof Error ? err.message : JSON.stringify(err)
+  await prisma.v3_audit_log.create({
+    data: {
+      event_name: 'shopifyGetProductData',
+      event_ext: errorMessage,
+    },
+  })
+}
+
 export const shopifyGetProductDataByVariantIds = cache(
   async (variantIds: string[]): Promise<{ [variantId: string]: ProductData }> => {
     try {
@@ -89,6 +100,7 @@ export const shopifyGetProductDataByVariantIds = cache(
 
       return productData
     } catch (err) {
+      await logError(err)
       console.error(err)
       return {}
     }

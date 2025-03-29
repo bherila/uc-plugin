@@ -1,6 +1,6 @@
 import 'server-only'
 import z from 'zod'
-import db from '@/server_lib/db'
+import { prisma } from '@/server_lib/prisma'
 import shopify from '@/server_lib/shopify'
 
 const QUERY = `query ($id: ID!) {
@@ -53,16 +53,37 @@ const schema = z.object({
 
 export type ShopifyDetail = z.infer<typeof schema>
 
+async function logError(err: any, offerId?: number) {
+  const errorMessage = err instanceof Error ? err.message : JSON.stringify(err)
+  await prisma.v3_audit_log.create({
+    data: {
+      event_name: 'genShopifyDetail',
+      event_ext: errorMessage,
+      offer_id: offerId,
+    },
+  })
+}
+
 export default async function genShopifyDetail(offerId: number): Promise<ShopifyDetail> {
   try {
     // get the offer variant name
-    const rows: any = await db.query(`select offer_variant_id from v3_offer where offer_id = ?`, [offerId])
-    const offerVariant = z.string().parse(rows[0].offer_variant_id)
+    const offer = await prisma.v3_offer.findUnique({
+      where: { offer_id: offerId },
+      select: { offer_variant_id: true },
+    })
+
+    if (!offer) {
+      throw new Error(`No offer found with ID ${offerId}`)
+    }
+
+    const offerVariant = z.string().parse(offer.offer_variant_id)
 
     // get the product quantity
     const gqlRoot: any = await shopify.graphql(QUERY, { id: offerVariant })
     return schema.parse(gqlRoot?.node)
-  } finally {
-    await db.end()
+  } catch (error) {
+    await logError(error, offerId)
+    console.error('Error in genShopifyDetail:', error)
+    throw error
   }
 }

@@ -1,12 +1,16 @@
 import 'server-only'
 import shopify from '@/server_lib/shopify'
-import z from 'zod'
-import db from '@/server_lib/db'
+import { prisma } from '@/server_lib/prisma'
 
 async function log(msg: any) {
   const txt = typeof msg === 'string' ? msg : JSON.stringify(msg)
   console.log(txt)
-  await db.query('insert into v3_audit_log (event_name, event_ext) values (?, ?)', ['setVariantQty', txt])
+  await prisma.v3_audit_log.create({
+    data: {
+      event_name: 'setVariantQty',
+      event_ext: txt,
+    },
+  })
 }
 
 const SET_INVENTORY_LEVEL_MUTATION = `

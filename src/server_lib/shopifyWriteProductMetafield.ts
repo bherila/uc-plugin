@@ -1,11 +1,16 @@
 import 'server-only'
-import db from '@/server_lib/db'
+import { prisma } from '@/server_lib/prisma'
 import shopify from '@/server_lib/shopify'
 import z from 'zod'
 
 async function log(msg: any) {
   const txt = typeof msg === 'string' ? msg : JSON.stringify(msg)
-  await db.query('insert into v3_audit_log (event_name, event_ext) values (?, ?)', ['metaField', txt])
+  await prisma.v3_audit_log.create({
+    data: {
+      event_name: 'metaField',
+      event_ext: txt,
+    },
+  })
 }
 
 // Define the GraphQL mutation to update the metafield

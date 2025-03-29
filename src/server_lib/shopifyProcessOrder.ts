@@ -1,13 +1,14 @@
 import 'server-only'
 import z from 'zod'
-import db from '@/server_lib/db'
+import { prisma } from '@/server_lib/prisma'
 import { V3Manifest } from '@/app/api/manifest/models'
 import groupBySku from '@/lib/groupBySku'
 import shopify from '@/server_lib/shopify'
 import shopifyGetOrdersWithLineItems from '@/server_lib/shopifyGetOrdersWithLineItems'
-import { ResultSetHeader } from 'mysql2'
 import { shopifyCancelOrder } from './shopifyCancelOrder'
 import { shopifySetVariantQuantity } from './shopifySetVariantQuantity'
+import db from '@/server_lib/db'
+import { btl_allocate, btl_deallocate } from '@prisma/client/sql'
 
 export const maxDuration = 60
 
@@ -18,21 +19,17 @@ async function log(
   timeTakenMs: number | null = null,
 ) {
   const txt = typeof msg === 'string' ? msg : JSON.stringify(msg)
-  await db.query(
-    'insert into v3_audit_log (event_ts, event_name, event_ext, offer_id, order_id, time_taken_ms) values (?, ?, ?, ?, ?, ?)',
-    [
-      new Date().toISOString(),
-      'shopifyProcessOrder',
-      txt,
-      offerId ?? null,
-      orderIdNumeric?.toString() ?? null,
-      timeTakenMs?.toString() ?? null,
-    ],
-  )
+  await prisma.v3_audit_log.create({
+    data: {
+      event_name: 'shopifyProcessOrder',
+      event_ext: txt,
+      offer_id: offerId ?? undefined,
+      order_id: orderIdNumeric ?? undefined,
+      time_taken_ms: timeTakenMs ?? undefined,
+    },
+  })
   console.info('[allocate] ' + txt)
 }
-
-function groupByVariantGraphqlId() {}
 
 export default async function shopifyProcessOrder(orderIdX: string) {
   const logPromises: Promise<void>[] = []
@@ -132,34 +129,13 @@ export default async function shopifyProcessOrder(orderIdX: string) {
       pushLog(`${alreadyHaveQty} already allocated to ${assigneeId}, need ${needQty} more`)
       if (needQty > 0) {
         // ALLOCATE bottles.
-        const updateResult: ResultSetHeader = await db.query(
-          `
-            UPDATE v3_offer_manifest
-            SET assignee_id = ?
-            WHERE offer_id = ?
-              AND assignee_id IS NULL
-            ORDER BY assignment_ordering
-            LIMIT ?;
-          `,
-          [assigneeId, offerId, needQty],
-        )
-        pushLog(updateResult)
-
-        const rowsAffected = updateResult.affectedRows
+        const rowsAffected: number = await prisma.$queryRawTyped(btl_allocate(assigneeId, offerId, needQty))
         if (rowsAffected < needQty) {
           // Set the assignee_id for those rows back to null
-          await db.query(
-            `
-              UPDATE v3_offer_manifest
-              SET assignee_id = null
-              WHERE assignee_id = ?
-          AND offer_id = ?
-              ORDER BY assignment_ordering
-              LIMIT ?;
-            `,
-            [assigneeId, offerId, rowsAffected],
+          const rowsReverted: number = await prisma.$queryRawTyped(
+            btl_deallocate(assigneeId, offerId, rowsAffected),
           )
-          pushLog(`Reverted ${rowsAffected} rows due to insufficient allocation`)
+          pushLog(`Reverted ${rowsReverted} of ${rowsAffected} rows due to insufficient allocation`)
 
           // Call shopifyCancelOrder and shopifySetVariantQty
           pushLog(`Attempting to cancel order ${orderIdUri}`)
@@ -178,18 +154,8 @@ export default async function shopifyProcessOrder(orderIdX: string) {
         }
       } else if (needQty < 0) {
         // RELEASE (unallocate) bottles
-        const updateResult = await db.query(
-          `
-            UPDATE v3_offer_manifest
-            SET assignee_id = null
-            WHERE assignee_id = ?
-              AND offer_id = ?
-            ORDER BY assignment_ordering
-            LIMIT ?;
-          `,
-          [assigneeId, offerId, -needQty],
-        )
-        pushLog(updateResult)
+        const rowsReverted: number = await prisma.$queryRawTyped(btl_deallocate(assigneeId, offerId, -needQty))
+        pushLog(`Reverted ${rowsReverted} of ${-needQty} rows due to release`)
       }
 
       const offerManifests: V3Manifest[] = await db.query(
