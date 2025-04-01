@@ -8,6 +8,7 @@ import shopifyGetOrdersWithLineItems from '@/server_lib/shopifyGetOrdersWithLine
 import { shopifyCancelOrder } from './shopifyCancelOrder'
 import { shopifySetVariantQuantity } from './shopifySetVariantQuantity'
 import db from '@/server_lib/db'
+import { ResultSetHeader } from 'mysql2'
 
 export const maxDuration = 60
 
@@ -130,24 +131,35 @@ export default async function shopifyProcessOrder(orderIdX: string) {
 
       if (needQty > 0) {
         // ALLOCATE bottles.
-        const rowsAffected: number = await prisma.$executeRaw`
-            -- @param {String} $1:assignee_id
-            -- @param {BigInt} $2:offer_id
-            -- @param {Int} $3:quantity
+        const updateResult: ResultSetHeader = await db.query(
+          `
             UPDATE v3_offer_manifest
-            SET
-              assignee_id = ${assigneeId}
-            WHERE
-              offer_id = ${offerId}
+            SET assignee_id = ?
+            WHERE offer_id = ?
               AND assignee_id IS NULL
-            ORDER BY
-              assignment_ordering
-            LIMIT
-              ${needQty}`
+            ORDER BY assignment_ordering
+            LIMIT ?;
+          `,
+          [assigneeId, offerId, needQty],
+        )
+        const rowsAffected = updateResult.affectedRows
 
         if (rowsAffected < needQty) {
           // Set the assignee_id for those rows back to null
-          const rowsReverted: number = await btl_deallocate(assigneeId, offerId, rowsAffected)
+          // Set the assignee_id for those rows back to null
+          const rowsReverted = (
+            (await db.query(
+              `
+              UPDATE v3_offer_manifest
+              SET assignee_id = null
+              WHERE assignee_id = ?
+          AND offer_id = ?
+              ORDER BY assignment_ordering
+              LIMIT ?;
+            `,
+              [assigneeId, offerId, rowsAffected],
+            )) as ResultSetHeader
+          ).affectedRows
           pushLog(`Reverted ${rowsReverted} of ${rowsAffected} rows due to insufficient allocation`)
 
           // Call shopifyCancelOrder and shopifySetVariantQty
@@ -167,8 +179,18 @@ export default async function shopifyProcessOrder(orderIdX: string) {
         }
       } else if (needQty < 0) {
         // RELEASE (unallocate) bottles
-        const rowsReverted: number = await btl_deallocate(assigneeId, offerId, -needQty)
-        pushLog(`Reverted ${rowsReverted} of ${-needQty} rows due to release`)
+        const updateResult: ResultSetHeader = await db.query(
+          `
+            UPDATE v3_offer_manifest
+            SET assignee_id = null
+            WHERE assignee_id = ?
+              AND offer_id = ?
+            ORDER BY assignment_ordering
+            LIMIT ?;
+          `,
+          [assigneeId, offerId, -needQty],
+        )
+        pushLog(`Reverted ${updateResult.affectedRows} of ${-needQty} rows due to release`)
       }
 
       const offerManifests: V3Manifest[] = await db.query(
