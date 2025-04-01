@@ -16,8 +16,6 @@ import Link from 'next/link'
 import genShopifyDetail from '@/server_lib/shopifyDetailGenerator'
 import VariantLink from '../VariantLink'
 import { setShopifyQtyAction } from './_setShopifyQtyAction'
-import svrLoadOfferList from '@/server_lib/svrLoadOfferList'
-import { V3Offer } from '@/app/api/manifest/models'
 
 async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   const promises = {
