@@ -5,8 +5,8 @@ import groupBySku from '@/lib/groupBySku'
 import { cache } from 'react'
 import { prisma } from '@/server_lib/prisma'
 
-const PRODUCT_QUERY = `
-  query($IDs: [ID!]!) {
+const PRODUCT_QUERY = `#graphql
+  query GetProductData($IDs: [ID!]!) {
     nodes(ids: $IDs) {
       ... on ProductVariant {
         id

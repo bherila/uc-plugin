@@ -8,7 +8,6 @@ import shopifyGetOrdersWithLineItems from '@/server_lib/shopifyGetOrdersWithLine
 import { shopifyCancelOrder } from './shopifyCancelOrder'
 import { shopifySetVariantQuantity } from './shopifySetVariantQuantity'
 import db from '@/server_lib/db'
-import { btl_allocate, btl_deallocate } from '@prisma/client/sql'
 
 export const maxDuration = 60
 
@@ -129,12 +128,24 @@ export default async function shopifyProcessOrder(orderIdX: string) {
       pushLog(`${alreadyHaveQty} already allocated to ${assigneeId}, need ${needQty} more`)
       if (needQty > 0) {
         // ALLOCATE bottles.
-        const rowsAffected: number = await prisma.$queryRawTyped(btl_allocate(assigneeId, offerId, needQty))
+        const rowsAffected: number = await prisma.$executeRaw`
+            -- @param {String} $1:assignee_id
+            -- @param {BigInt} $2:offer_id
+            -- @param {Int} $3:quantity
+            UPDATE v3_offer_manifest
+            SET
+              assignee_id = ${assigneeId}
+            WHERE
+              offer_id = ${offerId}
+              AND assignee_id IS NULL
+            ORDER BY
+              assignment_ordering
+            LIMIT
+              ${needQty}`
+
         if (rowsAffected < needQty) {
           // Set the assignee_id for those rows back to null
-          const rowsReverted: number = await prisma.$queryRawTyped(
-            btl_deallocate(assigneeId, offerId, rowsAffected),
-          )
+          const rowsReverted: number = await btl_deallocate(assigneeId, offerId, rowsAffected)
           pushLog(`Reverted ${rowsReverted} of ${rowsAffected} rows due to insufficient allocation`)
 
           // Call shopifyCancelOrder and shopifySetVariantQty
@@ -154,7 +165,7 @@ export default async function shopifyProcessOrder(orderIdX: string) {
         }
       } else if (needQty < 0) {
         // RELEASE (unallocate) bottles
-        const rowsReverted: number = await prisma.$queryRawTyped(btl_deallocate(assigneeId, offerId, -needQty))
+        const rowsReverted: number = await btl_deallocate(assigneeId, offerId, -needQty)
         pushLog(`Reverted ${rowsReverted} of ${-needQty} rows due to release`)
       }
 
@@ -247,7 +258,7 @@ export default async function shopifyProcessOrder(orderIdX: string) {
 // these from https://shopify.dev/docs/apps/build/orders-fulfillment/order-management-apps/edit-orders#add-a-new-variant
 // genAI: For each of these graphql mutations, please write async typescript functions that take in the relevant input arguments strongly typed and return an object  parsed by zod schema. Assume "shopify" object is already constructed as a global variable from shopify-api-node, and we can use "await shopify.graphql(query, params)" to execute them. For the OrderEditAppliedDiscountInput, refer to the shopify GraphQL API for the correct object type definition.
 
-const GQL_BEGIN_EDIT = `
+const GQL_BEGIN_EDIT = `#graphql
 mutation beginEdit($order_id: ID!){
  orderEditBegin(id: $order_id){
     calculatedOrder{
@@ -262,7 +273,7 @@ mutation beginEdit($order_id: ID!){
   }
 }`
 
-const GQL_ADD_VARIANT = `
+const GQL_ADD_VARIANT = `#graphql
 mutation orderEditAddVariant($calculatedOrderId: ID!, $quantity: Int!, $variantId: ID!) {
   orderEditAddVariant(id: $calculatedOrderId, quantity: $quantity, variantId: $variantId, allowDuplicates: false) {
     calculatedLineItem {
@@ -284,7 +295,7 @@ mutation orderEditAddVariant($calculatedOrderId: ID!, $quantity: Int!, $variantI
   }
 }`
 
-const GQL_ADD_DISCOUNT = `
+const GQL_ADD_DISCOUNT = `#graphql
 mutation orderEditAddLineItemDiscount($discount: OrderEditAppliedDiscountInput!, $calculated_order_id: ID!, $line_item_id: ID!) {
   orderEditAddLineItemDiscount(discount: $discount, id: $calculated_order_id, lineItemId: $line_item_id) {
     addedDiscountStagedChange {
@@ -311,7 +322,7 @@ mutation orderEditAddLineItemDiscount($discount: OrderEditAppliedDiscountInput!,
   }
 }`
 
-const GQL_ORDER_EDIT_COMMIT = `
+const GQL_ORDER_EDIT_COMMIT = `#graphql
 mutation orderEditCommit($calculated_order_id: ID!) {
   orderEditCommit(id: $calculated_order_id, notifyCustomer: true) {
     order {
@@ -500,4 +511,19 @@ async function orderEditCommit({
   }
 }
 
-// end generated
+async function btl_deallocate(assigneeId: string, offerId: number, rowsAffected: number): Promise<number> {
+  return await prisma.$executeRaw`
+    -- @param {String} $1:assignee_id
+    -- @param {BigInt} $2:offer_id
+    -- @param {Int} $3:quantity
+    UPDATE v3_offer_manifest
+    SET
+      assignee_id = null
+    WHERE
+      assignee_id = ${assigneeId}
+      AND offer_id = ${offerId}
+    ORDER BY
+      assignment_ordering
+    LIMIT
+      ${rowsAffected}`
+}

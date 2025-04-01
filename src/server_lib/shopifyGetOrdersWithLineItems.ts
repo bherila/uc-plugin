@@ -61,8 +61,8 @@ const schema = z.object({
   ),
 })
 
-const query = `
-  query ($ids: [ID!]!) {
+const query = `#graphql
+  query GetOrdersWithLineItems ($ids: [ID!]!) {
     nodes(ids: $ids) {
       ... on Order {
         id

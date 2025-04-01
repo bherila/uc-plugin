@@ -9,7 +9,7 @@ async function log(msg: any) {
 }
 
 // Define the GraphQL mutation to update the metafield
-const UPDATE_METAFIELD_MUTATION = `
+const UPDATE_METAFIELD_MUTATION = `#graphql
   mutation UpdateMetafield($variantId: ID!, $key: String!, $value: String!) {
     productVariantUpdate(input: {
       id: $variantId,

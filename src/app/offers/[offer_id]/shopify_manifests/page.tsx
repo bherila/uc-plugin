@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react'
+import React from 'react'
 import Table from 'react-bootstrap/Table'
 import Container from 'react-bootstrap/Container'
 import Alert from 'react-bootstrap/Alert'
@@ -6,23 +6,22 @@ import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
 import Badge from 'react-bootstrap/Badge'
 import Button from 'react-bootstrap/Button'
-import db from '@/server_lib/db'
 import z from 'zod'
 import shopifyGetOrdersWithLineItems from '@/server_lib/shopifyGetOrdersWithLineItems'
 import CurrencyDisplay from '@/components/CurrencyDisplay'
 import RenderUTCDate from '@/components/RenderUTCDate'
 import Link from 'next/link'
-import { redirect, RedirectType, useSearchParams } from 'next/navigation'
+import { redirect, RedirectType } from 'next/navigation'
 import { getSession } from '@/server_lib/session'
 import { revalidatePath } from 'next/cache'
 import AuthRoutes from '@/app/auth/AuthRoutes'
 import shopifyProcessOrder from '@/server_lib/shopifyProcessOrder'
 import FixButton from './FixButton'
-import UpgradesAtTopToggle from './UpgradesAtTopToggle'
 import { shopifyCancelOrder } from '@/server_lib/shopifyCancelOrder'
 import SoldManifestsDetails, { SoldManifestItem } from './SoldManifestsDetails.client'
 import queryOffer from '@/app/api/manifest/queryOffer'
 import currency from 'currency.js'
+import { prisma } from '@/server_lib/prisma'
 
 export const maxDuration = 60
 
@@ -58,13 +57,16 @@ export default async function ShopifyOrdersPage({
     revalidatePath(`/offers/${offer_id}/shopify_manifests`)
   }
 
-  const variant_id = (
-    (await db.query(`select offer_variant_id from v3_offer where offer_id = ?`, [offer_id])) as any[]
-  )[0].offer_variant_id
+  const offer = await prisma.v3_offer.findFirstOrThrow({
+    where: { offer_id },
+    select: { offer_variant_id: true },
+  })
+  const variant_id = offer.offer_variant_id
 
-  const orders = (await db.query(`select order_id, variant_id from v3_order_to_variant where variant_id = ?`, [
-    variant_id,
-  ])) as any[]
+  const orders = await prisma.v3_order_to_variant.findMany({
+    where: { variant_id },
+    select: { order_id: true, variant_id: true },
+  })
 
   const allManifests: SoldManifestItem[] = []
   const offerData = await queryOffer({ offer_id })

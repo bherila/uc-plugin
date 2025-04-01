@@ -14,7 +14,7 @@ async function log(msg: any) {
 }
 
 // Define the GraphQL mutation to update the metafield
-const UPDATE_METAFIELD_MUTATION = `
+const UPDATE_METAFIELD_MUTATION = `#graphql
   mutation UpdateProductMetafield($productId: ID!, $key: String!, $value: String!) {
     productUpdate(input: {
       id: $productId,

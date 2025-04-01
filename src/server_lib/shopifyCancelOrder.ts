@@ -3,7 +3,7 @@ import shopify from '@/server_lib/shopify'
 import z from 'zod'
 import { prisma } from '@/server_lib/prisma'
 
-const CANCEL_ORDER_MUTATION = `
+const CANCEL_ORDER_MUTATION = `#graphql
   mutation cancelOrder($id: ID!, $restockInventory: Boolean = false) {
     orderCancel(
       orderId: $id, 

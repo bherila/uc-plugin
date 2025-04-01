@@ -13,7 +13,7 @@ async function log(msg: any) {
   })
 }
 
-const SET_INVENTORY_LEVEL_MUTATION = `
+const SET_INVENTORY_LEVEL_MUTATION = `#graphql
   mutation SetInventoryLevel($input: InventorySetQuantitiesInput!) {
     inventorySetQuantities(input: $input) {
       inventoryAdjustmentGroup {
@@ -40,7 +40,7 @@ export async function shopifySetVariantQuantity(variantId: string, availableQuan
   }
   try {
     // Get the first location ID
-    const data = await shopify.graphql(`
+    const data = await shopify.graphql(`#graphql
       query GetFirstLocation {
         locations(first: 1) {
           edges {
@@ -58,7 +58,7 @@ export async function shopifySetVariantQuantity(variantId: string, availableQuan
 
     // Get the inventory item ID
     const inventoryItemResponse = await shopify.graphql(
-      `
+      `#graphql
       query GetInventoryItem($variantId: ID!) {
         productVariant(id: $variantId) {
           inventoryItem {

@@ -1,12 +1,13 @@
 import { getSession } from '@/server_lib/session'
 import { redirect, RedirectType } from 'next/navigation'
 import AuthRoutes from '@/app/auth/AuthRoutes'
-import db from '@/server_lib/db'
 import Table from 'react-bootstrap/Table'
 import Container from 'react-bootstrap/Container'
 import Filter from './filter'
 import currency from 'currency.js'
 import z from 'zod'
+import { by_varietal_buyer_info, by_varietal_counts } from '@prisma/client/sql'
+import { prisma } from '@/server_lib/prisma'
 
 export default async function DataPage({
   searchParams,
@@ -28,39 +29,14 @@ export default async function DataPage({
 
   const varietal = params.varietal + '%'
 
-  const allVarietals: string[] = (
-    (await db.query(
-      `select distinct cola_varietal c from computed_buyer_varietals order by cola_varietal`,
-    )) as any[]
-  ).map((row) => row.c)
+  // const allVarietals: string[] = (
+  //   (await db.query(
+  //     `select distinct cola_varietal c from computed_buyer_varietals order by cola_varietal`,
+  //   )) as any[]
+  // ).map((row) => row.c)
 
-  const countQuery = (await db.query(
-    `
-      select count(*) num, sum(total_paid) total
-      from computed_buyer_varietals cv join user_list ul on ul.user_guid = cv.winner_guid
-      where cola_varietal like ?`,
-    [varietal],
-  )) as { num: number; total: number }[]
-  const query = (await db.query(
-    `
-      select user_email,
-             user_fname,
-             user_lname,
-             cola_varietal,
-             cv.total_paid AS total_paid_for_varietal
-      from computed_buyer_varietals cv
-             join user_list ul on ul.user_guid = cv.winner_guid
-      where cola_varietal like ?
-      order by total_paid_for_varietal desc 
-      limit 100`,
-    [varietal],
-  )) as {
-    user_email: string
-    user_fname: string
-    user_lname: string
-    cola_varietal: string
-    total_paid_for_varietal: number
-  }[]
+  const countQuery = await prisma.$queryRawTyped(by_varietal_counts(varietal))
+  const query = await prisma.$queryRawTyped(by_varietal_buyer_info(varietal))
 
   return (
     <div>
@@ -69,7 +45,7 @@ export default async function DataPage({
         <Filter />
         <div>
           Total paid:
-          <div>{countQuery[0].total}</div>
+          <div>{countQuery[0].total?.toString()}</div>
         </div>
         <div>Num rows = {countQuery[0].num}</div>
       </Container>
@@ -90,7 +66,7 @@ export default async function DataPage({
               <td>{row.user_fname}</td>
               <td>{row.user_lname}</td>
               <td>{row.cola_varietal}</td>
-              <td>{currency(row.total_paid_for_varietal).toString()}</td>
+              <td>{currency(row.total_paid_for_varietal.toString()).toString()}</td>
             </tr>
           ))}
         </tbody>

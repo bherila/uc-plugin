@@ -3,7 +3,8 @@ import z from 'zod'
 import { prisma } from '@/server_lib/prisma'
 import shopify from '@/server_lib/shopify'
 
-const QUERY = `query ($id: ID!) {
+const QUERY = `#graphql
+query GenShopifyDetail ($id: ID!) {
   node(id: $id) {
     ... on ProductVariant {
       availableForSale
