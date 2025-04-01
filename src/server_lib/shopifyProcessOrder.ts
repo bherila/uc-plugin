@@ -125,7 +125,9 @@ export default async function shopifyProcessOrder(orderIdX: string) {
         shopifyOrder.cancelledAt == null
           ? orderLineItem.quantity - alreadyHaveQty // ALLOCATE if not canceled
           : -alreadyHaveQty // RELEASE if canceled
+
       pushLog(`${alreadyHaveQty} already allocated to ${assigneeId}, need ${needQty} more`)
+
       if (needQty > 0) {
         // ALLOCATE bottles.
         const rowsAffected: number = await prisma.$executeRaw`
@@ -181,23 +183,23 @@ export default async function shopifyProcessOrder(orderIdX: string) {
         node.product.tags.includes('manifest-item'),
       )
 
-      // remove pre-existing manifests from shopify order
-      if (preExistingShopifyManifests.length > 0) {
-        pushLog(
-          `Cannot proceed until all ${preExistingShopifyManifests.length} pre-existing manifests are deleted from Shopify order`,
-        )
-        return
-        // const beginEditResult = await beginEdit({ orderId: orderIdUri })
-        // calculatedOrderId = beginEditResult.orderEditBegin?.calculatedOrder?.id ?? null
-        // if (!calculatedOrderId) {
-        //   await log('CalculatedOrder.id was null, aborting', offerId, orderIdNumeric)
-        //   return
-        // }
-        // await log(`Opened CalculatedOrder ${calculatedOrderId}`, offerId, orderIdNumeric)
-        // ... do stuff
-        // const commitResult = await orderEditCommit({ calculatedOrderId })
-        // await log(commitResult, offerId, orderIdNumeric)
-      }
+      // // remove pre-existing manifests from shopify order
+      // if (preExistingShopifyManifests.length > 0) {
+      //   pushLog(
+      //     `Cannot proceed until all ${preExistingShopifyManifests.length} pre-existing manifests are deleted from Shopify order`,
+      //   )
+      //   return
+      //   // const beginEditResult = await beginEdit({ orderId: orderIdUri })
+      //   // calculatedOrderId = beginEditResult.orderEditBegin?.calculatedOrder?.id ?? null
+      //   // if (!calculatedOrderId) {
+      //   //   await log('CalculatedOrder.id was null, aborting', offerId, orderIdNumeric)
+      //   //   return
+      //   // }
+      //   // await log(`Opened CalculatedOrder ${calculatedOrderId}`, offerId, orderIdNumeric)
+      //   // ... do stuff
+      //   // const commitResult = await orderEditCommit({ calculatedOrderId })
+      //   // await log(commitResult, offerId, orderIdNumeric)
+      // }
 
       const willUpdateShopifyOrder = preExistingShopifyManifests.length < offerManifests.length
       pushLog(
@@ -275,7 +277,7 @@ mutation beginEdit($order_id: ID!){
 
 const GQL_ADD_VARIANT = `#graphql
 mutation orderEditAddVariant($calculatedOrderId: ID!, $quantity: Int!, $variantId: ID!) {
-  orderEditAddVariant(id: $calculatedOrderId, quantity: $quantity, variantId: $variantId, allowDuplicates: false) {
+  orderEditAddVariant(id: $calculatedOrderId, quantity: $quantity, variantId: $variantId, allowDuplicates: true) {
     calculatedLineItem {
       # CalculatedLineItem fields
       id
@@ -375,6 +377,7 @@ type BeginEditResponse = z.infer<typeof beginEditSchema>
 
 async function beginEdit({ orderId }: BeginEditInput): Promise<BeginEditResponse> {
   const response = await shopify.graphql(GQL_BEGIN_EDIT, { order_id: orderId })
+  console.info('beginEdit response', response)
   return beginEditSchema.parse(response)
 }
 
@@ -407,7 +410,12 @@ type AddVariantResponse = z.infer<typeof addVariantSchema>
 
 async function addVariant(input: AddVariantInput): Promise<AddVariantResponse> {
   const response = await shopify.graphql(GQL_ADD_VARIANT, input)
-  return addVariantSchema.parse(response)
+  const res = addVariantSchema.safeParse(response)
+  if (res.success) {
+    return res.data
+  }
+  console.error('addVariant response', JSON.stringify(response))
+  throw res.error
 }
 
 const addDiscountSchema = z.object({

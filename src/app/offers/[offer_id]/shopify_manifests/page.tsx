@@ -313,7 +313,8 @@ export default async function ShopifyOrdersPage({
                           ) : null}
                           {!order.isQtyEqual ? (
                             <Badge style={{ marginLeft: '7px' }} bg="danger">
-                              Allocation error
+                              Allocation error - expected {order.totalPurchasedItemsQty} but got{' '}
+                              {order.totalUpgradeItemsQty}
                             </Badge>
                           ) : null}
                         </div>
