@@ -5,7 +5,7 @@
   "version": "deploy",
   "scripts": {
     "dev": "next dev --turbopack",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate --sql",
     "build": "next build",
     "start": "next start",
     "type-check": "tsc --pretty --noEmit",
