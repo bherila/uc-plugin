@@ -80,7 +80,6 @@ model item_detail {
   @@index([retail_price], map: "retail_price")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model item_sku {
   sku                        String    @id @db.VarChar(255)
   srp                        Decimal?  @db.Decimal(10, 2)
@@ -358,9 +357,10 @@ model v3_audit_log {
 }
 
 model v3_offer {
-  offer_id         Int    @id @default(autoincrement())
-  offer_name       String @unique(map: "v3_offer_unique_name") @db.VarChar(100)
-  offer_variant_id String @unique(map: "v3_offer_pk") @db.VarChar(100)
+  offer_id            Int    @id @default(autoincrement())
+  offer_name          String @unique(map: "v3_offer_unique_name") @db.VarChar(100)
+  offer_variant_id    String @unique(map: "v3_offer_pk") @db.VarChar(100)
+  offer_product_name  String @db.VarChar(200)
 }
 
 model v3_offer_manifest {
@@ -391,7 +391,6 @@ model inventory {
   @@map("2023_05_31_inventory")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model computed_buyer_varietals {
   id            Int     @id @default(autoincrement())
   winner_guid   String  @db.Char(36)
@@ -413,6 +412,18 @@ model member_list_export_2023_07_06 {
   State___Region String? @map("State / Region") @db.VarChar(35)
   Country        String? @db.VarChar(24)
   Zip_Code       String? @map("Zip Code") @db.VarChar(10)
+}
+
+model shopify_product_variant {
+  variantId         String   @id
+  productId         String
+  productName       String
+  variantName       String
+  variantPrice      String?
+  variantCompareAtPrice String?
+  variantInventoryQuantity Int
+  variantSku        String
+  variantWeight     String?
 }
 
 enum order_list_x_order_is_authorized_or_captured {

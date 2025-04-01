@@ -74,22 +74,22 @@ export default async function ShopifyOrdersPage({
   const offerPrice = offerData?.offerProductData.maxVariantPriceAmount ?? 0
 
   const ordersFromShopify = (await shopifyGetOrdersWithLineItems(orders.map((o) => o.order_id))).map((order) => {
-    const orderLineItems = order.lineItems.nodes
-    const purchasedItems = orderLineItems.filter((li) => li.discountedTotalSet.shopMoney.amount > 0)
-    const upgradeItems = orderLineItems.filter((li) => li.discountedTotalSet.shopMoney.amount <= 0)
+    const orderLineItems = order.lineItems_nodes
+    const purchasedItems = orderLineItems.filter((li) => li.discountedTotalSet_shopMoney_amount > 0)
+    const upgradeItems = orderLineItems.filter((li) => li.discountedTotalSet_shopMoney_amount <= 0)
 
-    let amountPaid = currency(purchasedItems[0]?.discountedTotalSet.shopMoney.amount ?? 0).divide(
+    let amountPaid = currency(purchasedItems[0]?.discountedTotalSet_shopMoney_amount ?? 0).divide(
       upgradeItems.length,
     )
     for (const item of upgradeItems ?? []) {
-      if (item.variant.variant_graphql_id !== offerSkuVariantId) {
+      if (item.variant_variant_graphql_id !== offerSkuVariantId) {
         allManifests.push({
           wineName: item.title,
           winnerEmail: order.email ?? '',
           amountPaid: amountPaid.value,
-          wineValue: item.originalUnitPriceSet.shopMoney.amount,
+          wineValue: item.originalUnitPriceSet_shopMoney_amount,
           wineCost: currency(
-            offerData?.manifestProductData[item.variant.variant_graphql_id]?.unitCost?.amount ?? 0,
+            offerData?.manifestProductData[item.variant_variant_graphql_id]?.unitCost?.amount ?? 0,
           ).value,
         })
       }
@@ -100,23 +100,23 @@ export default async function ShopifyOrdersPage({
     const totalUpgradeItemsQty = upgradeItems.reduce((total, li) => {
       // Free items don't count against allocation
       const isFreeItem =
-        li.originalUnitPriceSet.shopMoney.amount == 0 &&
-        currency(offerData?.manifestProductData[li.variant.variant_graphql_id]?.unitCost?.amount ?? 0).value == 0
+        li.originalUnitPriceSet_shopMoney_amount == 0 &&
+        currency(offerData?.manifestProductData[li.variant_variant_graphql_id]?.unitCost?.amount ?? 0).value == 0
       return isFreeItem ? total : total + li.quantity
     }, 0)
     const isQtyEqual = totalPurchasedItemsQty === totalUpgradeItemsQty
 
     // total value of each purchasedItems and upgradeItems
     const purchasedItemsTotalValue = purchasedItems.reduce(
-      (total, li) => total + li.originalUnitPriceSet.shopMoney.amount * li.quantity,
+      (total, li) => total + li.originalUnitPriceSet_shopMoney_amount * li.quantity,
       0,
     )
     const upgradeItemsTotalValue = upgradeItems.reduce(
-      (total, li) => total + li.originalUnitPriceSet.shopMoney.amount * li.quantity,
+      (total, li) => total + li.originalUnitPriceSet_shopMoney_amount * li.quantity,
       0,
     )
     const upgradeItemsTotalCost = upgradeItems.reduce((total, li) => {
-      const unitCost = offerData?.manifestProductData[li.variant.variant_graphql_id]?.unitCost?.amount ?? 0
+      const unitCost = offerData?.manifestProductData[li.variant_variant_graphql_id]?.unitCost?.amount ?? 0
       return total.add(currency(unitCost).multiply(li.quantity))
     }, currency(0)).value
 
@@ -325,7 +325,7 @@ export default async function ShopifyOrdersPage({
                       <td>
                         {order.purchasedItems.map((li) => (
                           <div key={li.line_item_id} style={{ borderBottom: '1px dashed #666' }}>
-                            {li.quantity} &times; {li.title} ({li.discountedTotalSet.shopMoney.amount})
+                            {li.quantity} &times; {li.title} ({li.discountedTotalSet_shopMoney_amount})
                           </div>
                         ))}
                         {order.upgradeItems.map((li) => (
@@ -350,7 +350,7 @@ export default async function ShopifyOrdersPage({
                         />
                       </td>
                       <td>
-                        <CurrencyDisplay value={order.totalShippingPriceSet.shopMoney.amount} digits={2} />
+                        <CurrencyDisplay value={order.totalShippingPriceSet_shopMoney_amount} digits={2} />
                       </td>
                       <td>{order.email}</td>
                       <td style={{ whiteSpace: 'nowrap' }}>

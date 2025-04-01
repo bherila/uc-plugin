@@ -9,11 +9,8 @@ import Link from 'next/link'
 import VariantLink from '@/app/offers/VariantLink'
 import svrLoadOfferList from '@/server_lib/svrLoadOfferList'
 import { revalidatePath } from 'next/cache'
-import NewOfferForm from '@/app/offers/NewOfferForm'
 import svrLoadShopifyProducts from '@/server_lib/svrLoadShopifyProducts'
 import svrDeleteOffer from '@/server_lib/svrDeleteOffer'
-import { z } from 'zod'
-import svrCreateOffer from '@/server_lib/svrCreateOffer'
 import RenderRelativeTimeInterval from '@/components/RenderRelativeTimeInterval'
 import Badge from 'react-bootstrap/Badge'
 
@@ -27,21 +24,6 @@ export default async function OfferListServerComponent() {
   const shopifyData = await shopifyPromise
 
   // server actions
-  const newOffer = async (offer_name: string, offer_variant_id: string) => {
-    'use server'
-    const parsed = z
-      .object({
-        offer_name: z.string(),
-        offer_variant_id: z.string(),
-      })
-      .parse({
-        offer_name,
-        offer_variant_id,
-      })
-    await svrCreateOffer(parsed)
-    revalidatePath('/offers')
-  }
-
   const deleteOfferId = async (id: number) => {
     'use server'
     try {
@@ -51,16 +33,18 @@ export default async function OfferListServerComponent() {
     }
   }
 
-  const options =
-    shopifyData == null
-      ? null
-      : shopifyData.filter((opt) => !offers.find((o) => o.offerProductData?.variantId === opt.variantId))
-
   return (
     <Container>
       <MainTitle>Offers</MainTitle>
+      <Row className="mb-3">
+        <Col>
+          <Link href="/offers/new" className="btn btn-primary">
+            Create New Offer
+          </Link>
+        </Col>
+      </Row>
       <Row>
-        <Col xs={9}>
+        <Col xs={12}>
           <Table responsive striped bordered hover size="sm" style={{ fontSize: '10pt' }}>
             <thead>
               <tr>
@@ -82,7 +66,11 @@ export default async function OfferListServerComponent() {
                   <td>
                     {shopifyData.find((d) => d.variantId === offer.offerProductData?.variantId)?.productName}{' '}
                     {offer.offerProductData && (
-                      <VariantLink type="deal" variantURI={offer.offerProductData.variantId} />
+                      <VariantLink
+                        type="deal"
+                        variantURI={offer.offerProductData.variantId}
+                        shopifyData={shopifyData}
+                      />
                     )}{' '}
                     {(offer.offerProductData?.tags ?? []).map((tag) => (
                       <span key={tag} className="px-1">
@@ -104,18 +92,6 @@ export default async function OfferListServerComponent() {
               ))}
             </tbody>
           </Table>
-        </Col>
-        <Col xs={3}>
-          <h2>New Offer</h2>
-          <NewOfferForm action={newOffer} options={options} />
-          <p>
-            To add a new offer, create a product in shopify for the Deal. This specifies the buy-in price and all
-            the details that wil be shown to the customer will be created in this Deal Product.
-          </p>
-          <p>
-            You must add the tag <span className="badge badge-info">deal</span> in Shopify and then reload this
-            page to see the Deal Product to select.
-          </p>
         </Col>
       </Row>
     </Container>

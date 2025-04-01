@@ -374,7 +374,12 @@ export const V3_audit_logScalarFieldEnumSchema = z.enum([
   'time_taken_ms',
 ])
 
-export const V3_offerScalarFieldEnumSchema = z.enum(['offer_id', 'offer_name', 'offer_variant_id'])
+export const V3_offerScalarFieldEnumSchema = z.enum([
+  'offer_id',
+  'offer_name',
+  'offer_variant_id',
+  'offer_product_name',
+])
 
 export const V3_offer_manifestScalarFieldEnumSchema = z.enum([
   'm_id',
@@ -413,6 +418,18 @@ export const Member_list_export_2023_07_06ScalarFieldEnumSchema = z.enum([
   'State___Region',
   'Country',
   'Zip_Code',
+])
+
+export const Shopify_product_variantScalarFieldEnumSchema = z.enum([
+  'variantId',
+  'productId',
+  'productName',
+  'variantName',
+  'variantPrice',
+  'variantCompareAtPrice',
+  'variantInventoryQuantity',
+  'variantSku',
+  'variantWeight',
 ])
 
 export const SortOrderSchema = z.enum(['asc', 'desc'])
@@ -639,7 +656,11 @@ export const usersOrderByRelevanceFieldEnumSchema = z.enum(['email', 'pw', 'alia
 
 export const v3_audit_logOrderByRelevanceFieldEnumSchema = z.enum(['event_name', 'event_ext'])
 
-export const v3_offerOrderByRelevanceFieldEnumSchema = z.enum(['offer_name', 'offer_variant_id'])
+export const v3_offerOrderByRelevanceFieldEnumSchema = z.enum([
+  'offer_name',
+  'offer_variant_id',
+  'offer_product_name',
+])
 
 export const v3_offer_manifestOrderByRelevanceFieldEnumSchema = z.enum(['mf_variant', 'assignee_id'])
 
@@ -661,6 +682,17 @@ export const member_list_export_2023_07_06OrderByRelevanceFieldEnumSchema = z.en
   'State___Region',
   'Country',
   'Zip_Code',
+])
+
+export const shopify_product_variantOrderByRelevanceFieldEnumSchema = z.enum([
+  'variantId',
+  'productId',
+  'productName',
+  'variantName',
+  'variantPrice',
+  'variantCompareAtPrice',
+  'variantSku',
+  'variantWeight',
 ])
 
 export const order_list_x_order_is_authorized_or_capturedSchema = z.enum(['false', 'true'])
@@ -771,9 +803,6 @@ export type item_detail = z.infer<typeof item_detailSchema>
 // ITEM SKU SCHEMA
 /////////////////////////////////////////
 
-/**
- * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
- */
 export const item_skuSchema = z.object({
   sku: z.string(),
   srp: z
@@ -1211,6 +1240,7 @@ export const v3_offerSchema = z.object({
   offer_id: z.number().int(),
   offer_name: z.string(),
   offer_variant_id: z.string(),
+  offer_product_name: z.string(),
 })
 
 export type v3_offer = z.infer<typeof v3_offerSchema>
@@ -1267,9 +1297,6 @@ export type inventory = z.infer<typeof inventorySchema>
 // COMPUTED BUYER VARIETALS SCHEMA
 /////////////////////////////////////////
 
-/**
- * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
- */
 export const computed_buyer_varietalsSchema = z.object({
   id: z.number().int(),
   winner_guid: z.string(),
@@ -1300,6 +1327,24 @@ export const member_list_export_2023_07_06Schema = z.object({
 })
 
 export type member_list_export_2023_07_06 = z.infer<typeof member_list_export_2023_07_06Schema>
+
+/////////////////////////////////////////
+// SHOPIFY PRODUCT VARIANT SCHEMA
+/////////////////////////////////////////
+
+export const shopify_product_variantSchema = z.object({
+  variantId: z.string(),
+  productId: z.string(),
+  productName: z.string(),
+  variantName: z.string(),
+  variantPrice: z.string().nullable(),
+  variantCompareAtPrice: z.string().nullable(),
+  variantInventoryQuantity: z.number().int(),
+  variantSku: z.string(),
+  variantWeight: z.string().nullable(),
+})
+
+export type shopify_product_variant = z.infer<typeof shopify_product_variantSchema>
 
 /////////////////////////////////////////
 // SELECT & INCLUDE
@@ -1692,6 +1737,7 @@ export const v3_offerSelectSchema: z.ZodType<Prisma.v3_offerSelect> = z
     offer_id: z.boolean().optional(),
     offer_name: z.boolean().optional(),
     offer_variant_id: z.boolean().optional(),
+    offer_product_name: z.boolean().optional(),
   })
   .strict()
 
@@ -1760,6 +1806,23 @@ export const member_list_export_2023_07_06SelectSchema: z.ZodType<Prisma.member_
     State___Region: z.boolean().optional(),
     Country: z.boolean().optional(),
     Zip_Code: z.boolean().optional(),
+  })
+  .strict()
+
+// SHOPIFY PRODUCT VARIANT
+//------------------------------------------------------
+
+export const shopify_product_variantSelectSchema: z.ZodType<Prisma.shopify_product_variantSelect> = z
+  .object({
+    variantId: z.boolean().optional(),
+    productId: z.boolean().optional(),
+    productName: z.boolean().optional(),
+    variantName: z.boolean().optional(),
+    variantPrice: z.boolean().optional(),
+    variantCompareAtPrice: z.boolean().optional(),
+    variantInventoryQuantity: z.boolean().optional(),
+    variantSku: z.boolean().optional(),
+    variantWeight: z.boolean().optional(),
   })
   .strict()
 
@@ -7744,6 +7807,7 @@ export const v3_offerWhereInputSchema: z.ZodType<Prisma.v3_offerWhereInput> = z
     offer_id: z.union([z.lazy(() => IntFilterSchema), z.number()]).optional(),
     offer_name: z.union([z.lazy(() => StringFilterSchema), z.string()]).optional(),
     offer_variant_id: z.union([z.lazy(() => StringFilterSchema), z.string()]).optional(),
+    offer_product_name: z.union([z.lazy(() => StringFilterSchema), z.string()]).optional(),
   })
   .strict()
 
@@ -7752,6 +7816,7 @@ export const v3_offerOrderByWithRelationInputSchema: z.ZodType<Prisma.v3_offerOr
     offer_id: z.lazy(() => SortOrderSchema).optional(),
     offer_name: z.lazy(() => SortOrderSchema).optional(),
     offer_variant_id: z.lazy(() => SortOrderSchema).optional(),
+    offer_product_name: z.lazy(() => SortOrderSchema).optional(),
     _relevance: z.lazy(() => v3_offerOrderByRelevanceInputSchema).optional(),
   })
   .strict()
@@ -7801,6 +7866,7 @@ export const v3_offerWhereUniqueInputSchema: z.ZodType<Prisma.v3_offerWhereUniqu
         NOT: z
           .union([z.lazy(() => v3_offerWhereInputSchema), z.lazy(() => v3_offerWhereInputSchema).array()])
           .optional(),
+        offer_product_name: z.union([z.lazy(() => StringFilterSchema), z.string()]).optional(),
       })
       .strict(),
   )
@@ -7810,6 +7876,7 @@ export const v3_offerOrderByWithAggregationInputSchema: z.ZodType<Prisma.v3_offe
     offer_id: z.lazy(() => SortOrderSchema).optional(),
     offer_name: z.lazy(() => SortOrderSchema).optional(),
     offer_variant_id: z.lazy(() => SortOrderSchema).optional(),
+    offer_product_name: z.lazy(() => SortOrderSchema).optional(),
     _count: z.lazy(() => v3_offerCountOrderByAggregateInputSchema).optional(),
     _avg: z.lazy(() => v3_offerAvgOrderByAggregateInputSchema).optional(),
     _max: z.lazy(() => v3_offerMaxOrderByAggregateInputSchema).optional(),
@@ -7840,6 +7907,7 @@ export const v3_offerScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.v3_o
       offer_id: z.union([z.lazy(() => IntWithAggregatesFilterSchema), z.number()]).optional(),
       offer_name: z.union([z.lazy(() => StringWithAggregatesFilterSchema), z.string()]).optional(),
       offer_variant_id: z.union([z.lazy(() => StringWithAggregatesFilterSchema), z.string()]).optional(),
+      offer_product_name: z.union([z.lazy(() => StringWithAggregatesFilterSchema), z.string()]).optional(),
     })
     .strict()
 
@@ -8657,6 +8725,171 @@ export const member_list_export_2023_07_06ScalarWhereWithAggregatesInputSchema: 
         .optional()
         .nullable(),
       Zip_Code: z
+        .union([z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string()])
+        .optional()
+        .nullable(),
+    })
+    .strict()
+
+export const shopify_product_variantWhereInputSchema: z.ZodType<Prisma.shopify_product_variantWhereInput> = z
+  .object({
+    AND: z
+      .union([
+        z.lazy(() => shopify_product_variantWhereInputSchema),
+        z.lazy(() => shopify_product_variantWhereInputSchema).array(),
+      ])
+      .optional(),
+    OR: z
+      .lazy(() => shopify_product_variantWhereInputSchema)
+      .array()
+      .optional(),
+    NOT: z
+      .union([
+        z.lazy(() => shopify_product_variantWhereInputSchema),
+        z.lazy(() => shopify_product_variantWhereInputSchema).array(),
+      ])
+      .optional(),
+    variantId: z.union([z.lazy(() => StringFilterSchema), z.string()]).optional(),
+    productId: z.union([z.lazy(() => StringFilterSchema), z.string()]).optional(),
+    productName: z.union([z.lazy(() => StringFilterSchema), z.string()]).optional(),
+    variantName: z.union([z.lazy(() => StringFilterSchema), z.string()]).optional(),
+    variantPrice: z
+      .union([z.lazy(() => StringNullableFilterSchema), z.string()])
+      .optional()
+      .nullable(),
+    variantCompareAtPrice: z
+      .union([z.lazy(() => StringNullableFilterSchema), z.string()])
+      .optional()
+      .nullable(),
+    variantInventoryQuantity: z.union([z.lazy(() => IntFilterSchema), z.number()]).optional(),
+    variantSku: z.union([z.lazy(() => StringFilterSchema), z.string()]).optional(),
+    variantWeight: z
+      .union([z.lazy(() => StringNullableFilterSchema), z.string()])
+      .optional()
+      .nullable(),
+  })
+  .strict()
+
+export const shopify_product_variantOrderByWithRelationInputSchema: z.ZodType<Prisma.shopify_product_variantOrderByWithRelationInput> =
+  z
+    .object({
+      variantId: z.lazy(() => SortOrderSchema).optional(),
+      productId: z.lazy(() => SortOrderSchema).optional(),
+      productName: z.lazy(() => SortOrderSchema).optional(),
+      variantName: z.lazy(() => SortOrderSchema).optional(),
+      variantPrice: z.union([z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema)]).optional(),
+      variantCompareAtPrice: z
+        .union([z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema)])
+        .optional(),
+      variantInventoryQuantity: z.lazy(() => SortOrderSchema).optional(),
+      variantSku: z.lazy(() => SortOrderSchema).optional(),
+      variantWeight: z.union([z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema)]).optional(),
+      _relevance: z.lazy(() => shopify_product_variantOrderByRelevanceInputSchema).optional(),
+    })
+    .strict()
+
+export const shopify_product_variantWhereUniqueInputSchema: z.ZodType<Prisma.shopify_product_variantWhereUniqueInput> =
+  z
+    .object({
+      variantId: z.string(),
+    })
+    .and(
+      z
+        .object({
+          variantId: z.string().optional(),
+          AND: z
+            .union([
+              z.lazy(() => shopify_product_variantWhereInputSchema),
+              z.lazy(() => shopify_product_variantWhereInputSchema).array(),
+            ])
+            .optional(),
+          OR: z
+            .lazy(() => shopify_product_variantWhereInputSchema)
+            .array()
+            .optional(),
+          NOT: z
+            .union([
+              z.lazy(() => shopify_product_variantWhereInputSchema),
+              z.lazy(() => shopify_product_variantWhereInputSchema).array(),
+            ])
+            .optional(),
+          productId: z.union([z.lazy(() => StringFilterSchema), z.string()]).optional(),
+          productName: z.union([z.lazy(() => StringFilterSchema), z.string()]).optional(),
+          variantName: z.union([z.lazy(() => StringFilterSchema), z.string()]).optional(),
+          variantPrice: z
+            .union([z.lazy(() => StringNullableFilterSchema), z.string()])
+            .optional()
+            .nullable(),
+          variantCompareAtPrice: z
+            .union([z.lazy(() => StringNullableFilterSchema), z.string()])
+            .optional()
+            .nullable(),
+          variantInventoryQuantity: z.union([z.lazy(() => IntFilterSchema), z.number().int()]).optional(),
+          variantSku: z.union([z.lazy(() => StringFilterSchema), z.string()]).optional(),
+          variantWeight: z
+            .union([z.lazy(() => StringNullableFilterSchema), z.string()])
+            .optional()
+            .nullable(),
+        })
+        .strict(),
+    )
+
+export const shopify_product_variantOrderByWithAggregationInputSchema: z.ZodType<Prisma.shopify_product_variantOrderByWithAggregationInput> =
+  z
+    .object({
+      variantId: z.lazy(() => SortOrderSchema).optional(),
+      productId: z.lazy(() => SortOrderSchema).optional(),
+      productName: z.lazy(() => SortOrderSchema).optional(),
+      variantName: z.lazy(() => SortOrderSchema).optional(),
+      variantPrice: z.union([z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema)]).optional(),
+      variantCompareAtPrice: z
+        .union([z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema)])
+        .optional(),
+      variantInventoryQuantity: z.lazy(() => SortOrderSchema).optional(),
+      variantSku: z.lazy(() => SortOrderSchema).optional(),
+      variantWeight: z.union([z.lazy(() => SortOrderSchema), z.lazy(() => SortOrderInputSchema)]).optional(),
+      _count: z.lazy(() => shopify_product_variantCountOrderByAggregateInputSchema).optional(),
+      _avg: z.lazy(() => shopify_product_variantAvgOrderByAggregateInputSchema).optional(),
+      _max: z.lazy(() => shopify_product_variantMaxOrderByAggregateInputSchema).optional(),
+      _min: z.lazy(() => shopify_product_variantMinOrderByAggregateInputSchema).optional(),
+      _sum: z.lazy(() => shopify_product_variantSumOrderByAggregateInputSchema).optional(),
+    })
+    .strict()
+
+export const shopify_product_variantScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.shopify_product_variantScalarWhereWithAggregatesInput> =
+  z
+    .object({
+      AND: z
+        .union([
+          z.lazy(() => shopify_product_variantScalarWhereWithAggregatesInputSchema),
+          z.lazy(() => shopify_product_variantScalarWhereWithAggregatesInputSchema).array(),
+        ])
+        .optional(),
+      OR: z
+        .lazy(() => shopify_product_variantScalarWhereWithAggregatesInputSchema)
+        .array()
+        .optional(),
+      NOT: z
+        .union([
+          z.lazy(() => shopify_product_variantScalarWhereWithAggregatesInputSchema),
+          z.lazy(() => shopify_product_variantScalarWhereWithAggregatesInputSchema).array(),
+        ])
+        .optional(),
+      variantId: z.union([z.lazy(() => StringWithAggregatesFilterSchema), z.string()]).optional(),
+      productId: z.union([z.lazy(() => StringWithAggregatesFilterSchema), z.string()]).optional(),
+      productName: z.union([z.lazy(() => StringWithAggregatesFilterSchema), z.string()]).optional(),
+      variantName: z.union([z.lazy(() => StringWithAggregatesFilterSchema), z.string()]).optional(),
+      variantPrice: z
+        .union([z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string()])
+        .optional()
+        .nullable(),
+      variantCompareAtPrice: z
+        .union([z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string()])
+        .optional()
+        .nullable(),
+      variantInventoryQuantity: z.union([z.lazy(() => IntWithAggregatesFilterSchema), z.number()]).optional(),
+      variantSku: z.union([z.lazy(() => StringWithAggregatesFilterSchema), z.string()]).optional(),
+      variantWeight: z
         .union([z.lazy(() => StringNullableWithAggregatesFilterSchema), z.string()])
         .optional()
         .nullable(),
@@ -16269,6 +16502,7 @@ export const v3_offerCreateInputSchema: z.ZodType<Prisma.v3_offerCreateInput> = 
   .object({
     offer_name: z.string(),
     offer_variant_id: z.string(),
+    offer_product_name: z.string(),
   })
   .strict()
 
@@ -16277,6 +16511,7 @@ export const v3_offerUncheckedCreateInputSchema: z.ZodType<Prisma.v3_offerUnchec
     offer_id: z.number().int().optional(),
     offer_name: z.string(),
     offer_variant_id: z.string(),
+    offer_product_name: z.string(),
   })
   .strict()
 
@@ -16284,6 +16519,7 @@ export const v3_offerUpdateInputSchema: z.ZodType<Prisma.v3_offerUpdateInput> = 
   .object({
     offer_name: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
     offer_variant_id: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+    offer_product_name: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
   })
   .strict()
 
@@ -16292,6 +16528,7 @@ export const v3_offerUncheckedUpdateInputSchema: z.ZodType<Prisma.v3_offerUnchec
     offer_id: z.union([z.number().int(), z.lazy(() => IntFieldUpdateOperationsInputSchema)]).optional(),
     offer_name: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
     offer_variant_id: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+    offer_product_name: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
   })
   .strict()
 
@@ -16300,6 +16537,7 @@ export const v3_offerCreateManyInputSchema: z.ZodType<Prisma.v3_offerCreateManyI
     offer_id: z.number().int().optional(),
     offer_name: z.string(),
     offer_variant_id: z.string(),
+    offer_product_name: z.string(),
   })
   .strict()
 
@@ -16307,6 +16545,7 @@ export const v3_offerUpdateManyMutationInputSchema: z.ZodType<Prisma.v3_offerUpd
   .object({
     offer_name: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
     offer_variant_id: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+    offer_product_name: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
   })
   .strict()
 
@@ -16315,6 +16554,7 @@ export const v3_offerUncheckedUpdateManyInputSchema: z.ZodType<Prisma.v3_offerUn
     offer_id: z.union([z.number().int(), z.lazy(() => IntFieldUpdateOperationsInputSchema)]).optional(),
     offer_name: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
     offer_variant_id: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+    offer_product_name: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
   })
   .strict()
 
@@ -17062,6 +17302,153 @@ export const member_list_export_2023_07_06UncheckedUpdateManyInputSchema: z.ZodT
         .optional()
         .nullable(),
       Zip_Code: z
+        .union([z.string(), z.lazy(() => NullableStringFieldUpdateOperationsInputSchema)])
+        .optional()
+        .nullable(),
+    })
+    .strict()
+
+export const shopify_product_variantCreateInputSchema: z.ZodType<Prisma.shopify_product_variantCreateInput> = z
+  .object({
+    variantId: z.string(),
+    productId: z.string(),
+    productName: z.string(),
+    variantName: z.string(),
+    variantPrice: z.string().optional().nullable(),
+    variantCompareAtPrice: z.string().optional().nullable(),
+    variantInventoryQuantity: z.number().int(),
+    variantSku: z.string(),
+    variantWeight: z.string().optional().nullable(),
+  })
+  .strict()
+
+export const shopify_product_variantUncheckedCreateInputSchema: z.ZodType<Prisma.shopify_product_variantUncheckedCreateInput> =
+  z
+    .object({
+      variantId: z.string(),
+      productId: z.string(),
+      productName: z.string(),
+      variantName: z.string(),
+      variantPrice: z.string().optional().nullable(),
+      variantCompareAtPrice: z.string().optional().nullable(),
+      variantInventoryQuantity: z.number().int(),
+      variantSku: z.string(),
+      variantWeight: z.string().optional().nullable(),
+    })
+    .strict()
+
+export const shopify_product_variantUpdateInputSchema: z.ZodType<Prisma.shopify_product_variantUpdateInput> = z
+  .object({
+    variantId: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+    productId: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+    productName: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+    variantName: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+    variantPrice: z
+      .union([z.string(), z.lazy(() => NullableStringFieldUpdateOperationsInputSchema)])
+      .optional()
+      .nullable(),
+    variantCompareAtPrice: z
+      .union([z.string(), z.lazy(() => NullableStringFieldUpdateOperationsInputSchema)])
+      .optional()
+      .nullable(),
+    variantInventoryQuantity: z
+      .union([z.number().int(), z.lazy(() => IntFieldUpdateOperationsInputSchema)])
+      .optional(),
+    variantSku: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+    variantWeight: z
+      .union([z.string(), z.lazy(() => NullableStringFieldUpdateOperationsInputSchema)])
+      .optional()
+      .nullable(),
+  })
+  .strict()
+
+export const shopify_product_variantUncheckedUpdateInputSchema: z.ZodType<Prisma.shopify_product_variantUncheckedUpdateInput> =
+  z
+    .object({
+      variantId: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+      productId: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+      productName: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+      variantName: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+      variantPrice: z
+        .union([z.string(), z.lazy(() => NullableStringFieldUpdateOperationsInputSchema)])
+        .optional()
+        .nullable(),
+      variantCompareAtPrice: z
+        .union([z.string(), z.lazy(() => NullableStringFieldUpdateOperationsInputSchema)])
+        .optional()
+        .nullable(),
+      variantInventoryQuantity: z
+        .union([z.number().int(), z.lazy(() => IntFieldUpdateOperationsInputSchema)])
+        .optional(),
+      variantSku: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+      variantWeight: z
+        .union([z.string(), z.lazy(() => NullableStringFieldUpdateOperationsInputSchema)])
+        .optional()
+        .nullable(),
+    })
+    .strict()
+
+export const shopify_product_variantCreateManyInputSchema: z.ZodType<Prisma.shopify_product_variantCreateManyInput> =
+  z
+    .object({
+      variantId: z.string(),
+      productId: z.string(),
+      productName: z.string(),
+      variantName: z.string(),
+      variantPrice: z.string().optional().nullable(),
+      variantCompareAtPrice: z.string().optional().nullable(),
+      variantInventoryQuantity: z.number().int(),
+      variantSku: z.string(),
+      variantWeight: z.string().optional().nullable(),
+    })
+    .strict()
+
+export const shopify_product_variantUpdateManyMutationInputSchema: z.ZodType<Prisma.shopify_product_variantUpdateManyMutationInput> =
+  z
+    .object({
+      variantId: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+      productId: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+      productName: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+      variantName: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+      variantPrice: z
+        .union([z.string(), z.lazy(() => NullableStringFieldUpdateOperationsInputSchema)])
+        .optional()
+        .nullable(),
+      variantCompareAtPrice: z
+        .union([z.string(), z.lazy(() => NullableStringFieldUpdateOperationsInputSchema)])
+        .optional()
+        .nullable(),
+      variantInventoryQuantity: z
+        .union([z.number().int(), z.lazy(() => IntFieldUpdateOperationsInputSchema)])
+        .optional(),
+      variantSku: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+      variantWeight: z
+        .union([z.string(), z.lazy(() => NullableStringFieldUpdateOperationsInputSchema)])
+        .optional()
+        .nullable(),
+    })
+    .strict()
+
+export const shopify_product_variantUncheckedUpdateManyInputSchema: z.ZodType<Prisma.shopify_product_variantUncheckedUpdateManyInput> =
+  z
+    .object({
+      variantId: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+      productId: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+      productName: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+      variantName: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+      variantPrice: z
+        .union([z.string(), z.lazy(() => NullableStringFieldUpdateOperationsInputSchema)])
+        .optional()
+        .nullable(),
+      variantCompareAtPrice: z
+        .union([z.string(), z.lazy(() => NullableStringFieldUpdateOperationsInputSchema)])
+        .optional()
+        .nullable(),
+      variantInventoryQuantity: z
+        .union([z.number().int(), z.lazy(() => IntFieldUpdateOperationsInputSchema)])
+        .optional(),
+      variantSku: z.union([z.string(), z.lazy(() => StringFieldUpdateOperationsInputSchema)]).optional(),
+      variantWeight: z
         .union([z.string(), z.lazy(() => NullableStringFieldUpdateOperationsInputSchema)])
         .optional()
         .nullable(),
@@ -19301,6 +19688,7 @@ export const v3_offerCountOrderByAggregateInputSchema: z.ZodType<Prisma.v3_offer
     offer_id: z.lazy(() => SortOrderSchema).optional(),
     offer_name: z.lazy(() => SortOrderSchema).optional(),
     offer_variant_id: z.lazy(() => SortOrderSchema).optional(),
+    offer_product_name: z.lazy(() => SortOrderSchema).optional(),
   })
   .strict()
 
@@ -19315,6 +19703,7 @@ export const v3_offerMaxOrderByAggregateInputSchema: z.ZodType<Prisma.v3_offerMa
     offer_id: z.lazy(() => SortOrderSchema).optional(),
     offer_name: z.lazy(() => SortOrderSchema).optional(),
     offer_variant_id: z.lazy(() => SortOrderSchema).optional(),
+    offer_product_name: z.lazy(() => SortOrderSchema).optional(),
   })
   .strict()
 
@@ -19323,6 +19712,7 @@ export const v3_offerMinOrderByAggregateInputSchema: z.ZodType<Prisma.v3_offerMi
     offer_id: z.lazy(() => SortOrderSchema).optional(),
     offer_name: z.lazy(() => SortOrderSchema).optional(),
     offer_variant_id: z.lazy(() => SortOrderSchema).optional(),
+    offer_product_name: z.lazy(() => SortOrderSchema).optional(),
   })
   .strict()
 
@@ -19662,6 +20052,77 @@ export const member_list_export_2023_07_06MinOrderByAggregateInputSchema: z.ZodT
       State___Region: z.lazy(() => SortOrderSchema).optional(),
       Country: z.lazy(() => SortOrderSchema).optional(),
       Zip_Code: z.lazy(() => SortOrderSchema).optional(),
+    })
+    .strict()
+
+export const shopify_product_variantOrderByRelevanceInputSchema: z.ZodType<Prisma.shopify_product_variantOrderByRelevanceInput> =
+  z
+    .object({
+      fields: z.union([
+        z.lazy(() => shopify_product_variantOrderByRelevanceFieldEnumSchema),
+        z.lazy(() => shopify_product_variantOrderByRelevanceFieldEnumSchema).array(),
+      ]),
+      sort: z.lazy(() => SortOrderSchema),
+      search: z.string(),
+    })
+    .strict()
+
+export const shopify_product_variantCountOrderByAggregateInputSchema: z.ZodType<Prisma.shopify_product_variantCountOrderByAggregateInput> =
+  z
+    .object({
+      variantId: z.lazy(() => SortOrderSchema).optional(),
+      productId: z.lazy(() => SortOrderSchema).optional(),
+      productName: z.lazy(() => SortOrderSchema).optional(),
+      variantName: z.lazy(() => SortOrderSchema).optional(),
+      variantPrice: z.lazy(() => SortOrderSchema).optional(),
+      variantCompareAtPrice: z.lazy(() => SortOrderSchema).optional(),
+      variantInventoryQuantity: z.lazy(() => SortOrderSchema).optional(),
+      variantSku: z.lazy(() => SortOrderSchema).optional(),
+      variantWeight: z.lazy(() => SortOrderSchema).optional(),
+    })
+    .strict()
+
+export const shopify_product_variantAvgOrderByAggregateInputSchema: z.ZodType<Prisma.shopify_product_variantAvgOrderByAggregateInput> =
+  z
+    .object({
+      variantInventoryQuantity: z.lazy(() => SortOrderSchema).optional(),
+    })
+    .strict()
+
+export const shopify_product_variantMaxOrderByAggregateInputSchema: z.ZodType<Prisma.shopify_product_variantMaxOrderByAggregateInput> =
+  z
+    .object({
+      variantId: z.lazy(() => SortOrderSchema).optional(),
+      productId: z.lazy(() => SortOrderSchema).optional(),
+      productName: z.lazy(() => SortOrderSchema).optional(),
+      variantName: z.lazy(() => SortOrderSchema).optional(),
+      variantPrice: z.lazy(() => SortOrderSchema).optional(),
+      variantCompareAtPrice: z.lazy(() => SortOrderSchema).optional(),
+      variantInventoryQuantity: z.lazy(() => SortOrderSchema).optional(),
+      variantSku: z.lazy(() => SortOrderSchema).optional(),
+      variantWeight: z.lazy(() => SortOrderSchema).optional(),
+    })
+    .strict()
+
+export const shopify_product_variantMinOrderByAggregateInputSchema: z.ZodType<Prisma.shopify_product_variantMinOrderByAggregateInput> =
+  z
+    .object({
+      variantId: z.lazy(() => SortOrderSchema).optional(),
+      productId: z.lazy(() => SortOrderSchema).optional(),
+      productName: z.lazy(() => SortOrderSchema).optional(),
+      variantName: z.lazy(() => SortOrderSchema).optional(),
+      variantPrice: z.lazy(() => SortOrderSchema).optional(),
+      variantCompareAtPrice: z.lazy(() => SortOrderSchema).optional(),
+      variantInventoryQuantity: z.lazy(() => SortOrderSchema).optional(),
+      variantSku: z.lazy(() => SortOrderSchema).optional(),
+      variantWeight: z.lazy(() => SortOrderSchema).optional(),
+    })
+    .strict()
+
+export const shopify_product_variantSumOrderByAggregateInputSchema: z.ZodType<Prisma.shopify_product_variantSumOrderByAggregateInput> =
+  z
+    .object({
+      variantInventoryQuantity: z.lazy(() => SortOrderSchema).optional(),
     })
     .strict()
 
@@ -22132,6 +22593,119 @@ export const member_list_export_2023_07_06FindUniqueOrThrowArgsSchema: z.ZodType
     })
     .strict()
 
+export const shopify_product_variantFindFirstArgsSchema: z.ZodType<Prisma.shopify_product_variantFindFirstArgs> =
+  z
+    .object({
+      select: shopify_product_variantSelectSchema.optional(),
+      where: shopify_product_variantWhereInputSchema.optional(),
+      orderBy: z
+        .union([
+          shopify_product_variantOrderByWithRelationInputSchema.array(),
+          shopify_product_variantOrderByWithRelationInputSchema,
+        ])
+        .optional(),
+      cursor: shopify_product_variantWhereUniqueInputSchema.optional(),
+      take: z.number().optional(),
+      skip: z.number().optional(),
+      distinct: z
+        .union([
+          Shopify_product_variantScalarFieldEnumSchema,
+          Shopify_product_variantScalarFieldEnumSchema.array(),
+        ])
+        .optional(),
+    })
+    .strict()
+
+export const shopify_product_variantFindFirstOrThrowArgsSchema: z.ZodType<Prisma.shopify_product_variantFindFirstOrThrowArgs> =
+  z
+    .object({
+      select: shopify_product_variantSelectSchema.optional(),
+      where: shopify_product_variantWhereInputSchema.optional(),
+      orderBy: z
+        .union([
+          shopify_product_variantOrderByWithRelationInputSchema.array(),
+          shopify_product_variantOrderByWithRelationInputSchema,
+        ])
+        .optional(),
+      cursor: shopify_product_variantWhereUniqueInputSchema.optional(),
+      take: z.number().optional(),
+      skip: z.number().optional(),
+      distinct: z
+        .union([
+          Shopify_product_variantScalarFieldEnumSchema,
+          Shopify_product_variantScalarFieldEnumSchema.array(),
+        ])
+        .optional(),
+    })
+    .strict()
+
+export const shopify_product_variantFindManyArgsSchema: z.ZodType<Prisma.shopify_product_variantFindManyArgs> = z
+  .object({
+    select: shopify_product_variantSelectSchema.optional(),
+    where: shopify_product_variantWhereInputSchema.optional(),
+    orderBy: z
+      .union([
+        shopify_product_variantOrderByWithRelationInputSchema.array(),
+        shopify_product_variantOrderByWithRelationInputSchema,
+      ])
+      .optional(),
+    cursor: shopify_product_variantWhereUniqueInputSchema.optional(),
+    take: z.number().optional(),
+    skip: z.number().optional(),
+    distinct: z
+      .union([Shopify_product_variantScalarFieldEnumSchema, Shopify_product_variantScalarFieldEnumSchema.array()])
+      .optional(),
+  })
+  .strict()
+
+export const shopify_product_variantAggregateArgsSchema: z.ZodType<Prisma.shopify_product_variantAggregateArgs> =
+  z
+    .object({
+      where: shopify_product_variantWhereInputSchema.optional(),
+      orderBy: z
+        .union([
+          shopify_product_variantOrderByWithRelationInputSchema.array(),
+          shopify_product_variantOrderByWithRelationInputSchema,
+        ])
+        .optional(),
+      cursor: shopify_product_variantWhereUniqueInputSchema.optional(),
+      take: z.number().optional(),
+      skip: z.number().optional(),
+    })
+    .strict()
+
+export const shopify_product_variantGroupByArgsSchema: z.ZodType<Prisma.shopify_product_variantGroupByArgs> = z
+  .object({
+    where: shopify_product_variantWhereInputSchema.optional(),
+    orderBy: z
+      .union([
+        shopify_product_variantOrderByWithAggregationInputSchema.array(),
+        shopify_product_variantOrderByWithAggregationInputSchema,
+      ])
+      .optional(),
+    by: Shopify_product_variantScalarFieldEnumSchema.array(),
+    having: shopify_product_variantScalarWhereWithAggregatesInputSchema.optional(),
+    take: z.number().optional(),
+    skip: z.number().optional(),
+  })
+  .strict()
+
+export const shopify_product_variantFindUniqueArgsSchema: z.ZodType<Prisma.shopify_product_variantFindUniqueArgs> =
+  z
+    .object({
+      select: shopify_product_variantSelectSchema.optional(),
+      where: shopify_product_variantWhereUniqueInputSchema,
+    })
+    .strict()
+
+export const shopify_product_variantFindUniqueOrThrowArgsSchema: z.ZodType<Prisma.shopify_product_variantFindUniqueOrThrowArgs> =
+  z
+    .object({
+      select: shopify_product_variantSelectSchema.optional(),
+      where: shopify_product_variantWhereUniqueInputSchema,
+    })
+    .strict()
+
 export const customer_list_july_2023CreateArgsSchema: z.ZodType<Prisma.customer_list_july_2023CreateArgs> = z
   .object({
     select: customer_list_july_2023SelectSchema.optional(),
@@ -23042,6 +23616,74 @@ export const member_list_export_2023_07_06DeleteManyArgsSchema: z.ZodType<Prisma
   z
     .object({
       where: member_list_export_2023_07_06WhereInputSchema.optional(),
+      limit: z.number().optional(),
+    })
+    .strict()
+
+export const shopify_product_variantCreateArgsSchema: z.ZodType<Prisma.shopify_product_variantCreateArgs> = z
+  .object({
+    select: shopify_product_variantSelectSchema.optional(),
+    data: z.union([shopify_product_variantCreateInputSchema, shopify_product_variantUncheckedCreateInputSchema]),
+  })
+  .strict()
+
+export const shopify_product_variantUpsertArgsSchema: z.ZodType<Prisma.shopify_product_variantUpsertArgs> = z
+  .object({
+    select: shopify_product_variantSelectSchema.optional(),
+    where: shopify_product_variantWhereUniqueInputSchema,
+    create: z.union([
+      shopify_product_variantCreateInputSchema,
+      shopify_product_variantUncheckedCreateInputSchema,
+    ]),
+    update: z.union([
+      shopify_product_variantUpdateInputSchema,
+      shopify_product_variantUncheckedUpdateInputSchema,
+    ]),
+  })
+  .strict()
+
+export const shopify_product_variantCreateManyArgsSchema: z.ZodType<Prisma.shopify_product_variantCreateManyArgs> =
+  z
+    .object({
+      data: z.union([
+        shopify_product_variantCreateManyInputSchema,
+        shopify_product_variantCreateManyInputSchema.array(),
+      ]),
+      skipDuplicates: z.boolean().optional(),
+    })
+    .strict()
+
+export const shopify_product_variantDeleteArgsSchema: z.ZodType<Prisma.shopify_product_variantDeleteArgs> = z
+  .object({
+    select: shopify_product_variantSelectSchema.optional(),
+    where: shopify_product_variantWhereUniqueInputSchema,
+  })
+  .strict()
+
+export const shopify_product_variantUpdateArgsSchema: z.ZodType<Prisma.shopify_product_variantUpdateArgs> = z
+  .object({
+    select: shopify_product_variantSelectSchema.optional(),
+    data: z.union([shopify_product_variantUpdateInputSchema, shopify_product_variantUncheckedUpdateInputSchema]),
+    where: shopify_product_variantWhereUniqueInputSchema,
+  })
+  .strict()
+
+export const shopify_product_variantUpdateManyArgsSchema: z.ZodType<Prisma.shopify_product_variantUpdateManyArgs> =
+  z
+    .object({
+      data: z.union([
+        shopify_product_variantUpdateManyMutationInputSchema,
+        shopify_product_variantUncheckedUpdateManyInputSchema,
+      ]),
+      where: shopify_product_variantWhereInputSchema.optional(),
+      limit: z.number().optional(),
+    })
+    .strict()
+
+export const shopify_product_variantDeleteManyArgsSchema: z.ZodType<Prisma.shopify_product_variantDeleteManyArgs> =
+  z
+    .object({
+      where: shopify_product_variantWhereInputSchema.optional(),
       limit: z.number().optional(),
     })
     .strict()

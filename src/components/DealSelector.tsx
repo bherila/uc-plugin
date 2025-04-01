@@ -9,9 +9,10 @@ interface Props {
   selectedValue: ShopifyProductVariant | null
   setSelectedValue: (value: ShopifyProductVariant) => void
   options: ShopifyProductVariant[] | null
+  disabledOptions?: string[]
 }
 
-const DealSelector: React.FC<Props> = ({ options, selectedValue, setSelectedValue }) => {
+const DealSelector: React.FC<Props> = ({ options, selectedValue, setSelectedValue, disabledOptions = [] }) => {
   const [searchText, setSearchText] = useState('')
 
   const filteredOptions = useMemo(() => {
@@ -26,19 +27,29 @@ const DealSelector: React.FC<Props> = ({ options, selectedValue, setSelectedValu
       const lcjson = JSON.stringify(option).toLowerCase()
       return searchWords.every((word) => lcjson.includes(word))
     })
-  }, [searchText])
+  }, [searchText, options])
+
+  // Sort options: enabled options first, then disabled options
+  const sortedOptions = useMemo(() => {
+    if (!filteredOptions) return []
+
+    return [
+      ...filteredOptions.filter((option) => !disabledOptions.includes(option.variantId)),
+      ...filteredOptions.filter((option) => disabledOptions.includes(option.variantId)),
+    ]
+  }, [filteredOptions, disabledOptions])
 
   useEffect(() => {
-    if (filteredOptions && filteredOptions.length === 1) {
-      setSelectedValue(filteredOptions[0])
+    if (sortedOptions && sortedOptions.length === 1) {
+      setSelectedValue(sortedOptions[0])
     }
-  }, [filteredOptions])
+  }, [sortedOptions])
 
   if (options == null) return <Spinner />
   if (options.length == 0) return <div>No items</div>
 
   return (
-    filteredOptions && (
+    sortedOptions && (
       <div>
         <InputGroup>
           <InputGroup.Text>Search</InputGroup.Text>
@@ -60,12 +71,17 @@ const DealSelector: React.FC<Props> = ({ options, selectedValue, setSelectedValu
             setSelectedValue(!val ? null : JSON.parse(val))
           }}
         >
-          {filteredOptions.length != 1 && <option value="">({filteredOptions.length} options)</option>}
-          {filteredOptions.map((option) => (
-            <option key={option.productId + '|' + option.variantId} value={JSON.stringify(option)}>
+          {sortedOptions.length != 1 && <option value="">({sortedOptions.length} options)</option>}
+          {sortedOptions.map((option) => (
+            <option
+              key={option.productId + '|' + option.variantId}
+              value={JSON.stringify(option)}
+              disabled={disabledOptions.includes(option.variantId)}
+            >
               {option.productName}
               {option.variantName}
-              {filteredOptions.length === 1 ? ' ✅' : ''}
+              {disabledOptions.includes(option.variantId) ? ' (Already in use)' : ''}
+              {sortedOptions.length === 1 ? ' ✅' : ''}
             </option>
           ))}
         </select>

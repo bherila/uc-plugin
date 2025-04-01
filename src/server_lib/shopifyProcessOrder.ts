@@ -53,10 +53,10 @@ export default async function shopifyProcessOrder(orderIdX: string) {
     let offerId: number | null = null
 
     // combine dealLineItemFromShopifyOrder by variant_graphql_id (adding up quantities)
-    const variant2DealItemMap = new Map<string, (typeof shopifyOrder.lineItems.nodes)[0]>()
-    for (const dealLineItem of shopifyOrder.lineItems.nodes) {
-      if (dealLineItem.product.tags.includes('deal')) {
-        const key = dealLineItem.variant.variant_graphql_id
+    const variant2DealItemMap = new Map<string, (typeof shopifyOrder.lineItems_nodes)[0]>()
+    for (const dealLineItem of shopifyOrder.lineItems_nodes) {
+      if (dealLineItem.product_tags.includes('deal')) {
+        const key = dealLineItem.variant_variant_graphql_id
         const existingItem = variant2DealItemMap.get(key)
         if (existingItem != null) {
           existingItem.quantity += dealLineItem.quantity
@@ -70,8 +70,8 @@ export default async function shopifyProcessOrder(orderIdX: string) {
     // map the variant to the order and stash this so we can query for the order later
     const purchasedDealFields = dealLineItemFromShopifyOrder.map((node) => [
       orderIdUri, // order id
-      node.variant.variant_graphql_id, // variant id
-      offerIdFromVariantId.get(node.variant.variant_graphql_id), // offer id
+      node.variant_variant_graphql_id, // variant id
+      offerIdFromVariantId.get(node.variant_variant_graphql_id), // offer id
     ])
     if (purchasedDealFields.length !== 1) {
       await log(
@@ -101,11 +101,11 @@ export default async function shopifyProcessOrder(orderIdX: string) {
     }
 
     for (const orderLineItem of dealLineItemFromShopifyOrder) {
-      if (!orderLineItem.discountedTotalSet.shopMoney.amount) {
+      if (!orderLineItem.discountedTotalSet_shopMoney_amount) {
         console.info('Skip free item ' + orderLineItem.line_item_id)
         continue
       }
-      const lineItemVariantId = orderLineItem.variant.variant_graphql_id
+      const lineItemVariantId = orderLineItem.variant_variant_graphql_id
       offerId = offerIdFromVariantId.get(lineItemVariantId) ?? null
       if (!offerId) {
         pushLog(`LineItem: ${orderLineItem.line_item_id} => No match to offer for variant ${lineItemVariantId}`)
@@ -180,14 +180,12 @@ export default async function shopifyProcessOrder(orderIdX: string) {
       } else if (needQty < 0) {
         // RELEASE (unallocate) bottles
         const updateResult: ResultSetHeader = await db.query(
-          `
-            UPDATE v3_offer_manifest
+          `UPDATE v3_offer_manifest
             SET assignee_id = null
             WHERE assignee_id = ?
               AND offer_id = ?
             ORDER BY assignment_ordering
-            LIMIT ?;
-          `,
+            LIMIT ?`,
           [assigneeId, offerId, -needQty],
         )
         pushLog(`Reverted ${updateResult.affectedRows} of ${-needQty} rows due to release`)
@@ -201,27 +199,27 @@ export default async function shopifyProcessOrder(orderIdX: string) {
         [assigneeId, offerId],
       )
 
-      const preExistingShopifyManifests = shopifyOrder.lineItems.nodes.filter((node) =>
-        node.product.tags.includes('manifest-item'),
+      const preExistingShopifyManifests = shopifyOrder.lineItems_nodes.filter((node) =>
+        node.product_tags.includes('manifest-item'),
       )
 
-      // // remove pre-existing manifests from shopify order
-      // if (preExistingShopifyManifests.length > 0) {
-      //   pushLog(
-      //     `Cannot proceed until all ${preExistingShopifyManifests.length} pre-existing manifests are deleted from Shopify order`,
-      //   )
-      //   return
-      //   // const beginEditResult = await beginEdit({ orderId: orderIdUri })
-      //   // calculatedOrderId = beginEditResult.orderEditBegin?.calculatedOrder?.id ?? null
-      //   // if (!calculatedOrderId) {
-      //   //   await log('CalculatedOrder.id was null, aborting', offerId, orderIdNumeric)
-      //   //   return
-      //   // }
-      //   // await log(`Opened CalculatedOrder ${calculatedOrderId}`, offerId, orderIdNumeric)
-      //   // ... do stuff
-      //   // const commitResult = await orderEditCommit({ calculatedOrderId })
-      //   // await log(commitResult, offerId, orderIdNumeric)
-      // }
+      // remove pre-existing manifests from shopify order
+      if (preExistingShopifyManifests.length > 0) {
+        pushLog(
+          `Cannot proceed until all ${preExistingShopifyManifests.length} pre-existing manifests are deleted from Shopify order`,
+        )
+        return
+        // const beginEditResult = await beginEdit({ orderId: orderIdUri })
+        // calculatedOrderId = beginEditResult.orderEditBegin?.calculatedOrder?.id ?? null
+        // if (!calculatedOrderId) {
+        //   await log('CalculatedOrder.id was null, aborting', offerId, orderIdNumeric)
+        //   return
+        // }
+        // await log(`Opened CalculatedOrder ${calculatedOrderId}`, offerId, orderIdNumeric)
+        // ... do stuff
+        // const commitResult = await orderEditCommit({ calculatedOrderId })
+        // await log(commitResult, offerId, orderIdNumeric)
+      }
 
       const willUpdateShopifyOrder = preExistingShopifyManifests.length < offerManifests.length
       pushLog(
