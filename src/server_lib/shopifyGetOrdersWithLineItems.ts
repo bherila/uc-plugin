@@ -149,8 +149,10 @@ const shopifyGetOrdersWithLineItems = async (graphqlOrderIds: string[]) => {
   if (cleanedIds.length === 0) {
     return []
   }
+  console.info(`Getting ${cleanedIds.length} orders with line items from Shopify`)
   const response = await shopify.graphql(query, { ids: cleanedIds })
   const nodes = schema.parse(response).nodes
+  console.info(`Got ${nodes.length} orders with line items from Shopify`)
   // sort nodes by node.createdAt
   nodes.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
 
@@ -158,10 +160,13 @@ const shopifyGetOrdersWithLineItems = async (graphqlOrderIds: string[]) => {
     const lineItems = node.lineItems.nodes.map((lineItem) => ({
       ...lineItem,
       product_tags: lineItem.product.tags,
+      variant_variant_graphql_id: lineItem.variant.variant_graphql_id,
       variant_inventoryItem_id: lineItem.variant.inventoryItem?.id,
       variant_inventoryItem_measurement_id: lineItem.variant.inventoryItem?.measurement.id,
       variant_inventoryItem_measurement_weight_unit: lineItem.variant.inventoryItem?.measurement.weight.unit,
       variant_inventoryItem_measurement_weight_value: lineItem.variant.inventoryItem?.measurement.weight.value,
+      originalUnitPriceSet_shopMoney_amount: lineItem.originalUnitPriceSet.shopMoney.amount,
+      discountedTotalSet_shopMoney_amount: lineItem.discountedTotalSet.shopMoney.amount,
     }))
 
     const flatOrder = orderFlatSchema.parse({
