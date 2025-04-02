@@ -50,11 +50,9 @@ const orderCaptureSchema = z.object({
 })
 
 export interface OrderCaptureInput {
-  orderId: string
-  amount?: {
-    amount: number
-    currencyCode: string
-  }
+  id: string
+  parentTransactionId: string
+  amount: string
 }
 
 export async function shopifyOrderCapture(input: OrderCaptureInput) {
@@ -67,11 +65,11 @@ export async function shopifyOrderCapture(input: OrderCaptureInput) {
       data: {
         event_name: 'shopifyOrderCapture',
         event_ext: JSON.stringify({
-          orderId: input.orderId,
+          orderId: input.id,
           amount: input.amount,
           financialStatus: parsedResponse.orderCapture.order?.financialStatus,
         }),
-        order_id: BigInt(input.orderId.replace('gid://shopify/Order/', '')),
+        order_id: BigInt(input.id.replace('gid://shopify/Order/', '')),
       },
     })
 
@@ -82,11 +80,11 @@ export async function shopifyOrderCapture(input: OrderCaptureInput) {
       data: {
         event_name: 'shopifyOrderCapture_ERROR',
         event_ext: JSON.stringify({
-          orderId: input.orderId,
+          orderId: input.id,
           amount: input.amount,
           error: error instanceof Error ? error.message : String(error),
         }),
-        order_id: BigInt(input.orderId.replace('gid://shopify/Order/', '')),
+        order_id: BigInt(input.id.replace('gid://shopify/Order/', '')),
       },
     })
 

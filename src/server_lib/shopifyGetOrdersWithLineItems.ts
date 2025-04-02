@@ -37,6 +37,12 @@ const orderLineItem = z.object({
   }),
 })
 
+const orderTransaction = z.object({
+  id: z.string(),
+  status: z.string(),
+  kind: z.string(),
+})
+
 export const orderLineItemFlatSchema = z.object({
   line_item_id: z.string(),
   quantity: z.number(),
@@ -72,6 +78,7 @@ const schema = z.object({
       lineItems: z.object({
         nodes: z.array(orderLineItem),
       }),
+      transactions: z.array(orderTransaction),
     }),
   ),
 })
@@ -85,6 +92,13 @@ export const orderFlatSchema = z.object({
   totalPriceSet_shopMoney_amount: z.number(),
   totalShippingPriceSet_shopMoney_amount: z.number(),
   lineItems_nodes: z.array(orderLineItemFlatSchema),
+  transactions_nodes: z.array(
+    z.object({
+      id: z.string(),
+      status: z.string(),
+      kind: z.string(),
+    }),
+  ),
 })
 
 const query = `#graphql
@@ -139,6 +153,11 @@ const query = `#graphql
             }
           }
         }
+        transactions(first: 10) {
+          id
+          status
+          kind
+        }
       }
     }
   }
@@ -172,9 +191,16 @@ const shopifyGetOrdersWithLineItems = async (graphqlOrderIds: string[]) => {
       discountedTotalSet_shopMoney_amount: lineItem.discountedTotalSet.shopMoney.amount,
     }))
 
+    const transactions = node.transactions.map((transaction) => ({
+      id: transaction.id,
+      status: transaction.status,
+      kind: transaction.kind,
+    }))
+
     const flatOrder = orderFlatSchema.parse({
       ...node,
       lineItems_nodes: lineItems,
+      transactions_nodes: transactions,
       totalPriceSet_shopMoney_amount: node.totalPriceSet.shopMoney.amount,
       totalShippingPriceSet_shopMoney_amount: node.totalShippingPriceSet.shopMoney.amount,
       displayFinancialStatus: node.displayFinancialStatus,

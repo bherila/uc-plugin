@@ -308,11 +308,9 @@ export default async function shopifyProcessOrder(orderIdX: string) {
 
         if (!isAlreadyCaptured) {
           const captureResult = await shopifyOrderCapture({
-            orderId: orderIdUri,
-            amount: {
-              amount: shopifyOrder.totalPriceSet_shopMoney_amount,
-              currencyCode: 'USD',
-            },
+            id: orderIdUri,
+            parentTransactionId: `gid://shopify/OrderTransaction/${shopifyOrder.transactions_nodes[0]?.id ?? ''}`,
+            amount: shopifyOrder.totalPriceSet_shopMoney_amount.toFixed(2),
           })
           pushLog(`Order capture result: ${JSON.stringify(captureResult)}`)
         } else {
