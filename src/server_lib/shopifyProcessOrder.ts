@@ -236,6 +236,17 @@ export default async function shopifyProcessOrder(orderIdX: string) {
             qty: group.length,
             variantId: variant_id,
           })
+
+          // Delete extra line items
+          if (existing.length > 1) {
+            for (let i = 1; i < existing.length; ++i) {
+              actions.push({
+                updateLineItemId: existing[i].line_item_id,
+                qty: 0,
+                variantId: variant_id,
+              })
+            }
+          }
         }
       } else {
         actions.push({
