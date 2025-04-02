@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       result.push({
         id: order.id,
         canceledAt: order.cancelledAt,
-        lineItemCount: order.lineItems.nodes.length,
+        lineItemCount: order.lineItems_nodes.length,
       })
     }
 

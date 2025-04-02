@@ -26,6 +26,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             .object({
               offer_name: z.string(),
               offer_variant_id: z.string(),
+              offer_product_name: z.string().default(''),
             })
             .parse(o)
           await svrCreateOffer(parsed)

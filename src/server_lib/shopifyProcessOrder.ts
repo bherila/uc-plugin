@@ -9,8 +9,17 @@ import { shopifyCancelOrder } from './shopifyCancelOrder'
 import { shopifySetVariantQuantity } from './shopifySetVariantQuantity'
 import db from '@/server_lib/db'
 import { ResultSetHeader } from 'mysql2'
+import { shopifyBeginOrderEdit } from './shopifyBeginOrderEdit'
+import SkuManifestGrouping from '@/lib/SkuManifestGrouping'
+import { shopifySetLineItemQuantity } from './shopifySetLineItemQuantity'
 
 export const maxDuration = 60
+
+interface ShopOrderMutation {
+  variantId: string
+  qty: number
+  updateLineItemId: string | null // null will create a new line item
+}
 
 async function log(
   msg: any,
@@ -116,10 +125,9 @@ export default async function shopifyProcessOrder(orderIdX: string) {
         )
       }
 
-      const assigneeId = orderIdUri
       const existingManifests: { c: number }[] = await db.query(
         'select count(*) as c from v3_offer_manifest where assignee_id = ? and offer_id = ?',
-        [assigneeId, offerId],
+        [orderIdUri, offerId],
       )
       const alreadyHaveQty = z.number().parse(existingManifests[0].c)
       const needQty =
@@ -127,7 +135,7 @@ export default async function shopifyProcessOrder(orderIdX: string) {
           ? orderLineItem.quantity - alreadyHaveQty // ALLOCATE if not canceled
           : -alreadyHaveQty // RELEASE if canceled
 
-      pushLog(`${alreadyHaveQty} already allocated to ${assigneeId}, need ${needQty} more`)
+      pushLog(`${alreadyHaveQty} already allocated to ${orderIdUri}, need ${needQty} more`)
 
       if (needQty > 0) {
         // ALLOCATE bottles.
@@ -140,7 +148,7 @@ export default async function shopifyProcessOrder(orderIdX: string) {
             ORDER BY assignment_ordering
             LIMIT ?;
           `,
-          [assigneeId, offerId, needQty],
+          [orderIdUri, offerId, needQty],
         )
         const rowsAffected = updateResult.affectedRows
 
@@ -157,7 +165,7 @@ export default async function shopifyProcessOrder(orderIdX: string) {
               ORDER BY assignment_ordering
               LIMIT ?;
             `,
-              [assigneeId, offerId, rowsAffected],
+              [orderIdUri, offerId, rowsAffected],
             )) as ResultSetHeader
           ).affectedRows
           pushLog(`Reverted ${rowsReverted} of ${rowsAffected} rows due to insufficient allocation`)
@@ -170,7 +178,7 @@ export default async function shopifyProcessOrder(orderIdX: string) {
             pushLog(error)
           }
 
-          pushLog(`Set variant quantity to 0 for offer ${offerIdFromVariantId.get(assigneeId)}`)
+          pushLog(`Set variant quantity to 0 for offer ${offerIdFromVariantId.get(orderIdUri)}`)
           try {
             await shopifySetVariantQuantity(purchasedDealVariantUri, 0)
           } catch (error) {
@@ -186,87 +194,98 @@ export default async function shopifyProcessOrder(orderIdX: string) {
               AND offer_id = ?
             ORDER BY assignment_ordering
             LIMIT ?`,
-          [assigneeId, offerId, -needQty],
+          [orderIdUri, offerId, -needQty],
         )
         pushLog(`Reverted ${updateResult.affectedRows} of ${-needQty} rows due to release`)
       }
+    }
 
-      const offerManifests: V3Manifest[] = await db.query(
-        `select m_id as id, mf_variant as variant_id, assignee_id, assignment_ordering
+    // Now that the manifests are allocated, we need to update the shopify order
+
+    const offerManifests: V3Manifest[] = await db.query(
+      `select m_id as id, mf_variant as variant_id, assignee_id, assignment_ordering
           from v3_offer_manifest
           where assignee_id = ? and offer_id = ?
           order by mf_variant`,
-        [assigneeId, offerId],
+      [orderIdUri, offerId],
+    )
+
+    const preExistingShopifyManifests = shopifyOrder.lineItems_nodes.filter((node) =>
+      node.product_tags.includes('manifest-item'),
+    )
+
+    // Reconcile offerManifests vs. preExistingShopifyManifests
+    const actions: ShopOrderMutation[] = []
+    const groups: SkuManifestGrouping = groupBySku(offerManifests)
+    for (const variantId of Object.keys(groups)) {
+      const group = groups[variantId]
+      const variant_id = group[0].variant_id
+      const existing = preExistingShopifyManifests.filter(
+        (node) => node.variant_variant_graphql_id === variant_id,
       )
-
-      const preExistingShopifyManifests = shopifyOrder.lineItems_nodes.filter((node) =>
-        node.product_tags.includes('manifest-item'),
-      )
-
-      // remove pre-existing manifests from shopify order
-      if (preExistingShopifyManifests.length > 0) {
-        pushLog(
-          `Cannot proceed until all ${preExistingShopifyManifests.length} pre-existing manifests are deleted from Shopify order`,
-        )
-        return
-        // const beginEditResult = await beginEdit({ orderId: orderIdUri })
-        // calculatedOrderId = beginEditResult.orderEditBegin?.calculatedOrder?.id ?? null
-        // if (!calculatedOrderId) {
-        //   await log('CalculatedOrder.id was null, aborting', offerId, orderIdNumeric)
-        //   return
-        // }
-        // await log(`Opened CalculatedOrder ${calculatedOrderId}`, offerId, orderIdNumeric)
-        // ... do stuff
-        // const commitResult = await orderEditCommit({ calculatedOrderId })
-        // await log(commitResult, offerId, orderIdNumeric)
-      }
-
-      const willUpdateShopifyOrder = preExistingShopifyManifests.length < offerManifests.length
-      pushLog(
-        `${willUpdateShopifyOrder ? 'Will update' : 'Will not update'} shopify order, checked if ${preExistingShopifyManifests.length} < ${offerManifests.length}`,
-      )
-      if (willUpdateShopifyOrder) {
-        if (calculatedOrderId == null) {
-          const beginEditResult = await beginEdit({ orderId: orderIdUri })
-          calculatedOrderId = beginEditResult.orderEditBegin?.calculatedOrder?.id ?? null
-          if (!calculatedOrderId) {
-            pushLog('CalculatedOrder.id was null, aborting')
-            return
-          }
-          pushLog(`Opened CalculatedOrder ${calculatedOrderId}`)
-        }
-
-        const groups = groupBySku(offerManifests)
-        for (const variantId of Object.keys(groups)) {
-          const x: AddVariantInput = {
-            calculatedOrderId,
-            quantity: groups[variantId].length,
-            variantId,
-          }
-
-          // add the item to the order
-          pushLog(`Adding ${variantId} x ${groups[variantId].length}, ${JSON.stringify(x)}`)
-          const addResult = await addVariant(x)
-          const allocationLineItem = addResult.orderEditAddVariant
-          pushLog(`addVariant: ${JSON.stringify(addResult)}`)
-          // with a zero cost i.e. 100% discount
-          const discount = await addDiscount({
-            calculatedOrderId,
-            discount: {
-              percentValue: 100,
-              description: 'Allocation from Offer',
-            },
-            lineItemId: allocationLineItem.calculatedLineItem.id,
-          })
-
-          pushLog('addDiscount: ' + JSON.stringify(discount))
-        }
+      if (existing.length > 1) {
+        pushLog(`ERROR: Multiple existing items for variantId ${variantId}: ${JSON.stringify(existing)}`)
+      } else if (existing.length === 1) {
+        actions.push({
+          updateLineItemId: existing[0].line_item_id,
+          qty: group.length,
+          variantId: variant_id,
+        })
+      } else {
+        actions.push({
+          updateLineItemId: null,
+          qty: group.length,
+          variantId: variant_id,
+        })
       }
     }
+    // Apply to shopify order
+    if (actions.length > 0) {
+      // Start the order edit if needed
+      if (calculatedOrderId == null) {
+        const beginEditResult = await shopifyBeginOrderEdit({ orderId: orderIdUri })
+        calculatedOrderId = beginEditResult.calculatedOrderId
+        if (!calculatedOrderId) {
+          pushLog('CalculatedOrderId was null, aborting')
+          return // do not commit, error!!
+        }
+        pushLog(`Opened CalculatedOrder ${calculatedOrderId}`)
+      }
 
-    if (calculatedOrderId != null) {
-      const commitResult = await orderEditCommit({ calculatedOrderId })
-      pushLog('orderEditCommit: ' + JSON.stringify(commitResult))
+      for (const action of actions) {
+        const { qty, variantId, updateLineItemId } = action
+        let calculatedLineItemIdForDiscounting: string | null = null
+        if (updateLineItemId) {
+          // update the line item
+          pushLog(`Updating line item ${updateLineItemId} to ${qty} for variant ${variantId}`)
+          const updateResult = await shopifySetLineItemQuantity(calculatedOrderId, updateLineItemId, qty)
+          calculatedLineItemIdForDiscounting = updateResult.calculated_lineitem_id
+        } else {
+          // add line item
+          pushLog(`Adding line item ${variantId} to ${qty} for variant ${variantId}`)
+          const addResult = await addVariant({
+            calculatedOrderId,
+            quantity: qty,
+            variantId,
+          })
+          calculatedLineItemIdForDiscounting = addResult.orderEditAddVariant.calculatedLineItem.id
+        }
+        // with a zero cost i.e. 100% discount
+        const discount = await addDiscount({
+          calculatedOrderId,
+          discount: {
+            percentValue: 100,
+            description: 'Allocation from Offer',
+          },
+          lineItemId: calculatedLineItemIdForDiscounting,
+        })
+        pushLog('addDiscount: ' + JSON.stringify(discount))
+      }
+
+      if (calculatedOrderId != null) {
+        const commitResult = await orderEditCommit({ calculatedOrderId })
+        pushLog('orderEditCommit: ' + JSON.stringify(commitResult))
+      }
     }
 
     await Promise.allSettled(logPromises)
@@ -279,21 +298,6 @@ export default async function shopifyProcessOrder(orderIdX: string) {
 
 // these from https://shopify.dev/docs/apps/build/orders-fulfillment/order-management-apps/edit-orders#add-a-new-variant
 // genAI: For each of these graphql mutations, please write async typescript functions that take in the relevant input arguments strongly typed and return an object  parsed by zod schema. Assume "shopify" object is already constructed as a global variable from shopify-api-node, and we can use "await shopify.graphql(query, params)" to execute them. For the OrderEditAppliedDiscountInput, refer to the shopify GraphQL API for the correct object type definition.
-
-const GQL_BEGIN_EDIT = `#graphql
-mutation beginEdit($order_id: ID!){
- orderEditBegin(id: $order_id){
-    calculatedOrder{
-      id
-      totalPriceSet {
-        shopMoney {
-          amount
-          currencyCode
-        }
-      }
-    }
-  }
-}`
 
 const GQL_ADD_VARIANT = `#graphql
 mutation orderEditAddVariant($calculatedOrderId: ID!, $quantity: Int!, $variantId: ID!) {
@@ -366,40 +370,6 @@ mutation orderEditCommit($calculated_order_id: ID!) {
 `
 
 // generated
-
-const beginEditSchema = z.object({
-  orderEditBegin: z
-    .object({
-      calculatedOrder: z
-        .object({
-          id: z.string(),
-          totalPriceSet: z
-            .object({
-              shopMoney: z
-                .object({
-                  amount: z.string(),
-                  currencyCode: z.string(),
-                })
-                .nullable(),
-            })
-            .nullable(),
-        })
-        .nullable(),
-    })
-    .nullable(),
-})
-
-type BeginEditInput = {
-  orderId: string
-}
-
-type BeginEditResponse = z.infer<typeof beginEditSchema>
-
-async function beginEdit({ orderId }: BeginEditInput): Promise<BeginEditResponse> {
-  const response = await shopify.graphql(GQL_BEGIN_EDIT, { order_id: orderId })
-  console.info('beginEdit response', response)
-  return beginEditSchema.parse(response)
-}
 
 const addVariantSchema = z.object({
   orderEditAddVariant: z.object({
@@ -537,21 +507,4 @@ async function orderEditCommit({
   } catch {
     return response as any
   }
-}
-
-async function btl_deallocate(assigneeId: string, offerId: number, rowsAffected: number): Promise<number> {
-  return await prisma.$executeRaw`
-    -- @param {String} $1:assignee_id
-    -- @param {BigInt} $2:offer_id
-    -- @param {Int} $3:quantity
-    UPDATE v3_offer_manifest
-    SET
-      assignee_id = null
-    WHERE
-      assignee_id = ${assigneeId}
-      AND offer_id = ${offerId}
-    ORDER BY
-      assignment_ordering
-    LIMIT
-      ${rowsAffected}`
 }
