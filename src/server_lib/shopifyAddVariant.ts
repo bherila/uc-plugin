@@ -3,7 +3,7 @@ import shopify from './shopify'
 
 const GQL_ADD_VARIANT = `#graphql
 mutation orderEditAddVariant($calculatedOrderId: ID!, $quantity: Int!, $variantId: ID!) {
-  orderEditAddVariant(id: $calculatedOrderId, quantity: $quantity, variantId: $variantId, allowDuplicates: true) {
+  orderEditAddVariant(id: $calculatedOrderId, quantity: $quantity, variantId: $variantId, allowDuplicates: false) {
     calculatedLineItem {
       # CalculatedLineItem fields
       id
