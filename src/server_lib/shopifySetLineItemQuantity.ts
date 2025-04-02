@@ -39,10 +39,10 @@ export async function shopifySetLineItemQuantity(
     throw new Error('Invalid calculated order id')
   }
   if (!calculated_lineitem_id.startsWith('gid://shopify/CalculatedLineItem/')) {
-    throw new Error('Invalid calculated line item id')
+    throw new Error('Invalid calculated line item id: "' + calculated_lineitem_id + '"')
   }
   try {
-    const data = shopify.graphql(GRAPHQL, {
+    const data = await shopify.graphql(GRAPHQL, {
       orderId: calculated_order_id,
       lineItemId: calculated_lineitem_id,
       quantity: quantity,

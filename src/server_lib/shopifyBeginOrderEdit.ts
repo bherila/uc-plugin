@@ -1,13 +1,24 @@
 import 'server-only'
 import shopify from '@/server_lib/shopify'
-import { z } from 'zod'
 import currency from 'currency.js'
 
 const GQL_BEGIN_EDIT = `#graphql
-mutation beginEdit($order_id: ID!){
- orderEditBegin(id: $order_id){
-    calculatedOrder{
+mutation beginEdit($order_id: ID!) {
+  orderEditBegin(id: $order_id) {
+    calculatedOrder {
       id
+      lineItems(first: 250) {
+        nodes {
+          id
+          variant {
+            id
+            product {
+              tags
+            }
+          }
+          quantity
+        }
+      }
       totalPriceSet {
         shopMoney {
           amount
@@ -18,29 +29,6 @@ mutation beginEdit($order_id: ID!){
   }
 }`
 
-const beginEditSchema = z.object({
-  orderEditBegin: z
-    .object({
-      calculatedOrder: z
-        .object({
-          id: z.string(),
-
-          totalPriceSet: z
-            .object({
-              shopMoney: z
-                .object({
-                  amount: z.string(),
-                  currencyCode: z.string(),
-                })
-                .nullable(),
-            })
-            .nullable(),
-        })
-        .nullable(),
-    })
-    .nullable(),
-})
-
 type BeginEditInput = {
   orderId: string
 }
@@ -48,12 +36,30 @@ type BeginEditInput = {
 export async function shopifyBeginOrderEdit({ orderId }: BeginEditInput): Promise<{
   calculatedOrderId: string
   totalPrice: currency
+  editableLineItems: {
+    calculatedLineItemId: string
+    variantId: string
+    quantity: number
+    productTags: string[]
+  }[]
 }> {
   const response = await shopify.graphql(GQL_BEGIN_EDIT, { order_id: orderId })
-  // console.info('beginEdit response', response)
-  const parsed = beginEditSchema.parse(response)
+
+  const editableLineItems = []
+  for (const item of response.orderEditBegin?.calculatedOrder?.lineItems?.nodes ?? []) {
+    if (item.variant) {
+      editableLineItems.push({
+        calculatedLineItemId: item.id,
+        variantId: item.variant.id,
+        quantity: item.quantity,
+        productTags: item.variant.product.tags ?? [],
+      })
+    }
+  }
+
   return {
-    calculatedOrderId: parsed.orderEditBegin?.calculatedOrder?.id ?? '',
-    totalPrice: currency(parsed.orderEditBegin?.calculatedOrder?.totalPriceSet?.shopMoney?.amount ?? 0),
+    calculatedOrderId: response.orderEditBegin?.calculatedOrder?.id ?? '',
+    totalPrice: currency(response.orderEditBegin?.calculatedOrder?.totalPriceSet?.shopMoney?.amount ?? 0),
+    editableLineItems,
   }
 }

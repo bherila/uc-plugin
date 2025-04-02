@@ -54,7 +54,7 @@ export default async function ShopifyOrdersPage({
   async function reProcessShopifyOrder(order_id: string) {
     'use server'
     await shopifyProcessOrder(order_id)
-    revalidatePath(`/offers/${offer_id}/shopify_manifests`)
+    // revalidatePath(`/offers/${offer_id}/shopify_manifests`)
   }
 
   const offer = await prisma.v3_offer.findFirstOrThrow({

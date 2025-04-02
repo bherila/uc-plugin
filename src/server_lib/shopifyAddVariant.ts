@@ -56,6 +56,7 @@ export async function addVariant(input: AddVariantInput): Promise<AddVariantResp
   if (res.success) {
     return res.data
   }
-  console.error('addVariant response', JSON.stringify(response))
+  const msg = response?.orderEditAddVariant?.userErrors?.message
+  console.error('addVariant response', msg ?? JSON.stringify(response))
   throw res.error
 }
