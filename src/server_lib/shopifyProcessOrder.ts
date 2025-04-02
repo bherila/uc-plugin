@@ -215,6 +215,16 @@ export default async function shopifyProcessOrder(orderIdX: string) {
       [orderIdUri, offerId],
     )
 
+    // Sanity check offerManifest length against dealLineItemFromShopifyOrder total qty
+    const totalQty = offerManifests.reduce((acc, manifest) => acc + manifest.assignment_ordering, 0)
+    const totalQtyFromShopifyOrder = dealLineItemFromShopifyOrder.reduce((acc, item) => acc + item.quantity, 0)
+    if (totalQty !== totalQtyFromShopifyOrder) {
+      pushLog(
+        `ERROR: offerManifests length (${offerManifests.length}) does not match dealLineItemFromShopifyOrder length (${dealLineItemFromShopifyOrder.length})`,
+      )
+      return
+    }
+
     const preExistingShopifyManifests = shopifyOrder.lineItems_nodes.filter((node) =>
       node.product_tags.includes('manifest-item'),
     )
