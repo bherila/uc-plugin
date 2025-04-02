@@ -5,7 +5,7 @@ import { cache } from 'react'
 
 const orderLineItem = z.object({
   line_item_id: z.string(),
-  quantity: z.number(),
+  currentQuantity: z.number(),
   title: z.string(),
   product: z.object({
     tags: z.array(z.string()),
@@ -45,7 +45,7 @@ const orderTransaction = z.object({
 
 export const orderLineItemFlatSchema = z.object({
   line_item_id: z.string(),
-  quantity: z.number(),
+  currentQuantity: z.number(),
   title: z.string(),
   product_tags: z.array(z.string()),
   variant_variant_graphql_id: z.string(),
@@ -123,7 +123,7 @@ const query = `#graphql
         lineItems(first: 250) {
           nodes {
             line_item_id: id
-            quantity
+            currentQuantity
             title
             product {
               tags

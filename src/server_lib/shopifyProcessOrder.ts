@@ -14,7 +14,6 @@ import { shopifyBeginOrderEdit } from './shopifyBeginOrderEdit'
 import { shopifyCancelOrder } from './shopifyCancelOrder'
 import { shopifySetLineItemQuantity } from './shopifySetLineItemQuantity'
 import { shopifySetVariantQuantity } from './shopifySetVariantQuantity'
-import { shopifyOrderCapture } from './shopifyOrderCapture'
 import { V3Manifest } from '@/app/api/manifest/models'
 
 export const maxDuration = 60
@@ -85,7 +84,7 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
         console.info(
           `Combining line item ${dealLineItem.line_item_id} with existing item ${existingItem.line_item_id}`,
         )
-        existingItem.quantity += dealLineItem.quantity
+        existingItem.currentQuantity += dealLineItem.currentQuantity
       } else {
         console.info(`Adding line item ${dealLineItem.line_item_id} to map`)
         variant2DealItemMap.set(key, dealLineItem)
@@ -148,7 +147,7 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
     const alreadyHaveQty = z.number().parse(existingManifests[0].c)
     const needQty =
       shopifyOrder.cancelledAt == null
-        ? orderLineItem.quantity - alreadyHaveQty // ALLOCATE if not canceled
+        ? orderLineItem.currentQuantity - alreadyHaveQty // ALLOCATE if not canceled
         : -alreadyHaveQty // RELEASE if canceled
 
     pushLog(`${alreadyHaveQty} already allocated to ${orderIdUri}, need ${needQty} more`)
@@ -229,7 +228,7 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
   // Sanity check offerManifest length against dealLineItemFromShopifyOrder total qty
   const totalQty = offerManifests.length
   const totalQtyFromShopifyOrder = Array.from(variant2DealItemMap.values()).reduce(
-    (acc, item) => acc + item.quantity,
+    (acc, item) => acc + item.currentQuantity,
     0,
   )
   if (totalQty !== totalQtyFromShopifyOrder) {

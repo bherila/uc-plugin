@@ -71,7 +71,6 @@ export default async function ShopifyOrdersPage({
   const allManifests: SoldManifestItem[] = []
   const offerData = await queryOffer({ offer_id })
   const offerSkuVariantId = offerData?.offerProductData.variantId
-  const offerPrice = offerData?.offerProductData.maxVariantPriceAmount ?? 0
 
   const ordersFromShopify = (await shopifyGetOrdersWithLineItems(orders.map((o) => o.order_id))).map((order) => {
     const orderLineItems = order.lineItems_nodes
@@ -96,28 +95,28 @@ export default async function ShopifyOrdersPage({
     }
 
     // check if total qty of each purchasedItems equals total qty of upgradeItems
-    const totalPurchasedItemsQty = purchasedItems.reduce((total, li) => total + li.quantity, 0)
+    const totalPurchasedItemsQty = purchasedItems.reduce((total, li) => total + li.currentQuantity, 0)
     const totalUpgradeItemsQty = upgradeItems.reduce((total, li) => {
       // Free items don't count against allocation
       const isFreeItem =
         li.originalUnitPriceSet_shopMoney_amount == 0 &&
         currency(offerData?.manifestProductData[li.variant_variant_graphql_id]?.unitCost?.amount ?? 0).value == 0
-      return isFreeItem ? total : total + li.quantity
+      return isFreeItem ? total : total + li.currentQuantity
     }, 0)
     const isQtyEqual = totalPurchasedItemsQty === totalUpgradeItemsQty
 
     // total value of each purchasedItems and upgradeItems
     const purchasedItemsTotalValue = purchasedItems.reduce(
-      (total, li) => total + li.originalUnitPriceSet_shopMoney_amount * li.quantity,
+      (total, li) => total + li.originalUnitPriceSet_shopMoney_amount * li.currentQuantity,
       0,
     )
     const upgradeItemsTotalValue = upgradeItems.reduce(
-      (total, li) => total + li.originalUnitPriceSet_shopMoney_amount * li.quantity,
+      (total, li) => total + li.originalUnitPriceSet_shopMoney_amount * li.currentQuantity,
       0,
     )
     const upgradeItemsTotalCost = upgradeItems.reduce((total, li) => {
       const unitCost = offerData?.manifestProductData[li.variant_variant_graphql_id]?.unitCost?.amount ?? 0
-      return total.add(currency(unitCost).multiply(li.quantity))
+      return total.add(currency(unitCost).multiply(li.currentQuantity))
     }, currency(0)).value
 
     return {
@@ -325,12 +324,12 @@ export default async function ShopifyOrdersPage({
                       <td>
                         {order.purchasedItems.map((li) => (
                           <div key={li.line_item_id} style={{ borderBottom: '1px dashed #666' }}>
-                            {li.quantity} &times; {li.title} ({li.discountedTotalSet_shopMoney_amount})
+                            {li.currentQuantity} &times; {li.title} ({li.discountedTotalSet_shopMoney_amount})
                           </div>
                         ))}
                         {order.upgradeItems.map((li) => (
                           <div key={li.line_item_id} style={{ fontSize: '8pt' }}>
-                            {li.quantity} &times; {li.title}
+                            {li.currentQuantity} &times; {li.title}
                           </div>
                         ))}
                       </td>
