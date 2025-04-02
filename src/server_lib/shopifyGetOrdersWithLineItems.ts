@@ -58,7 +58,7 @@ const schema = z.object({
       cancelledAt: z.string().nullable(),
       createdAt: z.string(),
       email: z.string().nullable(),
-      financialStatus: z.string(),
+      displayFinancialStatus: z.string(),
       totalPriceSet: z.object({
         shopMoney: z.object({
           amount: z.coerce.number(),
@@ -81,7 +81,7 @@ export const orderFlatSchema = z.object({
   cancelledAt: z.string().nullable(),
   createdAt: z.string(),
   email: z.string().nullable(),
-  financialStatus: z.string(),
+  displayFinancialStatus: z.string(),
   totalPriceSet_shopMoney_amount: z.number(),
   totalShippingPriceSet_shopMoney_amount: z.number(),
   lineItems_nodes: z.array(orderLineItemFlatSchema),
@@ -95,7 +95,7 @@ const query = `#graphql
         cancelledAt
         createdAt
         email
-        financialStatus
+        displayFinancialStatus
         totalPriceSet {
           shopMoney {
             amount
@@ -177,7 +177,7 @@ const shopifyGetOrdersWithLineItems = async (graphqlOrderIds: string[]) => {
       lineItems_nodes: lineItems,
       totalPriceSet_shopMoney_amount: node.totalPriceSet.shopMoney.amount,
       totalShippingPriceSet_shopMoney_amount: node.totalShippingPriceSet.shopMoney.amount,
-      financialStatus: node.financialStatus,
+      displayFinancialStatus: node.displayFinancialStatus,
     })
     return flatOrder
   })

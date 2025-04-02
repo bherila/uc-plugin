@@ -8,15 +8,6 @@ mutation beginEdit($order_id: ID!){
  orderEditBegin(id: $order_id){
     calculatedOrder{
       id
-      lineItems(first: 250){
-        edges {
-          node {
-            id
-            quantity
-            sku
-          }
-        }
-      }
       totalPriceSet {
         shopMoney {
           amount
@@ -44,22 +35,6 @@ const beginEditSchema = z.object({
                 .nullable(),
             })
             .nullable(),
-
-          lineItems: z
-            .array(
-              z.object({
-                edges: z.array(
-                  z.object({
-                    node: z.object({
-                      id: z.string(),
-                      quantity: z.number(),
-                      sku: z.string().nullable(),
-                    }),
-                  }),
-                ),
-              }),
-            )
-            .nullable(),
         })
         .nullable(),
     })
@@ -73,24 +48,12 @@ type BeginEditInput = {
 export async function shopifyBeginOrderEdit({ orderId }: BeginEditInput): Promise<{
   calculatedOrderId: string
   totalPrice: currency
-  mapSku2LineItemId: Map<string, string>
 }> {
   const response = await shopify.graphql(GQL_BEGIN_EDIT, { order_id: orderId })
   // console.info('beginEdit response', response)
   const parsed = beginEditSchema.parse(response)
-  const mapSku2LineItemId = new Map<string, string>()
-  if (parsed.orderEditBegin?.calculatedOrder?.lineItems) {
-    for (const lineItem of parsed.orderEditBegin?.calculatedOrder?.lineItems) {
-      if (lineItem.edges) {
-        for (const edge of lineItem.edges) {
-          mapSku2LineItemId.set(edge.node.sku ?? '', edge.node.id)
-        }
-      }
-    }
-  }
   return {
     calculatedOrderId: parsed.orderEditBegin?.calculatedOrder?.id ?? '',
     totalPrice: currency(parsed.orderEditBegin?.calculatedOrder?.totalPriceSet?.shopMoney?.amount ?? 0),
-    mapSku2LineItemId,
   }
 }

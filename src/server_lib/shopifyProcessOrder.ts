@@ -111,6 +111,7 @@ export default async function shopifyProcessOrder(orderIdX: string) {
 
     function pushLog(msg: any) {
       logPromises.push(log(msg, offerId, orderIdNumeric, Date.now() - startTime))
+      console.info('[allocate] ' + msg)
     }
 
     for (const orderLineItem of dealLineItemFromShopifyOrder) {
@@ -230,11 +231,18 @@ export default async function shopifyProcessOrder(orderIdX: string) {
       if (existing.length > 1) {
         pushLog(`ERROR: Multiple existing items for variantId ${variantId}: ${JSON.stringify(existing)}`)
       } else if (existing.length === 1) {
-        actions.push({
-          updateLineItemId: existing[0].line_item_id,
-          qty: group.length,
-          variantId: variant_id,
-        })
+        if (existing[0].quantity != group.length) {
+          pushLog(
+            `Updating existing item ${existing[0].line_item_id} for variantId ${variantId} from ${existing[0].quantity} to ${group.length}`,
+          )
+          actions.push({
+            updateLineItemId: existing[0].line_item_id,
+            qty: group.length,
+            variantId: variant_id,
+          })
+        } else {
+          pushLog(`No change for existing item ${existing[0].line_item_id} for variantId ${variantId}`)
+        }
       } else {
         actions.push({
           updateLineItemId: null,
@@ -243,6 +251,7 @@ export default async function shopifyProcessOrder(orderIdX: string) {
         })
       }
     }
+
     // Apply to shopify order
     if (actions.length > 0) {
       // Start the order edit if needed
@@ -295,7 +304,7 @@ export default async function shopifyProcessOrder(orderIdX: string) {
     if (shopifyOrder.totalPriceSet_shopMoney_amount > 0) {
       try {
         // Check if the order is already captured
-        const isAlreadyCaptured = shopifyOrder.financialStatus === 'CAPTURED'
+        const isAlreadyCaptured = shopifyOrder.displayFinancialStatus === 'CAPTURED'
 
         if (!isAlreadyCaptured) {
           const captureResult = await shopifyOrderCapture({

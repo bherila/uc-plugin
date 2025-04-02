@@ -6,9 +6,14 @@ import NewOfferForm from '@/app/offers/new/NewOfferForm'
 import svrLoadShopifyProducts from '@/server_lib/svrLoadShopifyProducts'
 import svrCreateOffer from '@/server_lib/svrCreateOffer'
 import svrLoadOfferList from '@/server_lib/svrLoadOfferList'
-import { redirect } from 'next/navigation'
+import { redirect, RedirectType } from 'next/navigation'
+import { getSession } from '@/server_lib/session'
 
 export default async function NewOfferPage() {
+  const session = await getSession()
+  if (session?.uid == null || !session?.ax_uc) {
+    return redirect(AuthRoutes.signIn, RedirectType.replace)
+  }
   const { offerListItems } = await svrLoadOfferList()
   const shopifyProducts = await svrLoadShopifyProducts('manifest-item')
 
