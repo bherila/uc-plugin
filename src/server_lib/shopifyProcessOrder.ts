@@ -228,20 +228,14 @@ export default async function shopifyProcessOrder(orderIdX: string) {
       const existing = preExistingShopifyManifests.filter(
         (node) => node.variant_variant_graphql_id === variant_id,
       )
-      if (existing.length > 1) {
-        pushLog(`ERROR: Multiple existing items for variantId ${variantId}: ${JSON.stringify(existing)}`)
-      } else if (existing.length === 1) {
-        if (existing[0].quantity != group.length) {
-          pushLog(
-            `Updating existing item ${existing[0].line_item_id} for variantId ${variantId} from ${existing[0].quantity} to ${group.length}`,
-          )
+      const combinedQtyExisting = existing.reduce((acc, node) => acc + node.quantity, 0)
+      if (existing.length === 1) {
+        if (combinedQtyExisting != group.length) {
           actions.push({
             updateLineItemId: existing[0].line_item_id,
             qty: group.length,
             variantId: variant_id,
           })
-        } else {
-          pushLog(`No change for existing item ${existing[0].line_item_id} for variantId ${variantId}`)
         }
       } else {
         actions.push({
@@ -251,6 +245,7 @@ export default async function shopifyProcessOrder(orderIdX: string) {
         })
       }
     }
+    pushLog(`Actions: ${JSON.stringify(actions, null, 2)}`)
 
     // Apply to shopify order
     if (actions.length > 0) {
