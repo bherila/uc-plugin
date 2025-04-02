@@ -320,8 +320,8 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
         pushLog('addDiscount: ' + JSON.stringify(discount))
       }
     }
-    // const commitResult = await orderEditCommit({ calculatedOrderId })
-    // pushLog('orderEditCommit - ' + JSON.stringify(commitResult))
+    const commitResult = await orderEditCommit({ calculatedOrderId })
+    pushLog('orderEditCommit - ' + JSON.stringify(commitResult))
   } else {
     pushLog('SKIP orderEditCommit - Nothing to do')
   }
