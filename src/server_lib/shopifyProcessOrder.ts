@@ -53,7 +53,7 @@ export default async function shopifyProcessOrder(orderIdX: string) {
   const logPromises: Promise<void>[] = []
   const startTime = Date.now()
   try {
-    processOrderInternal(orderIdX, logPromises, startTime)
+    await processOrderInternal(orderIdX, logPromises, startTime)
   } finally {
     await Promise.allSettled(logPromises)
     orderLocks.delete(orderIdX)
