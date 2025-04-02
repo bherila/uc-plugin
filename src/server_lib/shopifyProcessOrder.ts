@@ -294,16 +294,25 @@ export default async function shopifyProcessOrder(orderIdX: string) {
 
     if (shopifyOrder.totalPriceSet_shopMoney_amount > 0) {
       try {
-        const captureResult = await shopifyOrderCapture({
-          orderId: orderIdUri,
-          amount: {
-            amount: shopifyOrder.totalPriceSet_shopMoney_amount,
-            currencyCode: 'USD',
-          },
-        })
-        pushLog(`Order capture result: ${JSON.stringify(captureResult)}`)
+        // Check if the order is already captured
+        const isAlreadyCaptured = shopifyOrder.financialStatus === 'CAPTURED'
+
+        if (!isAlreadyCaptured) {
+          const captureResult = await shopifyOrderCapture({
+            orderId: orderIdUri,
+            amount: {
+              amount: shopifyOrder.totalPriceSet_shopMoney_amount,
+              currencyCode: 'USD',
+            },
+          })
+          pushLog(`Order capture result: ${JSON.stringify(captureResult)}`)
+        } else {
+          pushLog(`Order ${orderIdUri} already captured, skipping capture`)
+        }
       } catch (captureError) {
-        pushLog(`Order capture failed: ${captureError instanceof Error ? captureError.message : String(captureError)}`)
+        pushLog(
+          `Order capture failed: ${captureError instanceof Error ? captureError.message : String(captureError)}`,
+        )
       }
     } else {
       pushLog(`Order ${orderIdUri} is free, no capture needed`)

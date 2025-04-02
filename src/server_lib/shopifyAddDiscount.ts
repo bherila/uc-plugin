@@ -1,5 +1,5 @@
-import { z } from "zod"
-import shopify from "./shopify"
+import { z } from 'zod'
+import shopify from './shopify'
 
 const GQL_ADD_DISCOUNT = `#graphql
 mutation orderEditAddLineItemDiscount($discount: OrderEditAppliedDiscountInput!, $calculated_order_id: ID!, $line_item_id: ID!) {
@@ -27,8 +27,6 @@ mutation orderEditAddLineItemDiscount($discount: OrderEditAppliedDiscountInput!,
     }
   }
 }`
-
-
 
 const addDiscountSchema = z.object({
   orderEditAddLineItemDiscount: z.object({

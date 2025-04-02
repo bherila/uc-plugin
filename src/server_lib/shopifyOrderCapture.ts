@@ -26,22 +26,26 @@ mutation orderCapture($input: OrderCaptureInput!) {
 
 const orderCaptureSchema = z.object({
   orderCapture: z.object({
-    order: z.object({
-      id: z.string(),
-      totalPriceSet: z.object({
-        shopMoney: z.object({
-          amount: z.string(),
-          currencyCode: z.string(),
+    order: z
+      .object({
+        id: z.string(),
+        totalPriceSet: z.object({
+          shopMoney: z.object({
+            amount: z.string(),
+            currencyCode: z.string(),
+          }),
         }),
-      }),
-      financialStatus: z.string(),
-    }).nullable(),
-    userErrors: z.array(
-      z.object({
-        field: z.array(z.string()),
-        message: z.string(),
+        financialStatus: z.string(),
       })
-    ).nullable(),
+      .nullable(),
+    userErrors: z
+      .array(
+        z.object({
+          field: z.array(z.string()),
+          message: z.string(),
+        }),
+      )
+      .nullable(),
   }),
 })
 
