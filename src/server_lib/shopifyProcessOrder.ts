@@ -1,17 +1,20 @@
 import 'server-only'
-import z from 'zod'
-import { prisma } from '@/server_lib/prisma'
-import { V3Manifest } from '@/app/api/manifest/models'
-import groupBySku from '@/lib/groupBySku'
-import shopify from '@/server_lib/shopify'
-import shopifyGetOrdersWithLineItems from '@/server_lib/shopifyGetOrdersWithLineItems'
-import { shopifyCancelOrder } from './shopifyCancelOrder'
-import { shopifySetVariantQuantity } from './shopifySetVariantQuantity'
 import db from '@/server_lib/db'
+import groupBySku from '@/lib/groupBySku'
+import shopifyGetOrdersWithLineItems from '@/server_lib/shopifyGetOrdersWithLineItems'
+import SkuManifestGrouping from '@/lib/SkuManifestGrouping'
+import z from 'zod'
+
+import { addDiscount } from './shopifyAddDiscount'
+import { addVariant } from './shopifyAddVariant'
+import { orderEditCommit } from './shopifyOrderEditCommit'
+import { prisma } from '@/server_lib/prisma'
 import { ResultSetHeader } from 'mysql2'
 import { shopifyBeginOrderEdit } from './shopifyBeginOrderEdit'
-import SkuManifestGrouping from '@/lib/SkuManifestGrouping'
+import { shopifyCancelOrder } from './shopifyCancelOrder'
 import { shopifySetLineItemQuantity } from './shopifySetLineItemQuantity'
+import { shopifySetVariantQuantity } from './shopifySetVariantQuantity'
+import { V3Manifest } from '@/app/api/manifest/models'
 
 export const maxDuration = 60
 
@@ -293,218 +296,5 @@ export default async function shopifyProcessOrder(orderIdX: string) {
   } finally {
     await Promise.allSettled(logPromises)
     await db.end()
-  }
-}
-
-// these from https://shopify.dev/docs/apps/build/orders-fulfillment/order-management-apps/edit-orders#add-a-new-variant
-// genAI: For each of these graphql mutations, please write async typescript functions that take in the relevant input arguments strongly typed and return an object  parsed by zod schema. Assume "shopify" object is already constructed as a global variable from shopify-api-node, and we can use "await shopify.graphql(query, params)" to execute them. For the OrderEditAppliedDiscountInput, refer to the shopify GraphQL API for the correct object type definition.
-
-const GQL_ADD_VARIANT = `#graphql
-mutation orderEditAddVariant($calculatedOrderId: ID!, $quantity: Int!, $variantId: ID!) {
-  orderEditAddVariant(id: $calculatedOrderId, quantity: $quantity, variantId: $variantId, allowDuplicates: true) {
-    calculatedLineItem {
-      # CalculatedLineItem fields
-      id
-    }
-    calculatedOrder {
-      totalPriceSet {
-        shopMoney {
-          amount
-          currencyCode
-        }
-      }
-    }
-    userErrors {
-      field
-      message
-    }
-  }
-}`
-
-const GQL_ADD_DISCOUNT = `#graphql
-mutation orderEditAddLineItemDiscount($discount: OrderEditAppliedDiscountInput!, $calculated_order_id: ID!, $line_item_id: ID!) {
-  orderEditAddLineItemDiscount(discount: $discount, id: $calculated_order_id, lineItemId: $line_item_id) {
-    addedDiscountStagedChange {
-      # OrderStagedChangeAddLineItemDiscount fields
-      id
-      description
-      value {
-        __typename
-      }
-    }
-    calculatedLineItem {
-      # CalculatedLineItem fields
-      id
-      sku
-      variant {
-        title
-        id
-      }
-    }
-    userErrors {
-      field
-      message
-    }
-  }
-}`
-
-const GQL_ORDER_EDIT_COMMIT = `#graphql
-mutation orderEditCommit($calculated_order_id: ID!) {
-  orderEditCommit(id: $calculated_order_id, notifyCustomer: true) {
-    order {
-      # Order fields
-      id
-      totalPriceSet {
-        shopMoney {
-          amount
-          currencyCode
-        }
-      }
-    }
-    userErrors {
-      field
-      message
-    }
-  }
-}
-`
-
-// generated
-
-const addVariantSchema = z.object({
-  orderEditAddVariant: z.object({
-    calculatedLineItem: z.object({
-      id: z.string(),
-    }),
-    calculatedOrder: z.object({
-      totalPriceSet: z
-        .object({
-          shopMoney: z.object({
-            amount: z.string(),
-            currencyCode: z.string(),
-          }),
-        })
-        .nullable(),
-    }),
-    userErrors: z.any().nullable(),
-  }),
-})
-
-type AddVariantInput = {
-  calculatedOrderId: string
-  quantity: number
-  variantId: string
-}
-
-type AddVariantResponse = z.infer<typeof addVariantSchema>
-
-async function addVariant(input: AddVariantInput): Promise<AddVariantResponse> {
-  const response = await shopify.graphql(GQL_ADD_VARIANT, input)
-  const res = addVariantSchema.safeParse(response)
-  if (res.success) {
-    return res.data
-  }
-  console.error('addVariant response', JSON.stringify(response))
-  throw res.error
-}
-
-const addDiscountSchema = z.object({
-  orderEditAddLineItemDiscount: z.object({
-    addedDiscountStagedChange: z.object({
-      id: z.string(),
-      description: z.string().nullable(),
-      value: z
-        .object({
-          __typename: z.string().optional().nullable(),
-        })
-        .optional()
-        .nullable(),
-    }), // Add fields as needed
-    calculatedLineItem: z.object({
-      id: z.string(),
-      sku: z.string().nullable(),
-      variant: z.object({
-        title: z.string().nullable(),
-        id: z.string(),
-      }),
-    }),
-    userErrors: z
-      .array(
-        z.object({
-          field: z.array(z.string()),
-          message: z.string(),
-        }),
-      )
-      .nullable(),
-  }),
-})
-
-interface OrderEditAppliedDiscountInput {
-  percentValue?: number
-  description?: string
-}
-
-type AddDiscountInput = {
-  discount: OrderEditAppliedDiscountInput
-  calculatedOrderId: string
-  lineItemId: string
-}
-
-type AddDiscountResponse = z.infer<typeof addDiscountSchema>
-
-async function addDiscount({
-  discount,
-  calculatedOrderId,
-  lineItemId,
-}: AddDiscountInput): Promise<AddDiscountResponse> {
-  const response = await shopify.graphql(GQL_ADD_DISCOUNT, {
-    discount,
-    calculated_order_id: calculatedOrderId,
-    line_item_id: lineItemId,
-  })
-  return addDiscountSchema.parse(response)
-}
-
-const orderEditCommitSchema = z.object({
-  orderEditCommit: z.object({
-    order: z
-      .object({
-        id: z.string(),
-        totalPriceSet: z.object({
-          shopMoney: z.object({
-            amount: z.string(),
-            currencyCode: z.string(),
-          }),
-        }),
-      })
-      .nullable(),
-    userErrors: z
-      .array(
-        z.object({
-          field: z.array(z.string()),
-          message: z.string(),
-        }),
-      )
-      .nullable(),
-  }),
-})
-
-type OrderEditCommitInput = {
-  calculatedOrderId: string
-}
-
-type OrderEditCommitResponse = z.infer<typeof orderEditCommitSchema>
-
-async function orderEditCommit({
-  calculatedOrderId,
-}: OrderEditCommitInput): Promise<OrderEditCommitResponse | null> {
-  let response
-  try {
-    response = await shopify.graphql(GQL_ORDER_EDIT_COMMIT, {
-      calculated_order_id: calculatedOrderId,
-    })
-    return orderEditCommitSchema.parse(response)
-  } catch {
-    return response as any
   }
 }
