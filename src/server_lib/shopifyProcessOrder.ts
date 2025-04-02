@@ -14,6 +14,7 @@ import { shopifyBeginOrderEdit } from './shopifyBeginOrderEdit'
 import { shopifyCancelOrder } from './shopifyCancelOrder'
 import { shopifySetLineItemQuantity } from './shopifySetLineItemQuantity'
 import { shopifySetVariantQuantity } from './shopifySetVariantQuantity'
+import { shopifyOrderCapture } from './shopifyOrderCapture'
 import { V3Manifest } from '@/app/api/manifest/models'
 
 export const maxDuration = 60
@@ -289,6 +290,23 @@ export default async function shopifyProcessOrder(orderIdX: string) {
         const commitResult = await orderEditCommit({ calculatedOrderId })
         pushLog('orderEditCommit: ' + JSON.stringify(commitResult))
       }
+    }
+
+    if (shopifyOrder.totalPriceSet_shopMoney_amount > 0) {
+      try {
+        const captureResult = await shopifyOrderCapture({
+          orderId: orderIdUri,
+          amount: {
+            amount: shopifyOrder.totalPriceSet_shopMoney_amount,
+            currencyCode: 'USD',
+          },
+        })
+        pushLog(`Order capture result: ${JSON.stringify(captureResult)}`)
+      } catch (captureError) {
+        pushLog(`Order capture failed: ${captureError instanceof Error ? captureError.message : String(captureError)}`)
+      }
+    } else {
+      pushLog(`Order ${orderIdUri} is free, no capture needed`)
     }
 
     await Promise.allSettled(logPromises)
