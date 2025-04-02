@@ -56,8 +56,8 @@ export default async function shopifyProcessOrder(orderIdX: string) {
     processOrderInternal(orderIdX, logPromises, startTime)
   } finally {
     await Promise.allSettled(logPromises)
-    await db.end()
     orderLocks.delete(orderIdX)
+    await db.end()
   }
   console.info(`done in ${Date.now() - startTime}ms`)
 }
