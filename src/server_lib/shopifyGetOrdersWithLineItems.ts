@@ -164,10 +164,14 @@ const query = `#graphql
 `
 
 const shopifyGetOrdersWithLineItems = async (graphqlOrderIds: string[]) => {
-  const cleanedIds = graphqlOrderIds
-    .map((id) => id.replace('gid://shopify/Order/', ''))
-    .map((id) => z.coerce.bigint().safeParse(id)?.data)
-    .map((id) => `gid://shopify/Order/${id}`)
+  const cleanedIds = Array.from(
+    new Set(
+      graphqlOrderIds
+        .map((id) => id.replace('gid://shopify/Order/', ''))
+        .map((id) => z.coerce.bigint().safeParse(id)?.data)
+        .map((id) => `gid://shopify/Order/${id}`),
+    ),
+  )
   if (cleanedIds.length === 0) {
     return []
   }
