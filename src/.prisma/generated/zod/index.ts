@@ -16502,7 +16502,7 @@ export const v3_offerCreateInputSchema: z.ZodType<Prisma.v3_offerCreateInput> = 
   .object({
     offer_name: z.string(),
     offer_variant_id: z.string(),
-    offer_product_name: z.string(),
+    offer_product_name: z.string().optional(),
   })
   .strict()
 
@@ -16511,7 +16511,7 @@ export const v3_offerUncheckedCreateInputSchema: z.ZodType<Prisma.v3_offerUnchec
     offer_id: z.number().int().optional(),
     offer_name: z.string(),
     offer_variant_id: z.string(),
-    offer_product_name: z.string(),
+    offer_product_name: z.string().optional(),
   })
   .strict()
 
@@ -16537,7 +16537,7 @@ export const v3_offerCreateManyInputSchema: z.ZodType<Prisma.v3_offerCreateManyI
     offer_id: z.number().int().optional(),
     offer_name: z.string(),
     offer_variant_id: z.string(),
-    offer_product_name: z.string(),
+    offer_product_name: z.string().optional(),
   })
   .strict()
 

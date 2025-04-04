@@ -360,7 +360,7 @@ model v3_offer {
   offer_id            Int    @id @default(autoincrement())
   offer_name          String @unique(map: "v3_offer_unique_name") @db.VarChar(100)
   offer_variant_id    String @unique(map: "v3_offer_pk") @db.VarChar(100)
-  offer_product_name  String @db.VarChar(200)
+  offer_product_name  String @db.VarChar(200) @default("")
 }
 
 model v3_offer_manifest {
