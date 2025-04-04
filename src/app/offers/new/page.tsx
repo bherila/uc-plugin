@@ -15,7 +15,7 @@ export default async function NewOfferPage() {
     return redirect(AuthRoutes.signIn, RedirectType.replace)
   }
   const { offerListItems } = await svrLoadOfferList()
-  const shopifyProducts = await svrLoadShopifyProducts('manifest-item')
+  const shopifyProducts = await svrLoadShopifyProducts('deal')
 
   const existingOfferVariantIds = offerListItems.map((offer) => offer.offerProductData.variantId)
 
