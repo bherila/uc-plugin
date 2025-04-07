@@ -19,7 +19,7 @@ import { V3Manifest } from '@/app/api/manifest/models'
 export const maxDuration = 60
 
 // DOUBLE DOWN REPICK SETTING
-const shouldRepickAllBottles = false
+const shouldRepickAllBottles = true
 
 interface ShopOrderMutation {
   variantId: string
