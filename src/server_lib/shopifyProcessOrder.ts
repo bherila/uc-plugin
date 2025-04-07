@@ -18,6 +18,9 @@ import { V3Manifest } from '@/app/api/manifest/models'
 
 export const maxDuration = 60
 
+// DOUBLE DOWN REPICK SETTING
+const shouldRepickAllBottles = false
+
 interface ShopOrderMutation {
   variantId: string
   qty: number
@@ -145,12 +148,35 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
       [orderIdUri, offerId],
     )
     const alreadyHaveQty = z.number().parse(existingManifests[0].c)
-    const needQty =
+    let needQty =
       shopifyOrder.cancelledAt == null
         ? orderLineItem.currentQuantity - alreadyHaveQty // ALLOCATE if not canceled
         : -alreadyHaveQty // RELEASE if canceled
 
     pushLog(`${alreadyHaveQty} already allocated to ${orderIdUri}, need ${needQty} more`)
+
+    // START maybe repick -----------------------------------
+    if (shouldRepickAllBottles && needQty > 0 && alreadyHaveQty > 0) {
+      // If we are repicking, we need to unallocate the existing bottles
+      const rowsReverted = (
+        (await db.query(
+          `
+            UPDATE v3_offer_manifest
+            SET assignee_id = null
+            WHERE assignee_id = ?
+              AND offer_id = ?
+            ORDER BY assignment_ordering
+            LIMIT ?;
+          `,
+          [orderIdUri, offerId, alreadyHaveQty],
+        )) as ResultSetHeader
+      ).affectedRows
+      pushLog(`Reverted ${rowsReverted} bottles due to REPICK`)
+
+      // Now we need the full amt
+      needQty += alreadyHaveQty
+    }
+    // END maybe repick -----------------------------------
 
     if (needQty > 0) {
       // ALLOCATE bottles.
@@ -176,7 +202,7 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
               UPDATE v3_offer_manifest
               SET assignee_id = null
               WHERE assignee_id = ?
-          AND offer_id = ?
+                AND offer_id = ?
               ORDER BY assignment_ordering
               LIMIT ?;
             `,
