@@ -4,7 +4,7 @@ import { sessionSchema } from '@/lib/sessionSchema'
 import { cache } from 'react'
 import * as jose from 'jose'
 
-const cookieName = 'bwh-session'
+const cookieName = 'uc-session'
 
 // Pad the key to 32 bytes (256 bits)
 function padKey(key: string): Uint8Array {
