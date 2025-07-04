@@ -53,7 +53,7 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   // }
 
   const numManifestsNotAssigned = offer?.mf?.filter((r) => r.assignee_id == null).length ?? 0
-  const deficit = numManifestsNotAssigned - inventoryQuantity
+  const deficit = numManifestsNotAssigned - (inventoryQuantity ?? 0)
 
   const shopifyOrderIds = Array.from(new Set(offer?.mf.map((r) => r.assignee_id).filter(Boolean)))
   const hasOrders = shopifyOrderIds.length > 0

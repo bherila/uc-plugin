@@ -3,7 +3,7 @@ generates:
   ./src/types/shopify-graphql.ts:
     preset: '@shopify/api-codegen-preset'
     presetConfig:
-      apiVersion: '2024-07'
+      apiVersion: '2025-07'
       accessToken: ${SHOPIFY_ADMIN_API_TOKEN}
       shopName: ${SHOPIFY_APP_NAME}
     plugins:

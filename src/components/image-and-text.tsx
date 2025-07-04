@@ -16,7 +16,7 @@ export default function ImageAndText({
   return (
     <Row container className={cn('pb-4', extraClass)}>
       <Col xs={12} sm={4} md={4} lg={3}>
-        <Image width={500} height={500} style={{width: '100%', height: 'auto'}} src={imageUrl} alt={alt} />
+        <Image width={500} height={500} style={{ width: '100%', height: 'auto' }} src={imageUrl} alt={alt} />
       </Col>
       <Col xs={12} sm={8} md={8} lg={9}>
         {children}

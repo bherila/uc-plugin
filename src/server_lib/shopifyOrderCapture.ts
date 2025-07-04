@@ -14,7 +14,7 @@ mutation orderCapture($input: OrderCaptureInput!) {
           currencyCode
         }
       }
-      financialStatus
+      displayFinancialStatus
     }
     userErrors {
       field
@@ -35,7 +35,7 @@ const orderCaptureSchema = z.object({
             currencyCode: z.string(),
           }),
         }),
-        financialStatus: z.string(),
+        displayFinancialStatus: z.string(),
       })
       .nullable(),
     userErrors: z
@@ -67,7 +67,7 @@ export async function shopifyOrderCapture(input: OrderCaptureInput) {
         event_ext: JSON.stringify({
           orderId: input.id,
           amount: input.amount,
-          financialStatus: parsedResponse.orderCapture.order?.financialStatus,
+          displayFinancialStatus: parsedResponse.orderCapture.order?.displayFinancialStatus,
         }),
         order_id: BigInt(input.id.replace('gid://shopify/Order/', '')),
       },

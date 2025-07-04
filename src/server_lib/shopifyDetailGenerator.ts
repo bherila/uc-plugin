@@ -7,8 +7,10 @@ const QUERY = `#graphql
 query GenShopifyDetail ($id: ID!) {
   node(id: $id) {
     ... on ProductVariant {
-      availableToSell
       inventoryQuantity
+      inventoryItem {
+        tracked
+      }
       product {
         title
       }
@@ -27,8 +29,7 @@ query GenShopifyDetail ($id: ID!) {
 }`
 
 const schema = z.object({
-  availableToSell: z.coerce.number().int(),
-  inventoryQuantity: z.coerce.number().int(),
+  inventoryQuantity: z.coerce.number().int().optional(),
   product: z
     .object({
       title: z.string().nullable(),
@@ -37,17 +38,16 @@ const schema = z.object({
   inventoryItem: z
     .object({
       id: z.string(),
-      measurement: z
-        .object({
-          id: z.string(),
-          weight: z
-            .object({
-              unit: z.string(),
-              value: z.number(),
-            })
-            .nullable(),
-        })
-        .nullable(),
+      tracked: z.boolean(),
+      measurement: z.object({
+        id: z.string(),
+        weight: z
+          .object({
+            unit: z.string(),
+            value: z.number(),
+          })
+          .nullable(),
+      }),
     })
     .nullable(),
 })

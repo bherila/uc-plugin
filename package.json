@@ -82,7 +82,7 @@
     "@graphql-codegen/cli": "^5.0.5",
     "@graphql-codegen/typescript": "^4.1.6",
     "@graphql-codegen/typescript-resolvers": "^4.5.0",
-    "@shopify/api-codegen-preset": "^1.1.6",
+    "@shopify/api-codegen-preset": "^1.1.8",
     "@testing-library/jest-dom": "^6.6.3",
     "@types/jest": "^29.5.14",
     "@types/react": "19.0.12",

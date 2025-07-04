@@ -10,8 +10,10 @@ const PRODUCT_QUERY = `#graphql
     nodes(ids: $IDs) {
       ... on ProductVariant {
         id
+        inventoryQuantity
         inventoryItem {
           id
+          tracked
           measurement {
             id
             weight {
@@ -22,11 +24,6 @@ const PRODUCT_QUERY = `#graphql
           unitCost {
             amount
             currencyCode
-          }
-        }
-        inventoryLevels(first: 1) {
-          nodes {
-            available
           }
         }
         product {
@@ -98,7 +95,7 @@ export const shopifyGetProductDataByVariantIds = cache(
           tags: product.tags,
           weight: inventoryItem?.measurement?.weight?.value ?? null,
           unitCost: inventoryItem?.unitCost,
-          variantInventoryQuantity: node.inventoryLevels?.nodes[0]?.available ?? 0,
+          variantInventoryQuantity: node.inventoryItem?.tracked ? node.inventoryQuantity : 0,
         }
       })
 

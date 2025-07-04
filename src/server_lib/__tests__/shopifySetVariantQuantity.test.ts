@@ -19,13 +19,14 @@ describe('shopifySetVariantQuantity', () => {
 
   it('should set variant quantity to zero', async () => {
     const mockInventoryResponse = {
-      productVariant: {
-        inventoryItem: {
-          id: 'gid://shopify/InventoryItem/123',
-        },
-      },
-      location: {
-        id: 'gid://shopify/Location/456',
+      locations: {
+        edges: [
+          {
+            node: {
+              id: 'gid://shopify/Location/456',
+            },
+          },
+        ],
       },
     }
 
