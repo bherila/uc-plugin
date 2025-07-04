@@ -24,7 +24,11 @@ const PRODUCT_QUERY = `#graphql
             currencyCode
           }
         }
-        inventoryQuantity
+        inventoryLevels(first: 1) {
+          nodes {
+            available
+          }
+        }
         product {
           id
           title
@@ -94,7 +98,7 @@ export const shopifyGetProductDataByVariantIds = cache(
           tags: product.tags,
           weight: inventoryItem?.measurement?.weight?.value ?? null,
           unitCost: inventoryItem?.unitCost,
-          variantInventoryQuantity: inventoryItem?.inventoryQuantity ?? 0,
+          variantInventoryQuantity: node.inventoryLevels?.nodes[0]?.available ?? 0,
         }
       })
 

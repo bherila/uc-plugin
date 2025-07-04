@@ -7,7 +7,7 @@ const QUERY = `#graphql
 query GenShopifyDetail ($id: ID!) {
   node(id: $id) {
     ... on ProductVariant {
-      availableForSale
+      availableToSell
       inventoryQuantity
       product {
         title
@@ -27,7 +27,7 @@ query GenShopifyDetail ($id: ID!) {
 }`
 
 const schema = z.object({
-  availableForSale: z.coerce.number().int(),
+  availableToSell: z.coerce.number().int(),
   inventoryQuantity: z.coerce.number().int(),
   product: z
     .object({

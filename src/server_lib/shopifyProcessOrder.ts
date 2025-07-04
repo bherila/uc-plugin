@@ -354,7 +354,7 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
   // if (shopifyOrder.totalPriceSet_shopMoney_amount > 0) {
   //   try {
   //     // Check if the order is already captured
-  //     const isAlreadyCaptured = shopifyOrder.displayFinancialStatus === 'CAPTURED'
+  //     const isAlreadyCaptured = shopifyOrder.financialStatus === 'PAID'
 
   //     if (!isAlreadyCaptured) {
   //       const captureResult = await shopifyOrderCapture({
