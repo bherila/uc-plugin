@@ -12,7 +12,7 @@ export default function ShopifyOrdersTableRow({ shopifyOrderId }: { shopifyOrder
       setLoading(true)
       post('/api/shopify/reprocessOrder/', { shopifyOrderId }).then(() => setLoading(false))
     },
-    [setLoading],
+    [setLoading, shopifyOrderId],
   )
   return (
     <tr>

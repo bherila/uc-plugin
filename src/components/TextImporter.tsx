@@ -45,13 +45,14 @@ function SetDocumentModal(
   )
 }
 
-function SetDocumentInline(props: SetDocumentProps) {
+function SetDocumentInline({ setDocFn }: SetDocumentProps) {
   const [delimiter, setDelimiter] = useState('Tab')
   const [text, setText] = useState('')
   useEffect(() => {
     const data = parseDelimitedText(text, delimiter === 'Tab' ? '\t' : ',')
-    props.setDocFn(data)
-  }, [delimiter, text])
+    setDocFn(data)
+  }, [delimiter, text, setDocFn])
+
   return (
     <Container fluid>
       <DelimiterSelectionRow {...{ delimiter, setDelimiter }} />

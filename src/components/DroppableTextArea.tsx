@@ -49,7 +49,7 @@ const DroppableTextArea: React.FC<DroppableTextAreaProps> = ({ data, setData }) 
         setData(text)
       })
     }
-  }, [file])
+  }, [file, setData])
 
   return (
     <Form>

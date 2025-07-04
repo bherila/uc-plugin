@@ -43,7 +43,7 @@ const DealSelector: React.FC<Props> = ({ options, selectedValue, setSelectedValu
     if (sortedOptions && sortedOptions.length === 1) {
       setSelectedValue(sortedOptions[0])
     }
-  }, [sortedOptions])
+  }, [sortedOptions, setSelectedValue])
 
   if (options == null) return <Spinner />
   if (options.length == 0) return <div>No items</div>

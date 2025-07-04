@@ -15,7 +15,7 @@ const useUrlState = <T>(key: string, defaultValue: T): [T, (newValue: T, push: b
   useEffect(() => {
     const handlePopstate = () => {
       const newSearchParams = new URLSearchParams(window.location.search)
-      const param = searchParams.get(key)
+      const param = newSearchParams.get(key)
       setValue(param != null ? JSON.parse(param) : defaultValue)
     }
     window.addEventListener('popstate', handlePopstate)
