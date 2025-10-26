@@ -16,6 +16,7 @@ import Link from 'next/link'
 import genShopifyDetail from '@/server_lib/shopifyDetailGenerator'
 import VariantLink from '../VariantLink'
 import { setShopifyQtyAction } from './_setShopifyQtyAction'
+import currency from 'currency.js'
 
 async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
   const promises = {
@@ -151,6 +152,7 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
             <thead>
               <tr>
                 <th>Product</th>
+                <th>Value</th>
                 <th># Offered</th>
                 {hasOrders ? <th># Allocated</th> : null}
                 {hasOrders ? <th># Remaining</th> : null}
@@ -185,6 +187,11 @@ async function OfferDetailsServerComponent({ offer_id }: { offer_id: number }) {
                       <br />
                       <VariantLink type="manifest-item" variantURI={shopifyPVURI} />
                       {(product?.weight ?? 0) > 1 ? <Badge bg="danger">Weight should be zero</Badge> : ''}
+                    </td>
+                    <td>
+                      {product?.maxVariantPriceAmount == null
+                        ? 'null'
+                        : currency(product?.maxVariantPriceAmount).format()}
                     </td>
                     <td>{totalQuantity}</td>
                     {hasOrders ? <td>{numAllocated}</td> : null}
