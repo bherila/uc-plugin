@@ -82,6 +82,10 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
     // console.info(`Reading line item ${dealLineItem.line_item_id} with tags ${dealLineItem.product_tags} and variant id ${dealLineItem.variant_variant_graphql_id}`)
     if (dealLineItem.product_tags.includes('deal')) {
       const key = dealLineItem.variant_variant_graphql_id
+      if (key == null) {
+        // maybe log error
+        break;
+      }
       const existingItem = variant2DealItemMap.get(key)
       if (existingItem != null) {
         console.info(
@@ -133,7 +137,7 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
       continue
     }
     const lineItemVariantId = orderLineItem.variant_variant_graphql_id
-    offerId = offerIdFromVariantId.get(lineItemVariantId) ?? null
+    offerId = lineItemVariantId == null ? null : (offerIdFromVariantId.get(lineItemVariantId) ?? null)
     if (!offerId) {
       pushLog(`LineItem: ${orderLineItem.line_item_id} => No match to offer for variant ${lineItemVariantId}`)
       continue

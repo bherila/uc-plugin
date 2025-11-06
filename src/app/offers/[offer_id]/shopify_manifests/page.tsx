@@ -81,7 +81,7 @@ export default async function ShopifyOrdersPage({
       upgradeItems.length,
     )
     for (const item of upgradeItems ?? []) {
-      if (item.variant_variant_graphql_id !== offerSkuVariantId) {
+      if (item.variant_variant_graphql_id != null && item.variant_variant_graphql_id !== offerSkuVariantId) {
         allManifests.push({
           wineName: item.title,
           winnerEmail: order.email ?? '',
