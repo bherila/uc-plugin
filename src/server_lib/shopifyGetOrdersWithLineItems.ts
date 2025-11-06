@@ -15,6 +15,7 @@ const orderLineItem = z.object({
     inventoryItem: z
       .object({
         id: z.string(),
+        // measurement can be null in actual API responses even when inventoryItem exists
         measurement: z.object({
           id: z.string(),
           weight: z.object({
