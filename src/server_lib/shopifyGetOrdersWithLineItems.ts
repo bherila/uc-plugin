@@ -185,9 +185,9 @@ const shopifyGetOrdersWithLineItems = async (graphqlOrderIds: string[]) => {
   const flatOrders = nodes.map((node) => {
     const lineItems = node.lineItems.nodes.map((lineItem) => ({
       ...lineItem,
-      product_tags: lineItem.product.tags,
-      variant_variant_graphql_id: lineItem.variant.variant_graphql_id,
-      variant_inventoryItem_id: lineItem.variant.inventoryItem?.id,
+      product_tags: lineItem.product?.tags ?? '',
+      variant_variant_graphql_id: lineItem.variant?.variant_graphql_id ?? 'null',
+      variant_inventoryItem_id: lineItem.variant?.inventoryItem?.id ?? 'null',
       variant_inventoryItem_measurement_id: lineItem.variant.inventoryItem?.measurement.id,
       variant_inventoryItem_measurement_weight_unit: lineItem.variant.inventoryItem?.measurement.weight.unit,
       variant_inventoryItem_measurement_weight_value: lineItem.variant.inventoryItem?.measurement.weight.value,
