@@ -9,7 +9,7 @@ const orderLineItem = z.object({
   title: z.string(),
   product: z.object({
     tags: z.array(z.string()),
-  }),
+  }).nullable(),
   variant: z.object({
     variant_graphql_id: z.string(),
     inventoryItem: z
@@ -24,7 +24,7 @@ const orderLineItem = z.object({
         }),
       })
       .nullable(),
-  }),
+  }).nullable(),
   originalUnitPriceSet: z.object({
     shopMoney: z.object({
       amount: z.coerce.number(),
