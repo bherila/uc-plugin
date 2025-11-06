@@ -21,7 +21,7 @@ const orderLineItem = z.object({
             unit: z.string(),
             value: z.number(),
           }),
-        }),
+        }).nullable(),
       })
       .nullable(),
   }).nullable(),
@@ -188,9 +188,9 @@ const shopifyGetOrdersWithLineItems = async (graphqlOrderIds: string[]) => {
       product_tags: lineItem.product?.tags ?? '',
       variant_variant_graphql_id: lineItem.variant?.variant_graphql_id ?? 'null',
       variant_inventoryItem_id: lineItem.variant?.inventoryItem?.id ?? 'null',
-      variant_inventoryItem_measurement_id: lineItem.variant?.inventoryItem?.measurement.id,
-      variant_inventoryItem_measurement_weight_unit: lineItem.variant?.inventoryItem?.measurement.weight.unit,
-      variant_inventoryItem_measurement_weight_value: lineItem.variant?.inventoryItem?.measurement.weight.value,
+      variant_inventoryItem_measurement_id: lineItem.variant?.inventoryItem?.measurement?.id ?? null,
+      variant_inventoryItem_measurement_weight_unit: lineItem.variant?.inventoryItem?.measurement?.weight?.unit ?? null,
+      variant_inventoryItem_measurement_weight_value: lineItem.variant?.inventoryItem?.measurement?.weight?.value ?? null,
       originalUnitPriceSet_shopMoney_amount: lineItem.originalUnitPriceSet.shopMoney.amount,
       discountedTotalSet_shopMoney_amount: lineItem.discountedTotalSet.shopMoney.amount,
     }))
