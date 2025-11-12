@@ -177,6 +177,18 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
       ).affectedRows
       pushLog(`Reverted ${rowsReverted} bottles due to REPICK`)
 
+      // Reshuffle unpicked bottles for the offer
+      await db.query(
+        `
+          UPDATE v3_offer_manifest
+          SET assignment_ordering = RAND()
+          WHERE offer_id = ?
+            AND assignee_id IS NULL;
+        `,
+        [offerId],
+      )
+      pushLog(`Reshuffled unpicked bottles for offer ${offerId}`)
+
       // Now we need the full amt
       needQty += alreadyHaveQty
     }
