@@ -45,21 +45,38 @@ async function log(
   })
 }
 
-const orderLocks = new Set<string>()
-
 export default async function shopifyProcessOrder(orderIdX: string) {
-  if (orderLocks.has(orderIdX)) {
+  const orderIdNumeric = z.coerce.bigint().safeParse(orderIdX.replace('gid://shopify/Order/', ''))?.data ?? null
+  const orderIdUri = `gid://shopify/Order/${orderIdNumeric}`
+
+  // Check for existing lock
+  const existingLock = await prisma.order_lock.findUnique({
+    where: { order_id: orderIdUri },
+  })
+  const now = new Date()
+  const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000)
+  if (existingLock && existingLock.locked_at > fiveMinutesAgo) {
     console.error(`Order ${orderIdX} is already being processed, skipping`)
     return
   }
-  orderLocks.add(orderIdX)
+
+  // Acquire lock
+  await prisma.order_lock.upsert({
+    where: { order_id: orderIdUri },
+    update: { locked_at: now },
+    create: { order_id: orderIdUri, locked_at: now },
+  })
+
   const logPromises: Promise<void>[] = []
   const startTime = Date.now()
   try {
     await processOrderInternal(orderIdX, logPromises, startTime)
   } finally {
     await Promise.allSettled(logPromises)
-    orderLocks.delete(orderIdX)
+    // Release lock
+    await prisma.order_lock.deleteMany({
+      where: { order_id: orderIdUri },
+    })
     await db.end()
   }
   console.info(`done in ${Date.now() - startTime}ms`)
