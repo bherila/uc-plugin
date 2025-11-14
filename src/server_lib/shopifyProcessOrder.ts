@@ -326,42 +326,57 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
   // Reconcile offerManifests vs. preExistingShopifyManifests
   const actions: ShopOrderMutation[] = []
   const groups: SkuManifestGrouping = groupBySku(offerManifests)
-  for (const variantId of Object.keys(groups)) {
-    const group = groups[variantId]
+  const allVariantIds = new Set([
+    ...Object.keys(groups),
+    ...preExistingShopifyManifests.map(node => node.variantId),
+  ])
+  for (const variantId of allVariantIds) {
+    const desiredQty = groups[variantId]?.length || 0
     const existing = preExistingShopifyManifests.filter((node) => node.variantId === variantId)
     const combinedQtyExisting = existing.reduce((acc, node) => acc + node.quantity, 0)
     console.info(
-      `Mf group ${variantId} has ${group.length} manifests and ${combinedQtyExisting} existing line items qty`,
+      `Mf group ${variantId} has ${desiredQty} manifests and ${combinedQtyExisting} existing line items qty`,
     )
-    if (combinedQtyExisting > 0) {
-      if (combinedQtyExisting != group.length) {
-        console.info(
-          `Updating line item ${existing[0].calculatedLineItemId} for variant ${variantId} from ${combinedQtyExisting} to ${group.length}`,
-        )
+    if (combinedQtyExisting === desiredQty) {
+      // No change needed
+      continue
+    }
+    if (desiredQty === 0) {
+      // Remove all existing line items
+      for (const item of existing) {
+        console.info(`Removing line item ${item.calculatedLineItemId} for variant ${variantId}`)
         actions.push({
-          updateLineItemId: existing[0].calculatedLineItemId,
-          qty: group.length,
+          updateLineItemId: item.calculatedLineItemId,
+          qty: 0,
           variantId: variantId,
         })
-
-        // Delete extra line items
-        if (existing.length > 1) {
-          for (let i = 1; i < existing.length; ++i) {
-            console.info(`Deleting extra line item ${existing[i].calculatedLineItemId} for variant ${variantId}`)
-            actions.push({
-              updateLineItemId: existing[i].calculatedLineItemId,
-              qty: 0,
-              variantId: variantId,
-            })
-          }
-        }
       }
-    } else {
-      console.info(`Adding new line item for ${variantId} with qty ${group.length}`)
+    } else if (combinedQtyExisting === 0) {
+      // Add new line item
+      console.info(`Adding new line item for ${variantId} with qty ${desiredQty}`)
       actions.push({
-        qty: group.length,
+        qty: desiredQty,
         variantId: variantId,
       })
+    } else {
+      // Update existing line items
+      console.info(
+        `Updating line item ${existing[0].calculatedLineItemId} for variant ${variantId} from ${combinedQtyExisting} to ${desiredQty}`,
+      )
+      actions.push({
+        updateLineItemId: existing[0].calculatedLineItemId,
+        qty: desiredQty,
+        variantId: variantId,
+      })
+      // Remove extra line items
+      for (let i = 1; i < existing.length; ++i) {
+        console.info(`Removing extra line item ${existing[i].calculatedLineItemId} for variant ${variantId}`)
+        actions.push({
+          updateLineItemId: existing[i].calculatedLineItemId,
+          qty: 0,
+          variantId: variantId,
+        })
+      }
     }
   }
 
