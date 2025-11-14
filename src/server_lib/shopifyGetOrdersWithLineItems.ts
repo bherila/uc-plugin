@@ -7,25 +7,31 @@ const orderLineItem = z.object({
   line_item_id: z.string(),
   currentQuantity: z.number(),
   title: z.string(),
-  product: z.object({
-    tags: z.array(z.string()),
-  }).nullable(),
-  variant: z.object({
-    variant_graphql_id: z.string(),
-    inventoryItem: z
-      .object({
-        id: z.string(),
-        // measurement can be null in actual API responses even when inventoryItem exists
-        measurement: z.object({
+  product: z
+    .object({
+      tags: z.array(z.string()),
+    })
+    .nullable(),
+  variant: z
+    .object({
+      variant_graphql_id: z.string(),
+      inventoryItem: z
+        .object({
           id: z.string(),
-          weight: z.object({
-            unit: z.string(),
-            value: z.number(),
-          }),
-        }).nullable(),
-      })
-      .nullable(),
-  }).nullable(),
+          // measurement can be null in actual API responses even when inventoryItem exists
+          measurement: z
+            .object({
+              id: z.string(),
+              weight: z.object({
+                unit: z.string(),
+                value: z.number(),
+              }),
+            })
+            .nullable(),
+        })
+        .nullable(),
+    })
+    .nullable(),
   originalUnitPriceSet: z.object({
     shopMoney: z.object({
       amount: z.coerce.number(),
@@ -190,8 +196,10 @@ const shopifyGetOrdersWithLineItems = async (graphqlOrderIds: string[]) => {
       variant_variant_graphql_id: lineItem.variant?.variant_graphql_id ?? 'null',
       variant_inventoryItem_id: lineItem.variant?.inventoryItem?.id ?? 'null',
       variant_inventoryItem_measurement_id: lineItem.variant?.inventoryItem?.measurement?.id ?? null,
-      variant_inventoryItem_measurement_weight_unit: lineItem.variant?.inventoryItem?.measurement?.weight?.unit ?? null,
-      variant_inventoryItem_measurement_weight_value: lineItem.variant?.inventoryItem?.measurement?.weight?.value ?? null,
+      variant_inventoryItem_measurement_weight_unit:
+        lineItem.variant?.inventoryItem?.measurement?.weight?.unit ?? null,
+      variant_inventoryItem_measurement_weight_value:
+        lineItem.variant?.inventoryItem?.measurement?.weight?.value ?? null,
       originalUnitPriceSet_shopMoney_amount: lineItem.originalUnitPriceSet.shopMoney.amount,
       discountedTotalSet_shopMoney_amount: lineItem.discountedTotalSet.shopMoney.amount,
     }))

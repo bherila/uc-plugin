@@ -84,7 +84,7 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
       const key = dealLineItem.variant_variant_graphql_id
       if (key == null) {
         // maybe log error
-        break;
+        break
       }
       const existingItem = variant2DealItemMap.get(key)
       if (existingItem != null) {
@@ -147,21 +147,25 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
       )
     }
 
+    // This code gets the existing manifests for this order and determines how many more
+    // we need to allocate or release
     const existingManifests: { c: number }[] = await db.query(
       'select count(*) as c from v3_offer_manifest where assignee_id = ? and offer_id = ?',
       [orderIdUri, offerId],
     )
     const alreadyHaveQty = z.number().parse(existingManifests[0].c)
     let needQty =
-      shopifyOrder.cancelledAt == null
-        ? orderLineItem.currentQuantity - alreadyHaveQty // ALLOCATE if not canceled
-        : -alreadyHaveQty // RELEASE if canceled
+      shopifyOrder.cancelledAt == null // is order not canceled?
+        ? orderLineItem.currentQuantity - alreadyHaveQty // ALLOCATE
+        : -alreadyHaveQty // RELEASE (Canceled order)
 
     pushLog(`${alreadyHaveQty} already allocated to ${orderIdUri}, need ${needQty} more`)
 
     // START maybe repick -----------------------------------
+    // Note this doesn't happen if needQty < 0 i.e. order is canceled
+    // needQty is the # of additional bottles we need to allocate
     if (shouldRepickAllBottles && needQty > 0 && alreadyHaveQty > 0) {
-      // If we are repicking, we need to unallocate the existing bottles
+      // If we are repicking, we need to unallocate the existing bottles first
       const rowsReverted = (
         (await db.query(
           `
@@ -177,25 +181,29 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
       ).affectedRows
       pushLog(`Reverted ${rowsReverted} bottles due to REPICK`)
 
-      // Reshuffle unpicked bottles for the offer
-      await db.query(
-        `
+      // Reshuffle all available bottles for the offer
+      const reshuffleQty = (
+        (await db.query(
+          `
           UPDATE v3_offer_manifest
           SET assignment_ordering = RAND()
           WHERE offer_id = ?
             AND assignee_id IS NULL;
         `,
-        [offerId],
-      )
-      pushLog(`Reshuffled unpicked bottles for offer ${offerId}`)
+          [offerId],
+        )) as ResultSetHeader
+      ).affectedRows
+      pushLog(`Reshuffled ALL ${reshuffleQty} unpicked bottles for offer ${offerId}`)
 
-      // Now we need the full amt
+      // Now we need to add the number of bottles released to the needQty,
+      // because these will soon be allocated to the user.
       needQty += alreadyHaveQty
     }
     // END maybe repick -----------------------------------
 
     if (needQty > 0) {
-      // ALLOCATE bottles.
+      // ALLOCATE bottles on a random basis (assignment_ordering is a
+      // pre-assigned random variable)
       const updateResult: ResultSetHeader = await db.query(
         `
             UPDATE v3_offer_manifest
@@ -209,6 +217,9 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
       )
       const rowsAffected = updateResult.affectedRows
 
+      // Check if we actually allocated enough bottles. If we didn't,
+      // that means we actually ran out of bottles. In this case we should not
+      // allocate any bottles, the order will need to be canceled manually.
       if (rowsAffected < needQty) {
         // Set the assignee_id for those rows back to null
         // Set the assignee_id for those rows back to null
@@ -227,7 +238,8 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
         ).affectedRows
         pushLog(`Reverted ${rowsReverted} of ${rowsAffected} rows due to insufficient allocation`)
 
-        // Call shopifyCancelOrder and shopifySetVariantQty
+        // As stated before, we should cancel the order since there weren't
+        // enough bottles to fulfill it.
         pushLog(`Attempting to cancel order ${orderIdUri}`)
         try {
           await shopifyCancelOrder(orderIdUri)
@@ -235,6 +247,7 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
           pushLog(error)
         }
 
+        // The following shopify API returns the assigned bottle SKUs to inventory.
         pushLog(`Set variant quantity to 0 for offer ${offerIdFromVariantId.get(orderIdUri)}`)
         try {
           await shopifySetVariantQuantity(purchasedDealVariantUri, 0)
@@ -258,7 +271,9 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
   }
 
   // Now that the manifests are allocated, we need to update the shopify order
+  // This uses the shopify order edit API.
 
+  // First we fetch the allocated/assigned manifests for this order
   const offerManifests: V3Manifest[] = await db.query(
     `select m_id as id, mf_variant as variant_id, assignee_id, assignment_ordering
           from v3_offer_manifest
@@ -278,7 +293,8 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
     return
   }
 
-  // Start the order edit if needed
+  // Start the order edit session using the shopify api. This is a "begin transaction"
+  // and we won't actually apply the changes until we call orderEditCommit.
   const { calculatedOrderId, editableLineItems } = await shopifyBeginOrderEdit({ orderId: orderIdUri })
   if (!calculatedOrderId) {
     pushLog('CalculatedOrderId was null, aborting')
