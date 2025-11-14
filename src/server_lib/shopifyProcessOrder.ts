@@ -347,6 +347,9 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
       })
     }
   }
+
+  pushLog('Calculated orderEdit actions: ' + JSON.stringify(actions))
+
   // Apply to shopify order
   if (actions.length > 0) {
     for (const action of actions) {
