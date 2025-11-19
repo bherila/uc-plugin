@@ -13,6 +13,7 @@ import { ResultSetHeader } from 'mysql2'
 import { shopifyBeginOrderEdit } from './shopifyBeginOrderEdit'
 import { shopifyCancelOrder } from './shopifyCancelOrder'
 import { shopifySetLineItemQuantity } from './shopifySetLineItemQuantity'
+import { shopifySetShippingLines } from './shopifySetShippingLines'
 import { shopifySetVariantQuantity } from './shopifySetVariantQuantity'
 import { V3Manifest } from '@/app/api/manifest/models'
 
@@ -318,6 +319,31 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
     return // do not commit, error!!
   }
   pushLog(`Opened CalculatedOrder ${calculatedOrderId}`)
+
+  // Set shipping lines to match the original order.
+  // In Shopify's Order Edit API, the flow is:
+  // 1. Begin the edit (orderEditBegin) to create a calculated order.
+  // 2. Apply modifications (add/remove line items, set discounts, update shipping, etc.) to the calculated order.
+  // 3. Commit the changes (orderEditCommit) to finalize and apply them to the actual order.
+  // Shipping lines must be set during step 2, before committing, to ensure new line items inherit the same shipping method.
+  // If done after commit, the edit session is closed, and modifications are not possible.
+  if (shopifyOrder.shippingLines_nodes.length > 0) {
+    const shippingLines = shopifyOrder.shippingLines_nodes.map(line => ({
+      price: {
+        amount: line.priceSet_shopMoney_amount,
+        currencyCode: 'USD', // Assuming USD, adjust if needed
+      },
+      title: line.title,
+      ...(line.carrierIdentifier && { carrierServiceId: line.carrierIdentifier }),
+    }))
+    try {
+      await shopifySetShippingLines({ calculatedOrderId, shippingLines })
+      pushLog(`Set shipping lines on calculated order: ${JSON.stringify(shippingLines)}`)
+    } catch (error) {
+      pushLog(`Failed to set shipping lines: ${error}`)
+      // Continue anyway, as shipping might be optional
+    }
+  }
 
   const preExistingShopifyManifests = editableLineItems.filter((node) =>
     node.productTags.includes('manifest-item'),
