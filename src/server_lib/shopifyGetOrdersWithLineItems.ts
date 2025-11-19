@@ -50,17 +50,6 @@ const orderTransaction = z.object({
   kind: z.string(),
 })
 
-const shippingLine = z.object({
-  id: z.string(),
-  title: z.string(),
-  priceSet: z.object({
-    shopMoney: z.object({
-      amount: z.coerce.number(),
-    }),
-  }),
-  carrierIdentifier: z.string().nullable(),
-})
-
 export const orderLineItemFlatSchema = z.object({
   line_item_id: z.string(),
   currentQuantity: z.number(),
@@ -97,9 +86,6 @@ const schema = z.object({
         nodes: z.array(orderLineItem),
       }),
       transactions: z.array(orderTransaction),
-      shippingLines: z.object({
-        nodes: z.array(shippingLine),
-      }),
     }),
   ),
 })
@@ -118,14 +104,6 @@ export const orderFlatSchema = z.object({
       id: z.string(),
       status: z.string(),
       kind: z.string(),
-    }),
-  ),
-  shippingLines_nodes: z.array(
-    z.object({
-      id: z.string(),
-      title: z.string(),
-      priceSet_shopMoney_amount: z.number(),
-      carrierIdentifier: z.string().nullable(),
     }),
   ),
 })
@@ -187,18 +165,6 @@ const query = `#graphql
           status
           kind
         }
-        shippingLines(first: 10) {
-          nodes {
-            id
-            title
-            priceSet {
-              shopMoney {
-                amount
-              }
-            }
-            carrierIdentifier
-          }
-        }
       }
     }
   }
@@ -244,18 +210,10 @@ const shopifyGetOrdersWithLineItems = async (graphqlOrderIds: string[]) => {
       kind: transaction.kind,
     }))
 
-    const shippingLines = node.shippingLines.nodes.map((shippingLine) => ({
-      id: shippingLine.id,
-      title: shippingLine.title,
-      priceSet_shopMoney_amount: shippingLine.priceSet.shopMoney.amount,
-      carrierIdentifier: shippingLine.carrierIdentifier,
-    }))
-
     const flatOrder = orderFlatSchema.parse({
       ...node,
       lineItems_nodes: lineItems,
       transactions_nodes: transactions,
-      shippingLines_nodes: shippingLines,
       totalPriceSet_shopMoney_amount: node.totalPriceSet.shopMoney.amount,
       totalShippingPriceSet_shopMoney_amount: node.totalShippingPriceSet.shopMoney.amount,
       displayFinancialStatus: node.displayFinancialStatus,
