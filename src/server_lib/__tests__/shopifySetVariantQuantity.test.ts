@@ -6,19 +6,24 @@ process.env.SHOPIFY_API_SECRET_KEY = 'test-secret'
 
 import { shopifySetVariantQuantity } from '../shopifySetVariantQuantity'
 import shopify from '../shopify'
-import db from '../db'
+import { prisma } from '../prisma'
 
 jest.mock('../shopify')
-jest.mock('../db')
+jest.mock('../prisma', () => ({
+  prisma: {
+    v3_audit_log: {
+      create: jest.fn(),
+    },
+  },
+}))
 
 describe('shopifySetVariantQuantity', () => {
   beforeEach(() => {
     jest.resetAllMocks()
-    ;(db.query as jest.Mock).mockResolvedValue([])
   })
 
   it('should set variant quantity to zero', async () => {
-    const mockInventoryResponse = {
+    const mockLocationResponse = {
       locations: {
         edges: [
           {
@@ -30,38 +35,54 @@ describe('shopifySetVariantQuantity', () => {
       },
     }
 
+    const mockInventoryResponse = {
+      productVariant: {
+        inventoryItem: {
+          id: 'gid://shopify/InventoryItem/789',
+        },
+      },
+    }
+
     const mockSetQuantityResponse = {
-      inventorySetOnHandQuantity: {
-        inventoryLevel: {
-          id: 'gid://shopify/InventoryLevel/789',
-          quantity: 0,
+      inventorySetQuantities: {
+        inventoryAdjustmentGroup: {
+          createdAt: '2023-01-01T00:00:00Z',
         },
         userErrors: [],
       },
     }
-
     ;(shopify.graphql as jest.Mock)
+      .mockResolvedValueOnce(mockLocationResponse)
       .mockResolvedValueOnce(mockInventoryResponse)
       .mockResolvedValueOnce(mockSetQuantityResponse)
 
-    const result = await shopifySetVariantQuantity('gid://shopify/ProductVariant/123', 0)
+    await shopifySetVariantQuantity('gid://shopify/ProductVariant/123', 0)
 
-    expect(shopify.graphql).toHaveBeenCalledTimes(2)
-    expect(result.inventorySetOnHandQuantity.inventoryLevel?.quantity).toBe(0)
+    expect(shopify.graphql).toHaveBeenCalledTimes(3)
+    expect(prisma.v3_audit_log.create).toHaveBeenCalledTimes(1)
   })
 
   it('should handle missing inventory data', async () => {
-    const mockInventoryResponse = {
-      productVariant: {
-        inventoryItem: null,
+    const mockLocationResponse = {
+      locations: {
+        edges: [
+          {
+            node: {
+              id: 'gid://shopify/Location/456',
+            },
+          },
+        ],
       },
-      location: null,
     }
+    const mockInventoryResponse = {
+      productVariant: null,
+    }
+    ;(shopify.graphql as jest.Mock)
+      .mockResolvedValueOnce(mockLocationResponse)
+      .mockResolvedValueOnce(mockInventoryResponse)
 
-    ;(shopify.graphql as jest.Mock).mockResolvedValueOnce(mockInventoryResponse)
-
-    await expect(shopifySetVariantQuantity('invalid-id', 0)).rejects.toThrow(
-      'Could not find inventory item or location',
-    )
+    await expect(
+      shopifySetVariantQuantity('gid://shopify/ProductVariant/non-existent', 0),
+    ).rejects.toThrow('No inventory item found')
   })
 })

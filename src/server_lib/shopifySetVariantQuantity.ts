@@ -71,7 +71,7 @@ export async function shopifySetVariantQuantity(variantId: string, availableQuan
         variantId,
       },
     )
-    const inventoryItem = inventoryItemResponse.productVariant.inventoryItem
+    const inventoryItem = inventoryItemResponse.productVariant?.inventoryItem
     if (!inventoryItem) {
       throw new Error('No inventory item found')
     }
