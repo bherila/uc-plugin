@@ -12,6 +12,7 @@ import { prisma } from '@/server_lib/prisma'
 import { ResultSetHeader } from 'mysql2'
 import { shopifyBeginOrderEdit } from './shopifyBeginOrderEdit'
 import { shopifyCancelOrder } from './shopifyCancelOrder'
+import { shopifyOrderEditSetShippingLine } from './shopifyOrderEditSetShippingLine'
 import { shopifySetLineItemQuantity } from './shopifySetLineItemQuantity'
 import { shopifySetVariantQuantity } from './shopifySetVariantQuantity'
 import { V3Manifest } from '@/app/api/manifest/models'
@@ -384,13 +385,25 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
 
   // Apply to shopify order
   if (actions.length > 0) {
+    const hasAdditions = actions.some((action) => !action.updateLineItemId)
+    if (hasAdditions && shopifyOrder.shippingLine) {
+      const result = await shopifyOrderEditSetShippingLine({
+        id: calculatedOrderId,
+        shippingLine: {
+          shippingRateHandle: shopifyOrder.shippingLine.shippingRateHandle,
+        },
+      })
+      pushLog(`setShippingLine: ${JSON.stringify(result)}`)
+    }
     for (const action of actions) {
       const { qty, variantId, updateLineItemId } = action
       if (updateLineItemId) {
         // update the line item
         const updateResult = await shopifySetLineItemQuantity(calculatedOrderId, updateLineItemId, qty)
         pushLog(
-          `Updating line item ${updateLineItemId} to ${qty} for variant ${variantId} - ${JSON.stringify(updateResult)}`,
+          `Updating line item ${updateLineItemId} to ${qty} for variant ${variantId} - ${JSON.stringify(
+            updateResult,
+          )}`,
         )
       } else {
         // add line item

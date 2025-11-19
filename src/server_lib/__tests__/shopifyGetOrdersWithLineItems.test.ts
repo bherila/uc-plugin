@@ -33,6 +33,7 @@ describe('shopifyGetOrdersWithLineItems', () => {
               amount: '10.00',
             },
           },
+          shippingLine: null,
           lineItems: {
             nodes: [
               {
@@ -102,6 +103,7 @@ describe('shopifyGetOrdersWithLineItems', () => {
               amount: '10.00',
             },
           },
+          shippingLine: null,
           lineItems: {
             nodes: [
               {
@@ -175,6 +177,7 @@ describe('shopifyGetOrdersWithLineItems', () => {
               amount: '10.00',
             },
           },
+          shippingLine: null,
           lineItems: {
             nodes: [
               {
@@ -253,6 +256,7 @@ describe('shopifyGetOrdersWithLineItems', () => {
               amount: '10.00',
             },
           },
+          shippingLine: null,
           lineItems: {
             nodes: [
               {
