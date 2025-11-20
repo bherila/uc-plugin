@@ -12,10 +12,11 @@ import { prisma } from '@/server_lib/prisma'
 import { ResultSetHeader } from 'mysql2'
 import { shopifyBeginOrderEdit } from './shopifyBeginOrderEdit'
 import { shopifyCancelOrder } from './shopifyCancelOrder'
-import { shopifyOrderEditSetShippingLine } from './shopifyOrderEditSetShippingLine'
+import { shopifyOrderEditAddShippingLine } from './shopifyOrderEditAddShippingLine'
 import { shopifySetLineItemQuantity } from './shopifySetLineItemQuantity'
 import { shopifySetVariantQuantity } from './shopifySetVariantQuantity'
 import { V3Manifest } from '@/app/api/manifest/models'
+import { CurrencyCode } from '../../types/admin.types'
 
 export const maxDuration = 60
 
@@ -387,13 +388,18 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
   if (actions.length > 0) {
     const hasAdditions = actions.some((action) => !action.updateLineItemId)
     if (hasAdditions && shopifyOrder.shippingLine) {
-      const result = await shopifyOrderEditSetShippingLine({
+      const result = await shopifyOrderEditAddShippingLine({
         id: calculatedOrderId,
         shippingLine: {
-          shippingRateHandle: shopifyOrder.shippingLine.shippingRateHandle,
+          price: {
+            amount: shopifyOrder.totalShippingPriceSet_shopMoney_amount,
+            currencyCode: shopifyOrder.totalShippingPriceSet_shopMoney_currencyCode as CurrencyCode,
+          },
+          title: shopifyOrder.shippingLine.title,
+          code: shopifyOrder.shippingLine.code,
         },
       })
-      pushLog(`setShippingLine: ${JSON.stringify(result)}`)
+      pushLog(`addShippingLine: ${JSON.stringify(result)}`)
     }
     for (const action of actions) {
       const { qty, variantId, updateLineItemId } = action

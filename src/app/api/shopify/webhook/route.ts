@@ -18,6 +18,7 @@ export const maxDuration = 60
 
 const webhookSchema = z.object({
   admin_graphql_api_id: z.string().optional(),
+  id: z.number().optional(),
 })
 
 async function log(msg: any, order_id: bigint | null = null) {
@@ -55,9 +56,13 @@ export async function POST(req: NextRequest) {
       // Handle other webhooks (e.g., orders/paid, orders/cancelled, products/create)
       const genericWebhookSchema = z.object({
         admin_graphql_api_id: z.string().optional(),
+        id: z.number().optional(),
       })
       const parsedGenericWebhook = genericWebhookSchema.parse(webhookData)
       adminGraphqlApiId = parsedGenericWebhook.admin_graphql_api_id ?? null
+      if (!adminGraphqlApiId && parsedGenericWebhook.id) {
+        adminGraphqlApiId = `gid://shopify/Order/${parsedGenericWebhook.id}`
+      }
       if (adminGraphqlApiId) {
         parsedOrderIdBigint =
           z.coerce.bigint().safeParse(adminGraphqlApiId.replace('gid://shopify/Order/', '')).data ?? null
