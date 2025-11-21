@@ -17,6 +17,8 @@ import { shopifySetLineItemQuantity } from './shopifySetLineItemQuantity'
 import { shopifySetVariantQuantity } from './shopifySetVariantQuantity'
 import { V3Manifest } from '@/app/api/manifest/models'
 import { CurrencyCode } from '../../types/admin.types'
+import { shopifyGetFulfillmentOrders } from './shopifyGetFulfillmentOrders'
+import { shopifyFulfillmentOrderMerge } from './shopifyFulfillmentOrderMerge'
 
 export const maxDuration = 60
 
@@ -387,20 +389,9 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
   // Apply to shopify order
   if (actions.length > 0) {
     const hasAdditions = actions.some((action) => !action.updateLineItemId)
-    if (hasAdditions && shopifyOrder.shippingLine) {
-      const result = await shopifyOrderEditAddShippingLine({
-        id: calculatedOrderId,
-        shippingLine: {
-          price: {
-            amount: shopifyOrder.totalShippingPriceSet_shopMoney_amount,
-            currencyCode: shopifyOrder.totalShippingPriceSet_shopMoney_currencyCode as CurrencyCode,
-          },
-          title: shopifyOrder.shippingLine.title,
-          code: shopifyOrder.shippingLine.code,
-        },
-      })
-      pushLog(`addShippingLine: ${JSON.stringify(result)}`)
-    }
+
+    // If we wanted to add a shipping line, which we don't, we would do that here.
+
     for (const action of actions) {
       const { qty, variantId, updateLineItemId } = action
       if (updateLineItemId) {
@@ -433,6 +424,55 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
     }
     const commitResult = await orderEditCommit({ calculatedOrderId })
     pushLog('orderEditCommit - ' + JSON.stringify(commitResult))
+
+    try {
+      pushLog('Checking for fulfillment orders to merge')
+      const fulfillmentOrders = await shopifyGetFulfillmentOrders(orderIdUri)
+      pushLog(`Found ${fulfillmentOrders.length} fulfillment orders.`)
+
+      if (fulfillmentOrders.length > 1) {
+        const openFulfillmentOrders = fulfillmentOrders.filter((fo) => fo.status === 'OPEN')
+
+        if (openFulfillmentOrders.length > 1) {
+          pushLog(`Found ${openFulfillmentOrders.length} OPEN fulfillment orders.`)
+          // Check if they can be merged.
+          const firstFo = openFulfillmentOrders[0]
+          const locationId = firstFo.assignedLocation.id
+          const fulfillAt = firstFo.fulfillAt
+
+          const areMergeable = openFulfillmentOrders.every(
+            (fo) => fo.assignedLocation.id === locationId && fo.fulfillAt === fulfillAt,
+          )
+
+          if (areMergeable) {
+            pushLog('Fulfillment orders are mergeable. Merging them now.')
+            const mergeIntents = openFulfillmentOrders.map((fo) => ({
+              fulfillmentOrderId: fo.id,
+              fulfillmentOrderLineItems: fo.lineItems.nodes.map((li) => ({
+                id: li.id,
+                quantity: li.totalQuantity,
+              })),
+            }))
+
+            const mergeResult = await shopifyFulfillmentOrderMerge([
+              {
+                mergeIntents: mergeIntents,
+              },
+            ])
+            pushLog(`Fulfillment order merge result: ${JSON.stringify(mergeResult)}`)
+          } else {
+            pushLog('Fulfillment orders are not mergeable.')
+          }
+        } else {
+          pushLog('Not enough OPEN fulfillment orders to merge.')
+        }
+      } else {
+        pushLog('Not enough fulfillment orders to merge.')
+      }
+    } catch (e) {
+      const err = e instanceof Error ? e.message : String(e)
+      pushLog(`Error during fulfillment order merge process: ${err}`)
+    }
   } else {
     pushLog('SKIP orderEditCommit - Nothing to do')
   }
