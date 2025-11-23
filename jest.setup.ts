@@ -1,3 +1,9 @@
+// Mock environment variables before imports
+process.env.SHOPIFY_APP_NAME = 'test-app'
+process.env.SHOPIFY_ADMIN_API_TOKEN = 'test-token'
+process.env.SHOPIFY_API_KEY = 'test-key'
+process.env.SHOPIFY_API_SECRET_KEY = 'test-secret'
+
 import '@testing-library/jest-dom'
 
 // Mock Next.js components and functions

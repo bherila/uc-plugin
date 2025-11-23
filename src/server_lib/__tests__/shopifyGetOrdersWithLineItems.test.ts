@@ -26,11 +26,13 @@ describe('shopifyGetOrdersWithLineItems', () => {
           totalPriceSet: {
             shopMoney: {
               amount: '100.00',
+              currencyCode: 'USD',
             },
           },
           totalShippingPriceSet: {
             shopMoney: {
               amount: '10.00',
+              currencyCode: 'USD',
             },
           },
           shippingLine: null,
@@ -50,11 +52,13 @@ describe('shopifyGetOrdersWithLineItems', () => {
                 originalUnitPriceSet: {
                   shopMoney: {
                     amount: '50.00',
+                    currencyCode: 'USD',
                   },
                 },
                 discountedTotalSet: {
                   shopMoney: {
                     amount: '50.00',
+                    currencyCode: 'USD',
                   },
                 },
               },
@@ -96,11 +100,13 @@ describe('shopifyGetOrdersWithLineItems', () => {
           totalPriceSet: {
             shopMoney: {
               amount: '100.00',
+              currencyCode: 'USD',
             },
           },
           totalShippingPriceSet: {
             shopMoney: {
               amount: '10.00',
+              currencyCode: 'USD',
             },
           },
           shippingLine: null,
@@ -123,11 +129,13 @@ describe('shopifyGetOrdersWithLineItems', () => {
                 originalUnitPriceSet: {
                   shopMoney: {
                     amount: '75.00',
+                    currencyCode: 'USD',
                   },
                 },
                 discountedTotalSet: {
                   shopMoney: {
                     amount: '75.00',
+                    currencyCode: 'USD',
                   },
                 },
               },
@@ -152,7 +160,6 @@ describe('shopifyGetOrdersWithLineItems', () => {
     expect(result[0].lineItems_nodes).toHaveLength(1)
     // inventoryItem exists so id should be set
     expect(result[0].lineItems_nodes[0].variant_inventoryItem_id).toBe('gid://shopify/InventoryItem/2')
-    // measurement is null, so these should be null
     expect(result[0].lineItems_nodes[0].variant_inventoryItem_measurement_id).toBe(null)
     expect(result[0].lineItems_nodes[0].variant_inventoryItem_measurement_weight_unit).toBe(null)
     expect(result[0].lineItems_nodes[0].variant_inventoryItem_measurement_weight_value).toBe(null)
@@ -170,11 +177,13 @@ describe('shopifyGetOrdersWithLineItems', () => {
           totalPriceSet: {
             shopMoney: {
               amount: '100.00',
+              currencyCode: 'USD',
             },
           },
           totalShippingPriceSet: {
             shopMoney: {
               amount: '10.00',
+              currencyCode: 'USD',
             },
           },
           shippingLine: null,
@@ -203,11 +212,13 @@ describe('shopifyGetOrdersWithLineItems', () => {
                 originalUnitPriceSet: {
                   shopMoney: {
                     amount: '90.00',
+                    currencyCode: 'USD',
                   },
                 },
                 discountedTotalSet: {
                   shopMoney: {
                     amount: '90.00',
+                    currencyCode: 'USD',
                   },
                 },
               },
@@ -230,7 +241,6 @@ describe('shopifyGetOrdersWithLineItems', () => {
 
     expect(result).toHaveLength(1)
     expect(result[0].lineItems_nodes).toHaveLength(1)
-    // All fields should be populated
     expect(result[0].lineItems_nodes[0].variant_inventoryItem_id).toBe('gid://shopify/InventoryItem/3')
     expect(result[0].lineItems_nodes[0].variant_inventoryItem_measurement_id).toBe('gid://shopify/Measurement/3')
     expect(result[0].lineItems_nodes[0].variant_inventoryItem_measurement_weight_unit).toBe('POUNDS')
@@ -249,11 +259,13 @@ describe('shopifyGetOrdersWithLineItems', () => {
           totalPriceSet: {
             shopMoney: {
               amount: '100.00',
+              currencyCode: 'USD',
             },
           },
           totalShippingPriceSet: {
             shopMoney: {
               amount: '10.00',
+              currencyCode: 'USD',
             },
           },
           shippingLine: null,
@@ -270,11 +282,13 @@ describe('shopifyGetOrdersWithLineItems', () => {
                 originalUnitPriceSet: {
                   shopMoney: {
                     amount: '40.00',
+                    currencyCode: 'USD',
                   },
                 },
                 discountedTotalSet: {
                   shopMoney: {
                     amount: '40.00',
+                    currencyCode: 'USD',
                   },
                 },
               },

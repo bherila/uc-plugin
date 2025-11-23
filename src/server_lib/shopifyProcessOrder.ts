@@ -90,6 +90,12 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
   const orderIdNumeric = z.coerce.bigint().safeParse(orderIdX.replace('gid://shopify/Order/', ''))?.data ?? null
   const orderIdUri = `gid://shopify/Order/${orderIdNumeric}`
   const shopifyOrder = (await shopifyGetOrdersWithLineItems([orderIdUri]))[0]
+
+  if (shopifyOrder.cancelledAt != null) {
+    logPromises.push(log(`Order ${orderIdUri} is cancelled, skipping processing.`, null, orderIdNumeric, Date.now() - startTime))
+    console.info('[allocate] ' + `Order ${orderIdUri} is cancelled, skipping processing.`)
+    return
+  }
   const dealSchema = z.object({
     offer_id: z.number(),
     offer_variant_id: z.string(),
