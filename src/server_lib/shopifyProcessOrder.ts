@@ -394,11 +394,19 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
 
   // Apply to shopify order
   if (actions.length > 0) {
-    const hasAdditions = actions.some((action) => !action.updateLineItemId)
+    // To preserve the shipping line, we perform all additions first. This ensures
+    // that the order doesn't become empty during a "re-pick" operation.
+    const additions = actions.filter((a) => !a.updateLineItemId)
+    const modifications = actions.filter((a) => a.updateLineItemId)
+    const executionActions = [...additions, ...modifications]
+
+    if (additions.length > 0 && modifications.some((a) => a.qty === 0)) {
+      pushLog('Reordering order edit actions to perform additions first to preserve shipping method.')
+    }
 
     // If we wanted to add a shipping line, which we don't, we would do that here.
 
-    for (const action of actions) {
+    for (const action of executionActions) {
       const { qty, variantId, updateLineItemId } = action
       if (updateLineItemId) {
         // update the line item
