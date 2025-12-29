@@ -436,6 +436,27 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
         pushLog('addDiscount: ' + JSON.stringify(discount))
       }
     }
+
+    // Restore original shipping line if it existed
+    if (shopifyOrder.shippingLine && shopifyOrder.totalShippingPriceSet_shopMoney_amount != null) {
+      const originalShipping = {
+        title: shopifyOrder.shippingLine.title,
+        price: {
+          amount: shopifyOrder.totalShippingPriceSet_shopMoney_amount,
+          currencyCode: shopifyOrder.totalShippingPriceSet_shopMoney_currencyCode as CurrencyCode,
+        },
+        code: shopifyOrder.shippingLine.code,
+      }
+      pushLog(`Restoring original shipping line: ${originalShipping.title} - ${originalShipping.price.amount}`)
+      try {
+        await shopifyOrderEditAddShippingLine({
+          id: calculatedOrderId,
+          shippingLine: originalShipping,
+        })
+      } catch (e) {
+        pushLog(`Failed to restore shipping line: ${e}`)
+      }
+    }
     const commitResult = await orderEditCommit({ calculatedOrderId })
     pushLog('orderEditCommit - ' + JSON.stringify(commitResult))
 
