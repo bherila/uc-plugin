@@ -430,7 +430,7 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
           calculatedOrderId,
           discount: {
             percentValue: 100,
-            description: 'Allocation from Offer',
+            description: 'UPGRADED',
           },
         })
         pushLog('addDiscount: ' + JSON.stringify(discount))
@@ -438,24 +438,24 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
     }
 
     // Restore original shipping line if it existed
-    if (shopifyOrder.shippingLine && shopifyOrder.totalShippingPriceSet_shopMoney_amount != null) {
-      const originalShipping = {
-        title: shopifyOrder.shippingLine.title,
-        price: {
-          amount: shopifyOrder.totalShippingPriceSet_shopMoney_amount,
-          currencyCode: shopifyOrder.totalShippingPriceSet_shopMoney_currencyCode as CurrencyCode,
-        },
-      }
-      pushLog(`Restoring original shipping line: ${originalShipping.title} - ${originalShipping.price.amount}`)
-      try {
-        await shopifyOrderEditAddShippingLine({
-          id: calculatedOrderId,
-          shippingLine: originalShipping,
-        })
-      } catch (e) {
-        pushLog(`Failed to restore shipping line: ${e}`)
-      }
-    }
+    // if (shopifyOrder.shippingLine && shopifyOrder.totalShippingPriceSet_shopMoney_amount != null) {
+    //   const originalShipping = {
+    //     title: shopifyOrder.shippingLine.title,
+    //     price: {
+    //       amount: shopifyOrder.totalShippingPriceSet_shopMoney_amount,
+    //       currencyCode: shopifyOrder.totalShippingPriceSet_shopMoney_currencyCode as CurrencyCode,
+    //     },
+    //   }
+    //   pushLog(`Restoring original shipping line: ${originalShipping.title} - ${originalShipping.price.amount}`)
+    //   try {
+    //     await shopifyOrderEditAddShippingLine({
+    //       id: calculatedOrderId,
+    //       shippingLine: originalShipping,
+    //     })
+    //   } catch (e) {
+    //     pushLog(`Failed to restore shipping line: ${e}`)
+    //   }
+    // }
     const commitResult = await orderEditCommit({ calculatedOrderId })
     pushLog('orderEditCommit - ' + JSON.stringify(commitResult))
 
