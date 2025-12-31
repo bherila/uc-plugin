@@ -445,7 +445,6 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
           amount: shopifyOrder.totalShippingPriceSet_shopMoney_amount,
           currencyCode: shopifyOrder.totalShippingPriceSet_shopMoney_currencyCode as CurrencyCode,
         },
-        code: shopifyOrder.shippingLine.code,
       }
       pushLog(`Restoring original shipping line: ${originalShipping.title} - ${originalShipping.price.amount}`)
       try {

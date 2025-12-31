@@ -36,7 +36,6 @@ export type AddShippingLineInput = {
   shippingLine: {
     price: MoneyInput
     title: string
-    code?: string | null
   }
 }
 
