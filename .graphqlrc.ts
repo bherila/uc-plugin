@@ -2,7 +2,7 @@ import {ApiType, pluckConfig, preset} from '@shopify/api-codegen-preset';
 
 export default {
   // For syntax highlighting / auto-complete when writing operations
-  // Use local schema for validation (downloaded from Shopify Admin GraphQL 2024-04)
+  // Use local schema for validation (downloaded from Shopify Admin GraphQL 2025-10)
   schema: './types/admin.schema.json',
   documents: ['./**/*.{js,ts,jsx,tsx}'],
   projects: {

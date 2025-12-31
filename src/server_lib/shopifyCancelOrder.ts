@@ -4,11 +4,11 @@ import z from 'zod'
 import { prisma } from '@/server_lib/prisma'
 
 const CANCEL_ORDER_MUTATION = `#graphql
-  mutation cancelOrder($id: ID!, $restockInventory: Boolean = false) {
+  mutation cancelOrder($id: ID!, $restockInventory: Boolean = false, $refund: Boolean = true) {
     orderCancel(
-      orderId: $id, 
-      refund: true, 
-      restock: $restockInventory, 
+      orderId: $id,
+      refund: $refund,
+      restock: $restockInventory,
       reason: OTHER
     ) {
       userErrors {
