@@ -6,15 +6,19 @@ import { prisma } from './prisma'
 const GQL_ORDER_CAPTURE = `#graphql
 mutation orderCapture($input: OrderCaptureInput!) {
   orderCapture(input: $input) {
-    order {
+    transaction {
       id
-      totalPriceSet {
-        shopMoney {
-          amount
-          currencyCode
+      status
+      order {
+        id
+        totalPriceSet {
+          shopMoney {
+            amount
+            currencyCode
+          }
         }
+        displayFinancialStatus
       }
-      displayFinancialStatus
     }
     userErrors {
       field
@@ -26,16 +30,20 @@ mutation orderCapture($input: OrderCaptureInput!) {
 
 const orderCaptureSchema = z.object({
   orderCapture: z.object({
-    order: z
+    transaction: z
       .object({
         id: z.string(),
-        totalPriceSet: z.object({
-          shopMoney: z.object({
-            amount: z.string(),
-            currencyCode: z.string(),
+        status: z.string(),
+        order: z.object({
+          id: z.string(),
+          totalPriceSet: z.object({
+            shopMoney: z.object({
+              amount: z.string(),
+              currencyCode: z.string(),
+            }),
           }),
+          displayFinancialStatus: z.string(),
         }),
-        displayFinancialStatus: z.string(),
       })
       .nullable(),
     userErrors: z
@@ -67,7 +75,8 @@ export async function shopifyOrderCapture(input: OrderCaptureInput) {
         event_ext: JSON.stringify({
           orderId: input.id,
           amount: input.amount,
-          displayFinancialStatus: parsedResponse.orderCapture.order?.displayFinancialStatus,
+          transactionStatus: parsedResponse.orderCapture.transaction?.status,
+          displayFinancialStatus: parsedResponse.orderCapture.transaction?.order?.displayFinancialStatus,
         }),
         order_id: BigInt(input.id.replace('gid://shopify/Order/', '')),
       },
