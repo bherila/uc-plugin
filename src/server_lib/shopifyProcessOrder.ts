@@ -456,6 +456,7 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
     //     pushLog(`Failed to restore shipping line: ${e}`)
     //   }
     // }
+    
     const commitResult = await orderEditCommit({ calculatedOrderId })
     pushLog('orderEditCommit - ' + JSON.stringify(commitResult))
 
