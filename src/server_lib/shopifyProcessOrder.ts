@@ -320,140 +320,146 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
     return
   }
 
+  // Start the order edit session using the shopify api. This is a "begin transaction"
+  // and we won't actually apply the changes until we call orderEditCommit.
+  const { calculatedOrderId, editableLineItems } = await shopifyBeginOrderEdit({ orderId: orderIdUri })
+  if (!calculatedOrderId) {
+    pushLog('CalculatedOrderId was null, aborting')
+    return // do not commit, error!!
+  }
+  pushLog(`Opened CalculatedOrder ${calculatedOrderId}`)
+
+  const preExistingShopifyManifests = editableLineItems.filter((node) =>
+    node.productTags.includes('manifest-item'),
+  )
+
+  // Reconcile offerManifests vs. preExistingShopifyManifests
+  const actions: ShopOrderMutation[] = []
   const groups: SkuManifestGrouping = groupBySku(offerManifests)
-
-  // Helper to perform edit
-  // Mode 'ADD' covers additions and updates (desiredQty > 0)
-  // Mode 'REMOVE' covers removals (desiredQty == 0)
-  const applyEdit = async (mode: 'ADD' | 'REMOVE') => {
-    // Start the order edit session using the shopify api. This is a "begin transaction"
-    // and we won't actually apply the changes until we call orderEditCommit.
-    const { calculatedOrderId, editableLineItems } = await shopifyBeginOrderEdit({ orderId: orderIdUri })
-    if (!calculatedOrderId) {
-      pushLog(`[${mode}] CalculatedOrderId was null, aborting`)
-      return false
-    }
-    pushLog(`[${mode}] Opened CalculatedOrder ${calculatedOrderId}`)
-
-    const preExistingShopifyManifests = editableLineItems.filter((node) =>
-      node.productTags.includes('manifest-item'),
+  const allVariantIds = new Set([
+    ...Object.keys(groups),
+    ...preExistingShopifyManifests.map(node => node.variantId),
+  ])
+  for (const variantId of allVariantIds) {
+    const desiredQty = groups[variantId]?.length || 0
+    const existing = preExistingShopifyManifests.filter((node) => node.variantId === variantId)
+    const combinedQtyExisting = existing.reduce((acc, node) => acc + node.quantity, 0)
+    console.info(
+      `Mf group ${variantId} has ${desiredQty} manifests and ${combinedQtyExisting} existing line items qty`,
     )
-
-    // Reconcile offerManifests vs. preExistingShopifyManifests
-    const actions: ShopOrderMutation[] = []
-    const allVariantIds = new Set([
-      ...Object.keys(groups),
-      ...preExistingShopifyManifests.map((node) => node.variantId),
-    ])
-
-    for (const variantId of allVariantIds) {
-      const desiredQty = groups[variantId]?.length || 0
-
-      // In ADD mode, we only care about items we want to keep/add (qty > 0)
-      if (mode === 'ADD' && desiredQty === 0) continue
-      // In REMOVE mode, we only care about items we want to remove (qty == 0)
-      if (mode === 'REMOVE' && desiredQty > 0) continue
-
-      const existing = preExistingShopifyManifests.filter((node) => node.variantId === variantId)
-      const combinedQtyExisting = existing.reduce((acc, node) => acc + node.quantity, 0)
-      console.info(
-        `[${mode}] Mf group ${variantId} has ${desiredQty} manifests and ${combinedQtyExisting} existing line items qty`,
-      )
-      if (combinedQtyExisting === desiredQty) {
-        // No change needed
-        continue
-      }
-      if (desiredQty === 0) {
-        // Remove all existing line items
-        for (const item of existing) {
-          console.info(`[${mode}] Removing line item ${item.calculatedLineItemId} for variant ${variantId}`)
-          actions.push({
-            updateLineItemId: item.calculatedLineItemId,
-            qty: 0,
-            variantId: variantId,
-          })
-        }
-      } else if (combinedQtyExisting === 0) {
-        // Add new line item
-        console.info(`[${mode}] Adding new line item for ${variantId} with qty ${desiredQty}`)
-        actions.push({
-          qty: desiredQty,
-          variantId: variantId,
-        })
-      } else {
-        // Update existing line items
-        console.info(
-          `[${mode}] Updating line item ${existing[0].calculatedLineItemId} for variant ${variantId} from ${combinedQtyExisting} to ${desiredQty}`,
-        )
-        actions.push({
-          updateLineItemId: existing[0].calculatedLineItemId,
-          qty: desiredQty,
-          variantId: variantId,
-        })
-        // Remove extra line items
-        for (let i = 1; i < existing.length; ++i) {
-          console.info(`[${mode}] Removing extra line item ${existing[i].calculatedLineItemId} for variant ${variantId}`)
-          actions.push({
-            updateLineItemId: existing[i].calculatedLineItemId,
-            qty: 0,
-            variantId: variantId,
-          })
-        }
-      }
+    if (combinedQtyExisting === desiredQty) {
+      // No change needed
+      continue
     }
-
-    pushLog(`[${mode}] Calculated orderEdit actions: ` + JSON.stringify(actions))
-
-    // Apply to shopify order
-    if (actions.length > 0) {
-      for (const action of actions) {
-        const { qty, variantId, updateLineItemId } = action
-        if (updateLineItemId) {
-          // update the line item
-          const updateResult = await shopifySetLineItemQuantity(calculatedOrderId, updateLineItemId, qty)
-          pushLog(
-            `Updating line item ${updateLineItemId} to ${qty} for variant ${variantId} - ${JSON.stringify(
-              updateResult,
-            )}`,
-          )
-        } else {
-          // add line item
-          const addResult = await addVariant({
-            calculatedOrderId,
-            quantity: qty,
-            variantId,
-          })
-          pushLog(`Adding line item ${variantId} to ${qty} for variant ${variantId} - ${JSON.stringify(addResult)}`)
-          // with a zero cost i.e. 100% discount
-          const discount = await addDiscount({
-            calculatedLineItemId: addResult.orderEditAddVariant.calculatedLineItem.id,
-            calculatedOrderId,
-            discount: {
-              percentValue: 100,
-              description: 'UPGRADED',
-            },
-          })
-          pushLog('addDiscount: ' + JSON.stringify(discount))
-        }
+    if (desiredQty === 0) {
+      // Remove all existing line items
+      for (const item of existing) {
+        console.info(`Removing line item ${item.calculatedLineItemId} for variant ${variantId}`)
+        actions.push({
+          updateLineItemId: item.calculatedLineItemId,
+          qty: 0,
+          variantId: variantId,
+        })
       }
-
-      const commitResult = await orderEditCommit({ calculatedOrderId })
-      pushLog(`[${mode}] orderEditCommit - ` + JSON.stringify(commitResult))
-      return true
+    } else if (combinedQtyExisting === 0) {
+      // Add new line item
+      console.info(`Adding new line item for ${variantId} with qty ${desiredQty}`)
+      actions.push({
+        qty: desiredQty,
+        variantId: variantId,
+      })
     } else {
-      pushLog(`[${mode}] SKIP orderEditCommit - Nothing to do`)
-      return false
+      // Update existing line items
+      console.info(
+        `Updating line item ${existing[0].calculatedLineItemId} for variant ${variantId} from ${combinedQtyExisting} to ${desiredQty}`,
+      )
+      actions.push({
+        updateLineItemId: existing[0].calculatedLineItemId,
+        qty: desiredQty,
+        variantId: variantId,
+      })
+      // Remove extra line items
+      for (let i = 1; i < existing.length; ++i) {
+        console.info(`Removing extra line item ${existing[i].calculatedLineItemId} for variant ${variantId}`)
+        actions.push({
+          updateLineItemId: existing[i].calculatedLineItemId,
+          qty: 0,
+          variantId: variantId,
+        })
+      }
     }
   }
 
-  // We perform two passes:
-  // 1. ADD: Add/Update items where desiredQty > 0.
-  // 2. REMOVE: Remove items where desiredQty == 0.
-  // This ensures the order is never empty (preserving shipping lines) when swapping items.
-  const didAdd = await applyEdit('ADD')
-  const didRemove = await applyEdit('REMOVE')
+  pushLog('Calculated orderEdit actions: ' + JSON.stringify(actions))
 
-  if (didAdd || didRemove) {
+  // Apply to shopify order
+  if (actions.length > 0) {
+    // To preserve the shipping line, we perform all additions first. This ensures
+    // that the order doesn't become empty during a "re-pick" operation.
+    const additions = actions.filter((a) => !a.updateLineItemId)
+    const modifications = actions.filter((a) => a.updateLineItemId)
+    const executionActions = [...additions, ...modifications]
+
+    if (additions.length > 0 && modifications.some((a) => a.qty === 0)) {
+      pushLog('Reordering order edit actions to perform additions first to preserve shipping method.')
+    }
+
+    // If we wanted to add a shipping line, which we don't, we would do that here.
+
+    for (const action of executionActions) {
+      const { qty, variantId, updateLineItemId } = action
+      if (updateLineItemId) {
+        // update the line item
+        const updateResult = await shopifySetLineItemQuantity(calculatedOrderId, updateLineItemId, qty)
+        pushLog(
+          `Updating line item ${updateLineItemId} to ${qty} for variant ${variantId} - ${JSON.stringify(
+            updateResult,
+          )}`,
+        )
+      } else {
+        // add line item
+        const addResult = await addVariant({
+          calculatedOrderId,
+          quantity: qty,
+          variantId,
+        })
+        pushLog(`Adding line item ${variantId} to ${qty} for variant ${variantId} - ${JSON.stringify(addResult)}`)
+        // with a zero cost i.e. 100% discount
+        const discount = await addDiscount({
+          calculatedLineItemId: addResult.orderEditAddVariant.calculatedLineItem.id,
+          calculatedOrderId,
+          discount: {
+            percentValue: 100,
+            description: 'UPGRADED',
+          },
+        })
+        pushLog('addDiscount: ' + JSON.stringify(discount))
+      }
+    }
+
+    // Restore original shipping line if it existed
+    // if (shopifyOrder.shippingLine && shopifyOrder.totalShippingPriceSet_shopMoney_amount != null) {
+    //   const originalShipping = {
+    //     title: shopifyOrder.shippingLine.title,
+    //     price: {
+    //       amount: shopifyOrder.totalShippingPriceSet_shopMoney_amount,
+    //       currencyCode: shopifyOrder.totalShippingPriceSet_shopMoney_currencyCode as CurrencyCode,
+    //     },
+    //   }
+    //   pushLog(`Restoring original shipping line: ${originalShipping.title} - ${originalShipping.price.amount}`)
+    //   try {
+    //     await shopifyOrderEditAddShippingLine({
+    //       id: calculatedOrderId,
+    //       shippingLine: originalShipping,
+    //     })
+    //   } catch (e) {
+    //     pushLog(`Failed to restore shipping line: ${e}`)
+    //   }
+    // }
+    
+    const commitResult = await orderEditCommit({ calculatedOrderId })
+    pushLog('orderEditCommit - ' + JSON.stringify(commitResult))
+
     try {
       pushLog('Checking for fulfillment orders to merge')
       const fulfillmentOrders = await shopifyGetFulfillmentOrders(orderIdUri)
