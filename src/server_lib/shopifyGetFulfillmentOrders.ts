@@ -42,8 +42,10 @@ export async function shopifyGetFulfillmentOrders(orderId: string): Promise<Fulf
             status
             fulfillAt
             assignedLocation {
-              id
-              name
+              location {
+                id
+                name
+              }
             }
             lineItems(first: 10) {
               nodes {
