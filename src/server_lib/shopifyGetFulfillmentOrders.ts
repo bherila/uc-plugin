@@ -7,8 +7,10 @@ const FulfillmentOrderNodeSchema = z.object({
   status: z.string(),
   fulfillAt: z.string().nullable(),
   assignedLocation: z.object({
-    id: z.string(),
-    name: z.string(),
+    location: z.object({
+      id: z.string(),
+      name: z.string(),
+    }),
   }),
   lineItems: z.object({
     nodes: z.array(
