@@ -472,11 +472,11 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
           pushLog(`Found ${openFulfillmentOrders.length} OPEN fulfillment orders.`)
           // Check if they can be merged.
           const firstFo = openFulfillmentOrders[0]
-          const locationId = firstFo.assignedLocation.id
+          const locationId = firstFo.assignedLocation.location.id
           const fulfillAt = firstFo.fulfillAt
 
           const areMergeable = openFulfillmentOrders.every(
-            (fo) => fo.assignedLocation.id === locationId && fo.fulfillAt === fulfillAt,
+            (fo) => fo.assignedLocation.location.id === locationId && fo.fulfillAt === fulfillAt,
           )
 
           if (areMergeable) {
