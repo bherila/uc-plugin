@@ -12,6 +12,9 @@ const FulfillmentOrderNodeSchema = z.object({
       name: z.string(),
     }),
   }),
+  deliveryMethod: z.object({
+    presentedName: z.string(),
+  }),
   lineItems: z.object({
     nodes: z.array(
       z.object({
@@ -48,6 +51,9 @@ export async function shopifyGetFulfillmentOrders(orderId: string): Promise<Fulf
                 id
                 name
               }
+            }
+            deliveryMethod {
+              presentedName
             }
             lineItems(first: 10) {
               nodes {

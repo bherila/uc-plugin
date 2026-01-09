@@ -477,11 +477,17 @@ async function processOrderInternal(orderIdX: string, logPromises: Promise<void>
 
           const areMergeable = openFulfillmentOrders.every(
             (fo) => fo.assignedLocation.location.id === locationId && fo.fulfillAt === fulfillAt,
-          )
+          ) && openFulfillmentOrders.some((fo) => fo.deliveryMethod.presentedName !== 'Shipping')
 
           if (areMergeable) {
             pushLog('Fulfillment orders are mergeable. Merging them now.')
-            const mergeIntents = openFulfillmentOrders.map((fo) => ({
+            // Sort so that non-'Shipping' fulfillment orders come first to preserve their presentedName
+            const sortedFulfillmentOrders = openFulfillmentOrders.sort((a, b) => {
+              const aIsShipping = a.deliveryMethod.presentedName === 'Shipping' ? 1 : 0
+              const bIsShipping = b.deliveryMethod.presentedName === 'Shipping' ? 1 : 0
+              return aIsShipping - bIsShipping
+            })
+            const mergeIntents = sortedFulfillmentOrders.map((fo) => ({
               fulfillmentOrderId: fo.id,
               fulfillmentOrderLineItems: fo.lineItems.nodes.map((li) => ({
                 id: li.id,
