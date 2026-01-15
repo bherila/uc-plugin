@@ -18,7 +18,7 @@ const cfg: Shopify.IPublicShopifyConfig | Shopify.IPrivateShopifyConfig = {
   shopName: process.env.SHOPIFY_APP_NAME,
   accessToken: process.env.SHOPIFY_ADMIN_API_TOKEN,
   autoLimit: true, // Automatically handles rate limiting
-  apiVersion: '2025-10',
+  apiVersion: '2026-01',
 }
 
 // Initialize the Shopify client
