@@ -4,6 +4,7 @@ import { ProductData, ProductDataGrouping, V3Manifest } from '@/app/api/manifest
 import groupBySku from '@/lib/groupBySku'
 import { cache } from 'react'
 import { prisma } from '@/server_lib/prisma'
+import { chunk } from 'lodash'
 
 const PRODUCT_QUERY = `#graphql
   query GetProductData($IDs: [ID!]!) {
@@ -69,9 +70,17 @@ async function logError(err: any) {
 export const shopifyGetProductDataByVariantIds = cache(
   async (variantIds: string[]): Promise<{ [variantId: string]: ProductData }> => {
     try {
-      const result = await shopify.graphql(PRODUCT_QUERY, { IDs: variantIds })
+      const chunks = chunk(variantIds, 250)
+      const promises = chunks.map(async (chunkIds) => {
+        const result = await shopify.graphql(PRODUCT_QUERY, { IDs: chunkIds })
+        return result.nodes || []
+      })
+
+      const results = await Promise.all(promises)
+      const allNodes = results.flat()
+
       const productData: { [id: string]: ProductData } = {}
-      result.nodes.forEach((node: any) => {
+      allNodes.forEach((node: any) => {
         if (!node) {
           return
         }
