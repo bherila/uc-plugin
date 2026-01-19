@@ -332,8 +332,9 @@ model user_list {
 }
 
 model users {
-  uid       BigInt   @id @default(autoincrement())
+  id        BigInt   @id @default(autoincrement())
   email     String   @unique(map: "users_pk") @db.VarChar(50)
+  password  String?  @db.VarChar(100)
   pw        String?  @db.VarChar(100)
   salt      BigInt   @default(0)
   alias     String?  @db.VarChar(50)
